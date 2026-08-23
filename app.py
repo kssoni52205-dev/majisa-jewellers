@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import secrets
 from functools import wraps
 
 from flask import (
@@ -15,16 +16,20 @@ from flask import (
 
 app = Flask(__name__)
 
-# --------------------------------------------------
+# ==========================================================
 # CONFIG
-# --------------------------------------------------
+# ==========================================================
 
 app.secret_key = os.environ.get(
     "SECRET_KEY",
     "majisa-development-secret-change-this"
 )
 
-ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_USERNAME = os.environ.get(
+    "ADMIN_USERNAME",
+    "admin"
+)
+
 ADMIN_PASSWORD = os.environ.get(
     "ADMIN_PASSWORD",
     "change-this-password"
@@ -33,9 +38,9 @@ ADMIN_PASSWORD = os.environ.get(
 DATABASE = "majisa.db"
 
 
-# --------------------------------------------------
+# ==========================================================
 # DATABASE
-# --------------------------------------------------
+# ==========================================================
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
@@ -43,8 +48,26 @@ def get_db():
     return conn
 
 
+def add_column_if_missing(conn, table, column, definition):
+    columns = conn.execute(
+        f"PRAGMA table_info({table})"
+    ).fetchall()
+
+    existing = [row["name"] for row in columns]
+
+    if column not in existing:
+        conn.execute(
+            f"ALTER TABLE {table} ADD COLUMN {column} {definition}"
+        )
+
+
 def init_db():
+
     conn = get_db()
+
+    # ------------------------------------------------------
+    # PRODUCTS
+    # ------------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS products (
@@ -61,6 +84,10 @@ def init_db():
         )
     """)
 
+    # ------------------------------------------------------
+    # USERS
+    # ------------------------------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,6 +99,10 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # ------------------------------------------------------
+    # ORDERS
+    # ------------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS orders (
@@ -87,6 +118,10 @@ def init_db():
         )
     """)
 
+    # ------------------------------------------------------
+    # ORDER ITEMS
+    # ------------------------------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS order_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,6 +132,10 @@ def init_db():
             quantity INTEGER NOT NULL
         )
     """)
+
+    # ------------------------------------------------------
+    # REVIEWS
+    # ------------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS reviews (
@@ -109,6 +148,10 @@ def init_db():
         )
     """)
 
+    # ------------------------------------------------------
+    # COUPONS
+    # ------------------------------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS coupons (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -118,23 +161,132 @@ def init_db():
         )
     """)
 
+    # ------------------------------------------------------
+    # STORE SETTINGS
+    # ------------------------------------------------------
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            store_name TEXT DEFAULT 'Majisa Jewellers',
+            phone TEXT DEFAULT '8949144970',
+            email TEXT DEFAULT '',
+            instagram TEXT DEFAULT 'majisa_art_jewellers',
+            address TEXT DEFAULT '',
+            city TEXT DEFAULT '',
+            pincode TEXT DEFAULT '',
+            business_hours TEXT DEFAULT '10:00 AM - 8:00 PM',
+            currency TEXT DEFAULT 'INR',
+            cod TEXT DEFAULT 'enabled',
+            upi TEXT DEFAULT 'enabled',
+            shipping_charge REAL DEFAULT 0,
+            free_shipping REAL DEFAULT 999,
+            delivery_time TEXT DEFAULT '5-7 business days',
+            store_status TEXT DEFAULT 'open',
+            maintenance_message TEXT DEFAULT ''
+        )
+    """)
+
+    conn.execute("""
+        INSERT OR IGNORE INTO settings
+        (id, store_name, phone, instagram)
+        VALUES
+        (1, 'Majisa Jewellers', '8949144970',
+        'majisa_art_jewellers')
+    """)
+
+    # ------------------------------------------------------
+    # SAFE MIGRATIONS FOR EXISTING DATABASE
+    # ------------------------------------------------------
+
+    add_column_if_missing(
+        conn,
+        "users",
+        "reset_token",
+        "TEXT DEFAULT ''"
+    )
+
+    add_column_if_missing(
+        conn,
+        "users",
+        "reset_token_created",
+        "TEXT DEFAULT ''"
+    )
+
+    add_column_if_missing(
+        conn,
+        "orders",
+        "email",
+        "TEXT DEFAULT ''"
+    )
+
+    add_column_if_missing(
+        conn,
+        "orders",
+        "subtotal",
+        "REAL DEFAULT 0"
+    )
+
+    add_column_if_missing(
+        conn,
+        "orders",
+        "shipping",
+        "REAL DEFAULT 0"
+    )
+
+    add_column_if_missing(
+        conn,
+        "orders",
+        "discount",
+        "REAL DEFAULT 0"
+    )
+
+    add_column_if_missing(
+        conn,
+        "orders",
+        "payment_status",
+        "TEXT DEFAULT 'Pending'"
+    )
+
     conn.commit()
     conn.close()
 
 
-# Database automatically initialize karega
 init_db()
 
 
-# --------------------------------------------------
+# ==========================================================
 # HELPERS
-# --------------------------------------------------
+# ==========================================================
 
 def admin_required(view):
+
     @wraps(view)
     def wrapped(*args, **kwargs):
+
         if not session.get("admin_logged_in"):
-            return redirect(url_for("admin_login"))
+            return redirect(
+                url_for("admin_login")
+            )
+
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def login_required(view):
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+
+        if not session.get("user_id"):
+            return redirect(
+                url_for(
+                    "login",
+                    next=request.path
+                )
+            )
+
         return view(*args, **kwargs)
 
     return wrapped
@@ -150,16 +302,51 @@ def save_cart(cart):
 
 
 def cart_count():
+
     cart = get_cart()
-    return sum(cart.values())
+
+    return sum(
+        int(quantity)
+        for quantity in cart.values()
+    )
 
 
-# --------------------------------------------------
+def get_settings():
+
+    conn = get_db()
+
+    settings = conn.execute(
+        "SELECT * FROM settings WHERE id = 1"
+    ).fetchone()
+
+    conn.close()
+
+    return settings
+
+
+# ==========================================================
+# GLOBAL TEMPLATE SETTINGS
+# ==========================================================
+
+@app.context_processor
+def inject_global_data():
+
+    return {
+        "store_settings": get_settings(),
+        "cart_count": cart_count(),
+        "site_name": "Majisa Jewellers",
+        "site_phone": "8949144970",
+        "site_instagram": "majisa_art_jewellers"
+    }
+
+
+# ==========================================================
 # HOME
-# --------------------------------------------------
+# ==========================================================
 
 @app.route("/")
 def home():
+
     conn = get_db()
 
     featured = conn.execute("""
@@ -180,23 +367,31 @@ def home():
     return render_template(
         "index.html",
         featured=featured,
-        latest=latest,
-        cart_count=cart_count()
+        latest=latest
     )
 
 
-# --------------------------------------------------
+# ==========================================================
 # PRODUCTS
-# --------------------------------------------------
+# ==========================================================
 
 @app.route("/products")
 def products():
-    category = request.args.get("category", "").strip()
-    search = request.args.get("search", "").strip()
+
+    category = request.args.get(
+        "category",
+        ""
+    ).strip()
+
+    search = request.args.get(
+        "search",
+        ""
+    ).strip()
 
     conn = get_db()
 
     if search:
+
         items = conn.execute("""
             SELECT * FROM products
             WHERE name LIKE ?
@@ -210,6 +405,7 @@ def products():
         )).fetchall()
 
     elif category:
+
         items = conn.execute("""
             SELECT * FROM products
             WHERE category = ?
@@ -217,6 +413,7 @@ def products():
         """, (category,)).fetchall()
 
     else:
+
         items = conn.execute("""
             SELECT * FROM products
             ORDER BY id DESC
@@ -236,13 +433,13 @@ def products():
         products=items,
         categories=categories,
         selected_category=category,
-        search=search,
-        cart_count=cart_count()
+        search=search
     )
 
 
 @app.route("/product/<int:product_id>")
 def product_detail(product_id):
+
     conn = get_db()
 
     product = conn.execute(
@@ -264,43 +461,48 @@ def product_detail(product_id):
     return render_template(
         "product.html",
         product=product,
-        reviews=reviews,
-        cart_count=cart_count()
+        reviews=reviews
     )
 
-
-# --------------------------------------------------
-# SEARCH
-# --------------------------------------------------
 
 @app.route("/search")
 def search():
-    query = request.args.get("q", "").strip()
+
+    query = request.args.get(
+        "q",
+        ""
+    ).strip()
 
     return redirect(
-        url_for("products", search=query)
+        url_for(
+            "products",
+            search=query
+        )
     )
 
 
-# --------------------------------------------------
+# ==========================================================
 # CART
-# --------------------------------------------------
+# ==========================================================
 
 @app.route("/cart")
 def cart():
+
     cart = get_cart()
 
     if not cart:
+
         return render_template(
             "cart.html",
             items=[],
-            total=0,
-            cart_count=0
+            total=0
         )
 
     product_ids = list(cart.keys())
 
-    placeholders = ",".join(["?"] * len(product_ids))
+    placeholders = ",".join(
+        ["?"] * len(product_ids)
+    )
 
     conn = get_db()
 
@@ -318,9 +520,19 @@ def cart():
     total = 0
 
     for product in products_list:
-        quantity = cart.get(str(product["id"]), 0)
 
-        subtotal = product["price"] * quantity
+        quantity = int(
+            cart.get(
+                str(product["id"]),
+                0
+            )
+        )
+
+        subtotal = (
+            product["price"] *
+            quantity
+        )
+
         total += subtotal
 
         items.append({
@@ -332,13 +544,16 @@ def cart():
     return render_template(
         "cart.html",
         items=items,
-        total=total,
-        cart_count=cart_count()
+        total=total
     )
 
 
-@app.route("/cart/add/<int:product_id>", methods=["POST", "GET"])
+@app.route(
+    "/cart/add/<int:product_id>",
+    methods=["POST", "GET"]
+)
 def add_to_cart(product_id):
+
     conn = get_db()
 
     product = conn.execute(
@@ -355,15 +570,24 @@ def add_to_cart(product_id):
 
     key = str(product_id)
 
-    cart[key] = cart.get(key, 0) + 1
+    cart[key] = (
+        int(cart.get(key, 0)) + 1
+    )
 
     save_cart(cart)
 
-    return redirect(request.referrer or url_for("cart"))
+    return redirect(
+        request.referrer or
+        url_for("cart")
+    )
 
 
-@app.route("/cart/remove/<int:product_id>", methods=["POST", "GET"])
+@app.route(
+    "/cart/remove/<int:product_id>",
+    methods=["POST", "GET"]
+)
 def remove_from_cart(product_id):
+
     cart = get_cart()
 
     key = str(product_id)
@@ -373,33 +597,47 @@ def remove_from_cart(product_id):
 
     save_cart(cart)
 
-    return redirect(url_for("cart"))
+    return redirect(
+        url_for("cart")
+    )
 
 
-@app.route("/cart/clear", methods=["POST", "GET"])
+@app.route(
+    "/cart/clear",
+    methods=["POST", "GET"]
+)
 def clear_cart():
+
     session["cart"] = {}
     session.modified = True
 
-    return redirect(url_for("cart"))
+    return redirect(
+        url_for("cart")
+    )
 
 
-# --------------------------------------------------
+# ==========================================================
 # WISHLIST
-# --------------------------------------------------
+# ==========================================================
 
 @app.route("/wishlist")
 def wishlist():
-    wishlist_ids = session.get("wishlist", [])
+
+    wishlist_ids = session.get(
+        "wishlist",
+        []
+    )
 
     if not wishlist_ids:
+
         return render_template(
             "wishlist.html",
-            products=[],
-            cart_count=cart_count()
+            products=[]
         )
 
-    placeholders = ",".join(["?"] * len(wishlist_ids))
+    placeholders = ",".join(
+        ["?"] * len(wishlist_ids)
+    )
 
     conn = get_db()
 
@@ -415,14 +653,20 @@ def wishlist():
 
     return render_template(
         "wishlist.html",
-        products=products_list,
-        cart_count=cart_count()
+        products=products_list
     )
 
 
-@app.route("/wishlist/toggle/<int:product_id>", methods=["POST", "GET"])
+@app.route(
+    "/wishlist/toggle/<int:product_id>",
+    methods=["POST", "GET"]
+)
 def toggle_wishlist(product_id):
-    wishlist = session.get("wishlist", [])
+
+    wishlist = session.get(
+        "wishlist",
+        []
+    )
 
     if product_id in wishlist:
         wishlist.remove(product_id)
@@ -432,30 +676,58 @@ def toggle_wishlist(product_id):
     session["wishlist"] = wishlist
     session.modified = True
 
-    return redirect(request.referrer or url_for("wishlist"))
+    return redirect(
+        request.referrer or
+        url_for("wishlist")
+    )
 
 
-# --------------------------------------------------
-# LOGIN / REGISTER
-# --------------------------------------------------
+# ==========================================================
+# REGISTER
+# ==========================================================
 
-@app.route("/register", methods=["GET", "POST"])
+@app.route(
+    "/register",
+    methods=["GET", "POST"]
+)
 def register():
 
     if request.method == "POST":
 
-        name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-        phone = request.form.get("phone", "").strip()
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        email = request.form.get(
+            "email",
+            ""
+        ).strip().lower()
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        phone = request.form.get(
+            "phone",
+            ""
+        ).strip()
 
         if not name or not email or not password:
-            flash("Please fill all required fields.")
-            return redirect(url_for("register"))
+
+            flash(
+                "Please fill all required fields."
+            )
+
+            return redirect(
+                url_for("register")
+            )
 
         conn = get_db()
 
         try:
+
             conn.execute("""
                 INSERT INTO users
                 (name, email, password, phone)
@@ -470,33 +742,60 @@ def register():
             conn.commit()
 
         except sqlite3.IntegrityError:
+
             conn.close()
 
-            flash("Email already registered.")
-            return redirect(url_for("register"))
+            flash(
+                "Email already registered."
+            )
+
+            return redirect(
+                url_for("register")
+            )
 
         conn.close()
 
-        flash("Registration successful. Please login.")
+        flash(
+            "Registration successful. Please login."
+        )
 
-        return redirect(url_for("login"))
+        return redirect(
+            url_for("login")
+        )
 
-    return render_template("register.html")
+    return render_template(
+        "register.html"
+    )
 
 
-@app.route("/login", methods=["GET", "POST"])
+# ==========================================================
+# LOGIN
+# ==========================================================
+
+@app.route(
+    "/login",
+    methods=["GET", "POST"]
+)
 def login():
 
     if request.method == "POST":
 
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
+        email = request.form.get(
+            "email",
+            ""
+        ).strip().lower()
+
+        password = request.form.get(
+            "password",
+            ""
+        )
 
         conn = get_db()
 
         user = conn.execute("""
             SELECT * FROM users
-            WHERE email = ? AND password = ?
+            WHERE email = ?
+            AND password = ?
         """, (
             email,
             password
@@ -509,41 +808,309 @@ def login():
             session["user_id"] = user["id"]
             session["user_name"] = user["name"]
 
-            return redirect(
-                request.args.get(
-                    "next",
-                    url_for("home")
-                )
+            next_url = request.args.get(
+                "next"
             )
 
-        flash("Invalid email or password.")
+            return redirect(
+                next_url or
+                url_for("home")
+            )
 
-    return render_template("login.html")
+        flash(
+            "Invalid email or password."
+        )
+
+    return render_template(
+        "login.html"
+    )
 
 
 @app.route("/logout")
 def logout():
 
-    session.pop("user_id", None)
-    session.pop("user_name", None)
+    session.pop(
+        "user_id",
+        None
+    )
 
-    return redirect(url_for("home"))
+    session.pop(
+        "user_name",
+        None
+    )
+
+    return redirect(
+        url_for("home")
+    )
 
 
-# --------------------------------------------------
+# ==========================================================
+# PROFILE
+# ==========================================================
+
+@app.route(
+    "/profile",
+    methods=["GET", "POST"]
+)
+@login_required
+def profile():
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    conn = get_db()
+
+    user = conn.execute(
+        "SELECT * FROM users WHERE id = ?",
+        (user_id,)
+    ).fetchone()
+
+    if request.method == "POST":
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        phone = request.form.get(
+            "phone",
+            ""
+        ).strip()
+
+        address = request.form.get(
+            "address",
+            ""
+        ).strip()
+
+        if name:
+
+            conn.execute("""
+                UPDATE users
+                SET name = ?,
+                    phone = ?,
+                    address = ?
+                WHERE id = ?
+            """, (
+                name,
+                phone,
+                address,
+                user_id
+            ))
+
+            conn.commit()
+
+            session["user_name"] = name
+
+            flash(
+                "Profile updated successfully."
+            )
+
+        conn.close()
+
+        return redirect(
+            url_for("profile")
+        )
+
+    conn.close()
+
+    return render_template(
+        "profile.html",
+        user=user
+    )
+
+
+# ==========================================================
+# FORGOT PASSWORD
+# ==========================================================
+
+@app.route(
+    "/forgot-password",
+    methods=["GET", "POST"]
+)
+def forgot_password():
+
+    if request.method == "POST":
+
+        email = request.form.get(
+            "email",
+            ""
+        ).strip().lower()
+
+        conn = get_db()
+
+        user = conn.execute(
+            "SELECT * FROM users WHERE email = ?",
+            (email,)
+        ).fetchone()
+
+        if user:
+
+            token = secrets.token_urlsafe(32)
+
+            conn.execute("""
+                UPDATE users
+                SET reset_token = ?
+                WHERE id = ?
+            """, (
+                token,
+                user["id"]
+            ))
+
+            conn.commit()
+
+            conn.close()
+
+            return redirect(
+                url_for(
+                    "reset_password",
+                    token=token
+                )
+            )
+
+        conn.close()
+
+        flash(
+            "If this email is registered, you can reset your password."
+        )
+
+    return render_template(
+        "forgot_password.html"
+    )
+
+
+# ==========================================================
+# RESET PASSWORD
+# ==========================================================
+
+@app.route(
+    "/reset-password/<token>",
+    methods=["GET", "POST"]
+)
+def reset_password(token):
+
+    conn = get_db()
+
+    user = conn.execute("""
+        SELECT * FROM users
+        WHERE reset_token = ?
+    """, (token,)).fetchone()
+
+    if user is None:
+
+        conn.close()
+
+        flash(
+            "Invalid or expired reset link."
+        )
+
+        return redirect(
+            url_for("forgot_password")
+        )
+
+    if request.method == "POST":
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        confirm_password = request.form.get(
+            "confirm_password",
+            request.form.get(
+                "password_confirmation",
+                ""
+            )
+        )
+
+        if not password:
+
+            conn.close()
+
+            flash(
+                "Password cannot be empty."
+            )
+
+            return redirect(
+                url_for(
+                    "reset_password",
+                    token=token
+                )
+            )
+
+        if (
+            confirm_password
+            and
+            password != confirm_password
+        ):
+
+            conn.close()
+
+            flash(
+                "Passwords do not match."
+            )
+
+            return redirect(
+                url_for(
+                    "reset_password",
+                    token=token
+                )
+            )
+
+        conn.execute("""
+            UPDATE users
+            SET password = ?,
+                reset_token = ''
+            WHERE id = ?
+        """, (
+            password,
+            user["id"]
+        ))
+
+        conn.commit()
+        conn.close()
+
+        flash(
+            "Password reset successfully. Please login."
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    conn.close()
+
+    return render_template(
+        "reset_password.html",
+        token=token
+    )
+
+
+# ==========================================================
 # CHECKOUT
-# --------------------------------------------------
+# ==========================================================
 
-@app.route("/checkout", methods=["GET", "POST"])
+@app.route(
+    "/checkout",
+    methods=["GET", "POST"]
+)
 def checkout():
 
     if not get_cart():
-        return redirect(url_for("cart"))
+
+        return redirect(
+            url_for("cart")
+        )
 
     if request.method == "POST":
 
         customer_name = request.form.get(
             "name",
+            ""
+        ).strip()
+
+        email = request.form.get(
+            "email",
             ""
         ).strip()
 
@@ -562,13 +1129,25 @@ def checkout():
             "COD"
         )
 
-        if not customer_name or not phone or not address:
-            flash("Please fill all checkout details.")
-            return redirect(url_for("checkout"))
+        if (
+            not customer_name
+            or not phone
+            or not address
+        ):
+
+            flash(
+                "Please fill all checkout details."
+            )
+
+            return redirect(
+                url_for("checkout")
+            )
 
         cart = get_cart()
 
-        product_ids = list(cart.keys())
+        product_ids = list(
+            cart.keys()
+        )
 
         placeholders = ",".join(
             ["?"] * len(product_ids)
@@ -584,15 +1163,41 @@ def checkout():
             product_ids
         ).fetchall()
 
-        total = 0
+        subtotal = 0
 
         for product in products_list:
-            quantity = cart.get(
-                str(product["id"]),
-                0
+
+            quantity = int(
+                cart.get(
+                    str(product["id"]),
+                    0
+                )
             )
 
-            total += product["price"] * quantity
+            subtotal += (
+                product["price"] *
+                quantity
+            )
+
+        settings = conn.execute(
+            "SELECT * FROM settings WHERE id = 1"
+        ).fetchone()
+
+        shipping_charge = float(
+            settings["shipping_charge"] or 0
+        )
+
+        free_shipping = float(
+            settings["free_shipping"] or 999999999
+        )
+
+        shipping = (
+            0
+            if subtotal >= free_shipping
+            else shipping_charge
+        )
+
+        total = subtotal + shipping
 
         cursor = conn.execute("""
             INSERT INTO orders
@@ -602,25 +1207,39 @@ def checkout():
                 phone,
                 address,
                 total,
-                payment_method
+                status,
+                payment_method,
+                email,
+                subtotal,
+                shipping,
+                discount,
+                payment_status
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             session.get("user_id"),
             customer_name,
             phone,
             address,
             total,
-            payment_method
+            "Pending",
+            payment_method,
+            email,
+            subtotal,
+            shipping,
+            0,
+            "Pending"
         ))
 
         order_id = cursor.lastrowid
 
         for product in products_list:
 
-            quantity = cart.get(
-                str(product["id"]),
-                0
+            quantity = int(
+                cart.get(
+                    str(product["id"]),
+                    0
+                )
             )
 
             conn.execute("""
@@ -654,35 +1273,32 @@ def checkout():
         )
 
     return render_template(
-        "checkout.html",
-        cart_count=cart_count()
+        "checkout.html"
     )
 
 
-@app.route("/order-success/<int:order_id>")
+@app.route(
+    "/order-success/<int:order_id>"
+)
 def order_success(order_id):
+
     return render_template(
         "order_success.html",
         order_id=order_id
     )
 
 
-# --------------------------------------------------
-# ORDERS
-# --------------------------------------------------
+# ==========================================================
+# CUSTOMER ORDERS
+# ==========================================================
 
 @app.route("/orders")
+@login_required
 def orders():
 
-    user_id = session.get("user_id")
-
-    if not user_id:
-        return redirect(
-            url_for(
-                "login",
-                next=url_for("orders")
-            )
-        )
+    user_id = session.get(
+        "user_id"
+    )
 
     conn = get_db()
 
@@ -690,31 +1306,46 @@ def orders():
         SELECT * FROM orders
         WHERE user_id = ?
         ORDER BY id DESC
-    """, (user_id,)).fetchall()
+    """, (
+        user_id,
+    )).fetchall()
 
     conn.close()
 
     return render_template(
         "orders.html",
-        orders=orders_list,
-        cart_count=cart_count()
+        orders=orders_list
     )
 
 
-@app.route("/order/<int:order_id>")
+@app.route(
+    "/order/<int:order_id>"
+)
+@login_required
 def order_detail(order_id):
+
+    user_id = session.get(
+        "user_id"
+    )
 
     conn = get_db()
 
-    order = conn.execute(
-        "SELECT * FROM orders WHERE id = ?",
-        (order_id,)
-    ).fetchone()
+    order = conn.execute("""
+        SELECT * FROM orders
+        WHERE id = ?
+        AND user_id = ?
+    """, (
+        order_id,
+        user_id
+    )).fetchone()
 
     items = conn.execute("""
-        SELECT * FROM order_items
+        SELECT *
+        FROM order_items
         WHERE order_id = ?
-    """, (order_id,)).fetchall()
+    """, (
+        order_id,
+    )).fetchall()
 
     conn.close()
 
@@ -728,9 +1359,9 @@ def order_detail(order_id):
     )
 
 
-# --------------------------------------------------
+# ==========================================================
 # REVIEWS
-# --------------------------------------------------
+# ==========================================================
 
 @app.route(
     "/product/<int:product_id>/review",
@@ -748,14 +1379,23 @@ def add_review(product_id):
         ""
     ).strip()
 
-    rating = int(
-        request.form.get(
-            "rating",
-            5
-        )
-    )
+    try:
 
-    rating = max(1, min(5, rating))
+        rating = int(
+            request.form.get(
+                "rating",
+                5
+            )
+        )
+
+    except ValueError:
+
+        rating = 5
+
+    rating = max(
+        1,
+        min(5, rating)
+    )
 
     if name and message:
 
@@ -788,42 +1428,45 @@ def add_review(product_id):
     )
 
 
-# --------------------------------------------------
+# ==========================================================
 # CONTACT / ABOUT / FAQ
-# --------------------------------------------------
+# ==========================================================
 
 @app.route("/contact")
 def contact():
     return render_template(
-        "contact.html",
-        cart_count=cart_count()
+        "contact.html"
     )
 
 
 @app.route("/about")
 def about():
     return render_template(
-        "about.html",
-        cart_count=cart_count()
+        "about.html"
     )
 
 
 @app.route("/faq")
 def faq():
     return render_template(
-        "faq.html",
-        cart_count=cart_count()
+        "faq.html"
     )
 
 
-# --------------------------------------------------
+# ==========================================================
 # ADMIN LOGIN
-# --------------------------------------------------
+# ==========================================================
 
-@app.route("/admin", methods=["GET", "POST"])
+@app.route(
+    "/admin",
+    methods=["GET", "POST"]
+)
 def admin_login():
 
-    if session.get("admin_logged_in"):
+    if session.get(
+        "admin_logged_in"
+    ):
+
         return redirect(
             url_for("admin_dashboard")
         )
@@ -842,18 +1485,25 @@ def admin_login():
 
         if (
             username == ADMIN_USERNAME
-            and password == ADMIN_PASSWORD
+            and
+            password == ADMIN_PASSWORD
         ):
+
             session.clear()
+
             session["admin_logged_in"] = True
 
             return redirect(
                 url_for("admin_dashboard")
             )
 
-        flash("Invalid admin username or password.")
+        flash(
+            "Invalid admin username or password."
+        )
 
-    return render_template("admin_login.html")
+    return render_template(
+        "admin_login.html"
+    )
 
 
 @app.route("/admin/logout")
@@ -866,9 +1516,9 @@ def admin_logout():
     )
 
 
-# --------------------------------------------------
+# ==========================================================
 # ADMIN DASHBOARD
-# --------------------------------------------------
+# ==========================================================
 
 @app.route("/admin/dashboard")
 @admin_required
@@ -893,12 +1543,14 @@ def admin_dashboard():
     ).fetchone()[0]
 
     products_list = conn.execute("""
-        SELECT * FROM products
+        SELECT *
+        FROM products
         ORDER BY id DESC
     """).fetchall()
 
     orders_list = conn.execute("""
-        SELECT * FROM orders
+        SELECT *
+        FROM orders
         ORDER BY id DESC
         LIMIT 20
     """).fetchall()
@@ -906,19 +1558,79 @@ def admin_dashboard():
     conn.close()
 
     return render_template(
-        "admin.html",
+        "admin_dashboard.html",
+
         products=products_list,
         orders=orders_list,
+
         products_count=products_count,
         orders_count=orders_count,
         users_count=users_count,
-        reviews_count=reviews_count
+        reviews_count=reviews_count,
+
+        total_products=products_count,
+        total_orders=orders_count,
+        total_customers=users_count,
+        total_users=users_count
     )
 
 
-# --------------------------------------------------
-# ADMIN - ADD PRODUCT
-# --------------------------------------------------
+# ==========================================================
+# ADMIN PRODUCTS
+# ==========================================================
+
+@app.route("/admin/products")
+@admin_required
+def admin_products():
+
+    search = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    conn = get_db()
+
+    if search:
+
+        products_list = conn.execute("""
+            SELECT *
+            FROM products
+            WHERE name LIKE ?
+               OR category LIKE ?
+            ORDER BY id DESC
+        """, (
+            f"%{search}%",
+            f"%{search}%"
+        )).fetchall()
+
+    else:
+
+        products_list = conn.execute("""
+            SELECT *
+            FROM products
+            ORDER BY id DESC
+        """).fetchall()
+
+    categories = conn.execute("""
+        SELECT DISTINCT category
+        FROM products
+        WHERE category != ''
+        ORDER BY category
+    """).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "admin_products.html",
+        products=products_list,
+        categories=categories,
+        search=search
+    )
+
+
+# ==========================================================
+# ADMIN ADD PRODUCT
+# ==========================================================
 
 @app.route(
     "/admin/product/add",
@@ -937,19 +1649,25 @@ def admin_add_product():
         ""
     ).strip()
 
-    price = float(
-        request.form.get(
-            "price",
-            0
-        ) or 0
-    )
+    try:
+        price = float(
+            request.form.get(
+                "price",
+                0
+            ) or 0
+        )
+    except ValueError:
+        price = 0
 
-    old_price = float(
-        request.form.get(
-            "old_price",
-            0
-        ) or 0
-    )
+    try:
+        old_price = float(
+            request.form.get(
+                "old_price",
+                0
+            ) or 0
+        )
+    except ValueError:
+        old_price = 0
 
     image = request.form.get(
         "image",
@@ -961,21 +1679,30 @@ def admin_add_product():
         ""
     ).strip()
 
-    stock = int(
-        request.form.get(
-            "stock",
-            0
-        ) or 0
+    try:
+        stock = int(
+            request.form.get(
+                "stock",
+                0
+            ) or 0
+        )
+    except ValueError:
+        stock = 0
+
+    featured = (
+        1
+        if request.form.get("featured")
+        else 0
     )
 
-    featured = 1 if request.form.get(
-        "featured"
-    ) else 0
-
     if not name or not category:
-        flash("Product name and category are required.")
+
+        flash(
+            "Product name and category are required."
+        )
+
         return redirect(
-            url_for("admin_dashboard")
+            url_for("admin_products")
         )
 
     conn = get_db()
@@ -1007,20 +1734,22 @@ def admin_add_product():
     conn.commit()
     conn.close()
 
-    flash("Product added successfully.")
+    flash(
+        "Product added successfully."
+    )
 
     return redirect(
-        url_for("admin_dashboard")
+        url_for("admin_products")
     )
 
 
-# --------------------------------------------------
-# ADMIN - DELETE PRODUCT
-# --------------------------------------------------
+# ==========================================================
+# ADMIN DELETE PRODUCT
+# ==========================================================
 
 @app.route(
     "/admin/product/delete/<int:product_id>",
-    methods=["POST"]
+    methods=["POST", "GET"]
 )
 @admin_required
 def admin_delete_product(product_id):
@@ -1028,35 +1757,164 @@ def admin_delete_product(product_id):
     conn = get_db()
 
     conn.execute(
-        "DELETE FROM products WHERE id = ?",
+        "DELETE FROM reviews WHERE product_id = ?",
         (product_id,)
     )
 
     conn.execute(
-        "DELETE FROM reviews WHERE product_id = ?",
+        "DELETE FROM products WHERE id = ?",
         (product_id,)
     )
 
     conn.commit()
     conn.close()
 
-    flash("Product deleted.")
+    flash(
+        "Product deleted."
+    )
 
     return redirect(
-        url_for("admin_dashboard")
+        url_for("admin_products")
     )
 
 
-# --------------------------------------------------
-# ADMIN - UPDATE ORDER STATUS
-# --------------------------------------------------
+# ==========================================================
+# ADMIN ORDERS
+# ==========================================================
+
+@app.route("/admin/orders")
+@admin_required
+def admin_orders():
+
+    search = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    status = request.args.get(
+        "status",
+        ""
+    ).strip()
+
+    conn = get_db()
+
+    query = """
+        SELECT *
+        FROM orders
+        WHERE 1 = 1
+    """
+
+    params = []
+
+    if search:
+
+        query += """
+            AND (
+                CAST(id AS TEXT) LIKE ?
+                OR customer_name LIKE ?
+                OR phone LIKE ?
+                OR email LIKE ?
+            )
+        """
+
+        search_value = f"%{search}%"
+
+        params.extend([
+            search_value,
+            search_value,
+            search_value,
+            search_value
+        ])
+
+    if status:
+
+        query += """
+            AND status = ?
+        """
+
+        params.append(status)
+
+    query += """
+        ORDER BY id DESC
+    """
+
+    orders_list = conn.execute(
+        query,
+        params
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "admin_orders.html",
+        orders=orders_list,
+        search=search,
+        selected_status=status
+    )
+
+
+# ==========================================================
+# ADMIN ORDER DETAIL
+# ==========================================================
 
 @app.route(
-    "/admin/order/status/<int:order_id>",
+    "/admin/orders/<int:order_id>"
+)
+@admin_required
+def admin_order_detail(order_id):
+
+    conn = get_db()
+
+    order = conn.execute("""
+        SELECT *
+        FROM orders
+        WHERE id = ?
+    """, (
+        order_id,
+    )).fetchone()
+
+    order_items = conn.execute("""
+        SELECT
+            oi.*,
+            p.image
+        FROM order_items oi
+        LEFT JOIN products p
+            ON oi.product_id = p.id
+        WHERE oi.order_id = ?
+        ORDER BY oi.id ASC
+    """, (
+        order_id,
+    )).fetchall()
+
+    conn.close()
+
+    if order is None:
+
+        return render_template(
+            "admin_order_detail.html",
+            order=None,
+            order_items=[]
+        ), 404
+
+    return render_template(
+        "admin_order_detail.html",
+        order=order,
+        order_items=order_items
+    )
+
+
+# ==========================================================
+# ADMIN UPDATE ORDER STATUS
+# ==========================================================
+
+@app.route(
+    "/admin/orders/<int:order_id>/status",
     methods=["POST"]
 )
 @admin_required
-def admin_update_order(order_id):
+def admin_update_order_status(
+    order_id
+):
 
     status = request.form.get(
         "status",
@@ -1066,9 +1924,11 @@ def admin_update_order(order_id):
     allowed_statuses = [
         "Pending",
         "Confirmed",
+        "Processing",
         "Packed",
         "Shipped",
         "Delivered",
+        "Completed",
         "Cancelled"
     ]
 
@@ -1086,19 +1946,393 @@ def admin_update_order(order_id):
         order_id
     ))
 
+    if status in [
+        "Completed",
+        "Delivered"
+    ]:
+
+        conn.execute("""
+            UPDATE orders
+            SET payment_status = 'Paid'
+            WHERE id = ?
+            AND payment_method != 'COD'
+        """, (
+            order_id,
+        ))
+
     conn.commit()
     conn.close()
 
-    flash("Order status updated.")
+    flash(
+        "Order status updated."
+    )
 
     return redirect(
-        url_for("admin_dashboard")
+        url_for(
+            "admin_order_detail",
+            order_id=order_id
+        )
     )
 
 
-# --------------------------------------------------
+# ==========================================================
+# OLD ORDER STATUS ROUTE - COMPATIBILITY
+# ==========================================================
+
+@app.route(
+    "/admin/order/status/<int:order_id>",
+    methods=["POST"]
+)
+@admin_required
+def admin_update_order_old(
+    order_id
+):
+
+    return admin_update_order_status(
+        order_id
+    )
+
+
+# ==========================================================
+# ADMIN CANCEL ORDER
+# ==========================================================
+
+@app.route(
+    "/admin/orders/<int:order_id>/cancel",
+    methods=["POST"]
+)
+@admin_required
+def admin_cancel_order(order_id):
+
+    conn = get_db()
+
+    conn.execute("""
+        UPDATE orders
+        SET status = 'Cancelled'
+        WHERE id = ?
+    """, (
+        order_id,
+    ))
+
+    conn.commit()
+    conn.close()
+
+    flash(
+        "Order cancelled."
+    )
+
+    return redirect(
+        url_for(
+            "admin_order_detail",
+            order_id=order_id
+        )
+    )
+
+
+# ==========================================================
+# ADMIN CUSTOMERS
+# ==========================================================
+
+@app.route("/admin/customers")
+@admin_required
+def admin_customers():
+
+    search = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    conn = get_db()
+
+    query = """
+        SELECT
+            u.*,
+            COUNT(o.id) AS orders_count,
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN o.status != 'Cancelled'
+                        THEN o.total
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS total_spent
+        FROM users u
+        LEFT JOIN orders o
+            ON u.id = o.user_id
+    """
+
+    params = []
+
+    if search:
+
+        query += """
+            WHERE
+                u.name LIKE ?
+                OR u.email LIKE ?
+                OR u.phone LIKE ?
+        """
+
+        search_value = f"%{search}%"
+
+        params.extend([
+            search_value,
+            search_value,
+            search_value
+        ])
+
+    query += """
+        GROUP BY u.id
+        ORDER BY u.id DESC
+    """
+
+    customers = conn.execute(
+        query,
+        params
+    ).fetchall()
+
+    total_customers = conn.execute(
+        "SELECT COUNT(*) FROM users"
+    ).fetchone()[0]
+
+    new_customers = conn.execute("""
+        SELECT COUNT(*)
+        FROM users
+        WHERE created_at >= datetime(
+            'now',
+            '-30 days'
+        )
+    """).fetchone()[0]
+
+    active_customers = conn.execute("""
+        SELECT COUNT(DISTINCT user_id)
+        FROM orders
+        WHERE user_id IS NOT NULL
+    """).fetchone()[0]
+
+    conn.close()
+
+    return render_template(
+        "admin_customers.html",
+        customers=customers,
+        total_customers=total_customers,
+        new_customers=new_customers,
+        active_customers=active_customers
+    )
+
+
+# ==========================================================
+# ADMIN CUSTOMER DETAIL
+# ==========================================================
+
+@app.route(
+    "/admin/customers/<int:user_id>"
+)
+@admin_required
+def admin_customer_detail(user_id):
+
+    conn = get_db()
+
+    customer = conn.execute(
+        "SELECT * FROM users WHERE id = ?",
+        (user_id,)
+    ).fetchone()
+
+    customer_orders = conn.execute("""
+        SELECT *
+        FROM orders
+        WHERE user_id = ?
+        ORDER BY id DESC
+    """, (
+        user_id,
+    )).fetchall()
+
+    conn.close()
+
+    if customer is None:
+        return "Customer not found", 404
+
+    # Agar alag detail template nahi hai,
+    # customer ko orders page par safely bhej do.
+    return render_template(
+        "orders.html",
+        orders=customer_orders,
+        customer=customer
+    )
+
+
+# ==========================================================
+# ADMIN SETTINGS
+# ==========================================================
+
+@app.route(
+    "/admin/settings",
+    methods=["GET", "POST"]
+)
+@admin_required
+def admin_settings():
+
+    conn = get_db()
+
+    if request.method == "POST":
+
+        store_name = request.form.get(
+            "store_name",
+            "Majisa Jewellers"
+        ).strip()
+
+        phone = request.form.get(
+            "phone",
+            "8949144970"
+        ).strip()
+
+        email = request.form.get(
+            "email",
+            ""
+        ).strip()
+
+        instagram = request.form.get(
+            "instagram",
+            "majisa_art_jewellers"
+        ).strip()
+
+        address = request.form.get(
+            "address",
+            ""
+        ).strip()
+
+        city = request.form.get(
+            "city",
+            ""
+        ).strip()
+
+        pincode = request.form.get(
+            "pincode",
+            ""
+        ).strip()
+
+        business_hours = request.form.get(
+            "business_hours",
+            "10:00 AM - 8:00 PM"
+        ).strip()
+
+        currency = request.form.get(
+            "currency",
+            "INR"
+        )
+
+        cod = request.form.get(
+            "cod",
+            "enabled"
+        )
+
+        upi = request.form.get(
+            "upi",
+            "enabled"
+        )
+
+        try:
+            shipping_charge = float(
+                request.form.get(
+                    "shipping_charge",
+                    0
+                ) or 0
+            )
+        except ValueError:
+            shipping_charge = 0
+
+        try:
+            free_shipping = float(
+                request.form.get(
+                    "free_shipping",
+                    999
+                ) or 999
+            )
+        except ValueError:
+            free_shipping = 999
+
+        delivery_time = request.form.get(
+            "delivery_time",
+            "5-7 business days"
+        ).strip()
+
+        store_status = request.form.get(
+            "store_status",
+            "open"
+        )
+
+        maintenance_message = request.form.get(
+            "maintenance_message",
+            ""
+        ).strip()
+
+        conn.execute("""
+            UPDATE settings
+            SET
+                store_name = ?,
+                phone = ?,
+                email = ?,
+                instagram = ?,
+                address = ?,
+                city = ?,
+                pincode = ?,
+                business_hours = ?,
+                currency = ?,
+                cod = ?,
+                upi = ?,
+                shipping_charge = ?,
+                free_shipping = ?,
+                delivery_time = ?,
+                store_status = ?,
+                maintenance_message = ?
+            WHERE id = 1
+        """, (
+            store_name,
+            phone,
+            email,
+            instagram,
+            address,
+            city,
+            pincode,
+            business_hours,
+            currency,
+            cod,
+            upi,
+            shipping_charge,
+            free_shipping,
+            delivery_time,
+            store_status,
+            maintenance_message
+        ))
+
+        conn.commit()
+
+        flash(
+            "Settings saved successfully."
+        )
+
+        conn.close()
+
+        return redirect(
+            url_for("admin_settings")
+        )
+
+    settings = conn.execute(
+        "SELECT * FROM settings WHERE id = 1"
+    ).fetchone()
+
+    conn.close()
+
+    return render_template(
+        "admin_settings.html",
+        settings=settings
+    )
+
+
+# ==========================================================
 # API - PRODUCTS
-# --------------------------------------------------
+# ==========================================================
 
 @app.route("/api/products")
 def api_products():
@@ -1106,7 +2340,8 @@ def api_products():
     conn = get_db()
 
     products_list = conn.execute("""
-        SELECT * FROM products
+        SELECT *
+        FROM products
         ORDER BY id DESC
     """).fetchall()
 
@@ -1118,9 +2353,9 @@ def api_products():
     ])
 
 
-# --------------------------------------------------
+# ==========================================================
 # HEALTH CHECK
-# --------------------------------------------------
+# ==========================================================
 
 @app.route("/health")
 def health():
@@ -1131,30 +2366,39 @@ def health():
     }
 
 
-# --------------------------------------------------
+# ==========================================================
 # 404
-# --------------------------------------------------
+# ==========================================================
 
 @app.errorhandler(404)
 def page_not_found(error):
 
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Page Not Found</title>
-    </head>
-    <body>
-        <h1>404 - Page Not Found</h1>
-        <p>The page you are looking for does not exist.</p>
-    </body>
-    </html>
-    """, 404
+    try:
+
+        return render_template(
+            "404.html"
+        ), 404
+
+    except Exception:
+
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Majisa Jewellers - 404</title>
+        </head>
+        <body>
+            <h1>404 - Page Not Found</h1>
+            <p>The page you are looking for does not exist.</p>
+            <a href="/">Go Home</a>
+        </body>
+        </html>
+        """, 404
 
 
-# --------------------------------------------------
+# ==========================================================
 # RUN
-# --------------------------------------------------
+# ==========================================================
 
 if __name__ == "__main__":
 
