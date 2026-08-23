@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>About Us | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .hero {
+            background: #211d18;
+            color: white;
+            text-align: center;
+            padding: 85px 20px;
+        }
+
+        .hero small {
+            color: #f4d58d;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            font-size: 52px;
+            margin: 12px 0 18px;
+        }
+
+        .hero p {
+            max-width: 650px;
+            margin: auto;
+            color: #d0cbc4;
+            font-family: Arial, sans-serif;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: auto;
+            padding: 65px 5%;
+        }
+
+        .story {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 55px;
+            align-items: center;
+            margin-bottom: 70px;
+        }
+
+        .story-image {
+            min-height: 380px;
+            background: #e9dfd0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #8a7b69;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .story-text small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .story-text h2 {
+            font-size: 38px;
+            margin: 10px 0 20px;
+        }
+
+        .story-text p {
+            color: #666;
+            font-family: Arial, sans-serif;
+            line-height: 1.9;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .values {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .values > small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .values h2 {
+            font-size: 38px;
+            margin: 10px 0 35px;
+        }
+
+        .value-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .value {
+            background: white;
+            border: 1px solid #e1d8cb;
+            padding: 30px 22px;
+        }
+
+        .value-icon {
+            font-size: 28px;
+            color: #9b7127;
+            margin-bottom: 15px;
+        }
+
+        .value h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .value p {
+            color: #666;
+            font-family: Arial, sans-serif;
+            line-height: 1.7;
+            font-size: 13px;
+        }
+
+        .cta {
+            margin-top: 70px;
+            background: #f1e8db;
+            text-align: center;
+            padding: 55px 20px;
+        }
+
+        .cta h2 {
+            font-size: 34px;
+            margin-bottom: 12px;
+        }
+
+        .cta p {
+            color: #666;
+            font-family: Arial, sans-serif;
+            margin-bottom: 25px;
+        }
+
+        .button {
+            display: inline-block;
+            background: #211d18;
+            color: #f4d58d;
+            padding: 14px 28px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 30px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 800px) {
+            nav {
+                display: none;
+            }
+
+            .story {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .value-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 40px;
+            }
+
+            .story-text h2,
+            .values h2 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+        <a href="/wishlist">♡</a>
+        <a href="/cart">🛒 {{ cart_count }}</a>
+        <a href="/login">Account</a>
+    </div>
+
+</header>
+
+
+<section class="hero">
+
+    <small>
+        Our Story
+    </small>
+
+    <h1>
+        About Majisa Jewellers
+    </h1>
+
+    <p>
+        Jewellery created to celebrate your special moments,
+        your personal style and the traditions that make every
+        occasion memorable.
+    </p>
+
+</section>
+
+
+<main class="page">
+
+
+    <section class="story">
+
+        <div class="story-image">
+            Majisa Jewellers
+        </div>
+
+
+        <div class="story-text">
+
+            <small>
+                The Majisa Story
+            </small>
+
+            <h2>
+                Elegance That Feels Personal
+            </h2>
+
+            <p>
+                At Majisa Jewellers, we believe jewellery is more
+                than an accessory. Every piece becomes part of a
+                memory, a celebration and a story.
+            </p>
+
+            <p>
+                Our collection is thoughtfully selected for people
+                who appreciate elegant designs, beautiful details
+                and jewellery that complements their individual
+                style.
+            </p>
+
+            <p>
+                From everyday elegance to special occasions, our
+                goal is to make finding the right piece simple,
+                enjoyable and memorable.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <section class="values">
+
+        <small>
+            What We Stand For
+        </small>
+
+        <h2>
+            Our Values
+        </h2>
+
+
+        <div class="value-grid">
+
+            <div class="value">
+
+                <div class="value-icon">
+                    ✦
+                </div>
+
+                <h3>
+                    Quality
+                </h3>
+
+                <p>
+                    We focus on beautiful finishing, thoughtful
+                    designs and products selected with care.
+                </p>
+
+            </div>
+
+
+            <div class="value">
+
+                <div class="value-icon">
+                    ♡
+                </div>
+
+                <h3>
+                    Trust
+                </h3>
+
+                <p>
+                    We aim to create a shopping experience built
+                    around transparency, care and customer service.
+                </p>
+
+            </div>
+
+
+            <div class="value">
+
+                <div class="value-icon">
+                    ✧
+                </div>
+
+                <h3>
+                    Elegance
+                </h3>
+
+                <p>
+                    Our designs are selected to bring a refined
+                    touch to both everyday and special occasions.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="cta">
+
+        <h2>
+            Find Something Beautiful
+        </h2>
+
+        <p>
+            Explore our collection and discover your next
+            favourite piece.
+        </p>
+
+        <a
+            href="/products"
+            class="button"
+        >
+            EXPLORE COLLECTION
+        </a>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+    >
+        @majisa_art_jewellers
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
