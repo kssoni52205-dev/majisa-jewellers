@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Order Details | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: auto;
+            padding: 55px 5%;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 25px;
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .heading {
+            margin-bottom: 30px;
+        }
+
+        .heading small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        .heading h1 {
+            font-size: 42px;
+            margin-top: 7px;
+        }
+
+        .order-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+            background: #211d18;
+            color: white;
+            padding: 22px;
+            margin-bottom: 25px;
+        }
+
+        .meta-item {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .meta-label {
+            color: #aaa;
+            font-size: 11px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .status {
+            color: #f4d58d;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 330px;
+            gap: 25px;
+            align-items: start;
+        }
+
+        .box {
+            background: white;
+            border: 1px solid #e1d8cb;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .box h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .item {
+            display: grid;
+            grid-template-columns: 90px 1fr auto;
+            gap: 18px;
+            align-items: center;
+            padding: 18px 0;
+            border-bottom: 1px solid #e5ddd2;
+        }
+
+        .item:last-child {
+            border-bottom: 0;
+        }
+
+        .item-image {
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            background: #eee7da;
+        }
+
+        .no-image {
+            width: 90px;
+            height: 90px;
+            background: #eee7da;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+        }
+
+        .category {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .product-name {
+            font-size: 19px;
+            margin: 6px 0;
+        }
+
+        .quantity {
+            color: #777;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+
+        .item-price {
+            text-align: right;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+
+        .address {
+            font-family: Arial, sans-serif;
+            color: #555;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .summary {
+            background: #211d18;
+            color: white;
+            padding: 27px;
+            position: sticky;
+            top: 25px;
+        }
+
+        .summary h2 {
+            color: #f4d58d;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 13px 0;
+            border-bottom: 1px solid #403a33;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .summary-row.total {
+            color: #f4d58d;
+            font-size: 20px;
+            font-weight: bold;
+            border-bottom: 0;
+            padding-top: 20px;
+        }
+
+        .payment {
+            margin-top: 22px;
+            padding-top: 20px;
+            border-top: 1px solid #403a33;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .orders-button {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            padding: 13px;
+            border: 1px solid #a99984;
+            color: #ddd;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 30px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 800px) {
+            nav {
+                display: none;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary {
+                position: static;
+            }
+        }
+
+        @media (max-width: 550px) {
+            .item {
+                grid-template-columns: 70px 1fr;
+            }
+
+            .item-image,
+            .no-image {
+                width: 70px;
+                height: 70px;
+            }
+
+            .item-price {
+                grid-column: 2;
+                text-align: left;
+            }
+
+            .heading h1 {
+                font-size: 34px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+        <a href="/wishlist">♡</a>
+        <a href="/cart">🛒 {{ cart_count }}</a>
+        <a href="/orders">Orders</a>
+    </div>
+
+</header>
+
+
+<main class="page">
+
+    <a href="/orders" class="back">
+        ← Back to My Orders
+    </a>
+
+
+    <div class="heading">
+
+        <small>
+            Order Information
+        </small>
+
+        <h1>
+            Order #{{ order["id"] }}
+        </h1>
+
+    </div>
+
+
+    <div class="order-meta">
+
+        <div class="meta-item">
+
+            <div class="meta-label">
+                Order Date
+            </div>
+
+            {{ order["created_at"] }}
+
+        </div>
+
+
+        <div class="meta-item">
+
+            <div class="meta-label">
+                Payment
+            </div>
+
+            {{ order["payment_method"] }}
+
+        </div>
+
+
+        <div class="meta-item">
+
+            <div class="meta-label">
+                Status
+            </div>
+
+            <div class="status">
+                {{ order["status"] }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="grid">
+
+        <div>
+
+            <!-- PRODUCTS -->
+
+            <section class="box">
+
+                <h2>
+                    Ordered Items
+                </h2>
+
+
+                {% for item in items %}
+
+                <div class="item">
+
+                    {% if item["image"] %}
+
+                    <img
+                        class="item-image"
+                        src="{{ url_for(
+                            'static',
+                            filename='images/' + item['image']
+                        ) }}"
+                        alt="{{ item['name'] }}"
+                    >
+
+                    {% else %}
+
+                    <div class="no-image">
+                        Image
+                    </div>
+
+                    {% endif %}
+
+
+                    <div>
+
+                        <div class="category">
+                            {{ item["category"] }}
+                        </div>
+
+                        <div class="product-name">
+                            {{ item["name"] }}
+                        </div>
+
+                        <div class="quantity">
+                            Quantity: {{ item["quantity"] }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="item-price">
+                        ₹{{ "%.0f"|format(item["subtotal"]) }}
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </section>
+
+
+            <!-- DELIVERY ADDRESS -->
+
+            <section class="box">
+
+                <h2>
+                    Delivery Address
+                </h2>
+
+                <div class="address">
+
+                    {{ order["address"] }}
+
+                </div>
+
+            </section>
+
+        </div>
+
+
+        <!-- SUMMARY -->
+
+        <aside class="summary">
+
+            <h2>
+                Order Summary
+            </h2>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Items
+                </span>
+
+                <span>
+                    {{ order["item_count"] }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Subtotal
+                </span>
+
+                <span>
+                    ₹{{ "%.0f"|format(order["total"]) }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Delivery
+                </span>
+
+                <span>
+                    Included
+                </span>
+
+            </div>
+
+
+            <div class="summary-row total">
+
+                <span>
+                    Total
+                </span>
+
+                <span>
+                    ₹{{ "%.0f"|format(order["total"]) }}
+                </span>
+
+            </div>
+
+
+            <div class="payment">
+
+                <strong>
+                    Payment Method
+                </strong>
+
+                <br>
+
+                {{ order["payment_method"] }}
+
+            </div>
+
+
+            <a
+                href="/orders"
+                class="orders-button"
+            >
+                VIEW ALL ORDERS
+            </a>
+
+        </aside>
+
+    </div>
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+    >
+        Instagram
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
