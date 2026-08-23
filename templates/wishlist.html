@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Wishlist | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .page {
+            max-width: 1200px;
+            margin: auto;
+            padding: 60px 5%;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .heading small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .heading h1 {
+            font-size: 45px;
+            margin-top: 8px;
+        }
+
+        .wishlist {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 22px;
+        }
+
+        .product {
+            background: white;
+            border: 1px solid #e2d8ca;
+        }
+
+        .product-image,
+        .no-image {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            background: #eee7da;
+        }
+
+        .no-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8c8378;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .info {
+            padding: 17px;
+        }
+
+        .category {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .name {
+            font-size: 19px;
+            margin: 7px 0;
+        }
+
+        .price {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            margin-bottom: 14px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 7px;
+        }
+
+        .button {
+            flex: 1;
+            text-align: center;
+            padding: 10px 5px;
+            background: #211d18;
+            color: #f4d58d;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+        }
+
+        .button.light {
+            background: #eee7da;
+            color: #211d18;
+        }
+
+        .empty {
+            background: white;
+            border: 1px solid #e2d8ca;
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .empty h2 {
+            font-size: 30px;
+            margin-bottom: 12px;
+        }
+
+        .empty p {
+            color: #666;
+            font-family: Arial, sans-serif;
+            margin-bottom: 25px;
+        }
+
+        .shop-button {
+            display: inline-block;
+            background: #211d18;
+            color: #f4d58d;
+            padding: 14px 25px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 30px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            margin-top: 60px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 950px) {
+            nav {
+                display: none;
+            }
+
+            .wishlist {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 650px) {
+            .wishlist {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .heading h1 {
+                font-size: 35px;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .wishlist {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+        <a href="/wishlist">♡</a>
+        <a href="/cart">🛒 {{ cart_count }}</a>
+        <a href="/login">Account</a>
+    </div>
+
+</header>
+
+
+<main class="page">
+
+    <div class="heading">
+
+        <small>
+            Your Favourites
+        </small>
+
+        <h1>
+            Wishlist
+        </h1>
+
+    </div>
+
+
+    {% if wishlist %}
+
+    <div class="wishlist">
+
+        {% for product in wishlist %}
+
+        <article class="product">
+
+            {% if product["image"] %}
+
+            <img
+                class="product-image"
+                src="{{ url_for(
+                    'static',
+                    filename='images/' + product['image']
+                ) }}"
+                alt="{{ product['name'] }}"
+            >
+
+            {% else %}
+
+            <div class="no-image">
+                Product Image
+            </div>
+
+            {% endif %}
+
+
+            <div class="info">
+
+                <div class="category">
+                    {{ product["category"] }}
+                </div>
+
+                <div class="name">
+                    {{ product["name"] }}
+                </div>
+
+                <div class="price">
+                    ₹{{ "%.0f"|format(product["price"]) }}
+                </div>
+
+
+                <div class="buttons">
+
+                    <a
+                        href="/product/{{ product['id'] }}"
+                        class="button light"
+                    >
+                        VIEW
+                    </a>
+
+                    <a
+                        href="/cart/add/{{ product['id'] }}"
+                        class="button"
+                    >
+                        ADD TO BAG
+                    </a>
+
+                </div>
+
+
+                <a
+                    href="/wishlist/toggle/{{ product['id'] }}"
+                    style="
+                        display:block;
+                        margin-top:12px;
+                        text-align:center;
+                        font-family:Arial,sans-serif;
+                        font-size:11px;
+                        color:#9b7127;
+                    "
+                >
+                    ♡ Remove from Wishlist
+                </a>
+
+            </div>
+
+        </article>
+
+        {% endfor %}
+
+    </div>
+
+
+    {% else %}
+
+    <div class="empty">
+
+        <h2>
+            Your wishlist is empty
+        </h2>
+
+        <p>
+            Save your favourite jewellery here
+            and come back whenever you like.
+        </p>
+
+        <a
+            href="/products"
+            class="shop-button"
+        >
+            EXPLORE COLLECTION
+        </a>
+
+    </div>
+
+    {% endif %}
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+    >
+        Instagram
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
