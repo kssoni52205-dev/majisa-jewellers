@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Page Not Found | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            color: #f4d58d;
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        nav a {
+            color: #eee;
+        }
+
+        nav a:hover {
+            color: #f4d58d;
+        }
+
+        .page {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 70px 20px;
+        }
+
+        .content {
+            max-width: 650px;
+        }
+
+        .number {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 110px;
+            line-height: 1;
+            font-weight: bold;
+            letter-spacing: 8px;
+        }
+
+        .content h1 {
+            font-size: 38px;
+            margin: 20px 0 12px;
+        }
+
+        .content p {
+            color: #777;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 14px 26px;
+            background: #211d18;
+            color: #f4d58d;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .button.secondary {
+            background: transparent;
+            color: #211d18;
+            border: 1px solid #cfc4b4;
+        }
+
+        .button:hover {
+            opacity: 0.88;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 28px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 650px) {
+            nav {
+                display: none;
+            }
+
+            .number {
+                font-size: 80px;
+            }
+
+            .content h1 {
+                font-size: 30px;
+            }
+
+            .brand {
+                font-size: 21px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+</header>
+
+
+<main class="page">
+
+    <div class="content">
+
+        <div class="number">
+            404
+        </div>
+
+        <h1>
+            This Page Could Not Be Found
+        </h1>
+
+        <p>
+            The page you're looking for may have been moved,
+            deleted, or the address may be incorrect.
+            Let's get you back to Majisa Jewellers.
+        </p>
+
+
+        <div class="buttons">
+
+            <a
+                href="/"
+                class="button"
+            >
+                BACK TO HOME
+            </a>
+
+            <a
+                href="/products"
+                class="button secondary"
+            >
+                EXPLORE SHOP
+            </a>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+    >
+        @majisa_art_jewellers
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
