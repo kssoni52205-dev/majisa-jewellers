@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Orders | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .page {
+            max-width: 1050px;
+            margin: auto;
+            padding: 60px 5%;
+            min-height: 70vh;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .heading small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .heading h1 {
+            font-size: 45px;
+            margin-top: 8px;
+        }
+
+        .order {
+            background: white;
+            border: 1px solid #e1d8cb;
+            margin-bottom: 18px;
+        }
+
+        .order-top {
+            padding: 20px 22px;
+            background: #f5efe5;
+            border-bottom: 1px solid #e1d8cb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .order-number {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .order-date {
+            color: #777;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .status {
+            padding: 7px 12px;
+            background: #211d18;
+            color: #f4d58d;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .order-body {
+            padding: 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .details {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .details strong {
+            color: #211d18;
+        }
+
+        .total {
+            text-align: right;
+        }
+
+        .total-label {
+            font-family: Arial, sans-serif;
+            color: #777;
+            font-size: 12px;
+        }
+
+        .amount {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 21px;
+            margin: 5px 0 12px;
+        }
+
+        .view-button {
+            display: inline-block;
+            background: #211d18;
+            color: #f4d58d;
+            padding: 10px 17px;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+        }
+
+        .empty {
+            background: white;
+            border: 1px solid #e1d8cb;
+            text-align: center;
+            padding: 80px 25px;
+        }
+
+        .empty h2 {
+            font-size: 30px;
+            margin-bottom: 12px;
+        }
+
+        .empty p {
+            color: #666;
+            font-family: Arial, sans-serif;
+            margin-bottom: 25px;
+        }
+
+        .shop-button {
+            display: inline-block;
+            background: #211d18;
+            color: #f4d58d;
+            padding: 14px 25px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 30px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 700px) {
+            nav {
+                display: none;
+            }
+
+            .order-body {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .total {
+                text-align: left;
+            }
+
+            .heading h1 {
+                font-size: 35px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+        <a href="/wishlist">♡</a>
+        <a href="/cart">🛒 {{ cart_count }}</a>
+        <a href="/logout">Logout</a>
+    </div>
+
+</header>
+
+
+<main class="page">
+
+    <div class="heading">
+
+        <small>
+            Your Account
+        </small>
+
+        <h1>
+            My Orders
+        </h1>
+
+    </div>
+
+
+    {% if orders %}
+
+        {% for order in orders %}
+
+        <div class="order">
+
+            <div class="order-top">
+
+                <div>
+
+                    <div class="order-number">
+                        Order #{{ order["id"] }}
+                    </div>
+
+                    <div class="order-date">
+                        {{ order["created_at"] }}
+                    </div>
+
+                </div>
+
+
+                <div class="status">
+
+                    {{ order["status"] }}
+
+                </div>
+
+            </div>
+
+
+            <div class="order-body">
+
+                <div class="details">
+
+                    <strong>
+                        Payment:
+                    </strong>
+
+                    {{ order["payment_method"] }}
+
+                    <br>
+
+                    <strong>
+                        Items:
+                    </strong>
+
+                    {{ order["item_count"] }}
+
+                    <br>
+
+                    <strong>
+                        Delivery:
+                    </strong>
+
+                    {{ order["address"] }}
+
+                </div>
+
+
+                <div class="total">
+
+                    <div class="total-label">
+                        Order Total
+                    </div>
+
+                    <div class="amount">
+                        ₹{{ "%.0f"|format(order["total"]) }}
+                    </div>
+
+                    <a
+                        href="/orders/{{ order['id'] }}"
+                        class="view-button"
+                    >
+                        VIEW ORDER
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+
+    {% else %}
+
+        <div class="empty">
+
+            <h2>
+                No orders yet
+            </h2>
+
+            <p>
+                Your placed orders will appear here.
+            </p>
+
+            <a
+                href="/products"
+                class="shop-button"
+            >
+                START SHOPPING
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+    >
+        Instagram
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
