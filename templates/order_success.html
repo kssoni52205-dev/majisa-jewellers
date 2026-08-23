@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Order Confirmed | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .page {
+            min-height: calc(100vh - 150px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 20px;
+        }
+
+        .success-box {
+            width: 100%;
+            max-width: 650px;
+            background: white;
+            border: 1px solid #e1d8cb;
+            padding: 55px 40px;
+            text-align: center;
+        }
+
+        .check {
+            width: 75px;
+            height: 75px;
+            margin: 0 auto 25px;
+            border-radius: 50%;
+            background: #211d18;
+            color: #f4d58d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+        }
+
+        .eyebrow {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 42px;
+            margin-bottom: 18px;
+        }
+
+        .message {
+            font-family: Arial, sans-serif;
+            color: #555;
+            line-height: 1.7;
+            margin-bottom: 30px;
+        }
+
+        .order-number {
+            display: inline-block;
+            background: #f5efe5;
+            padding: 15px 25px;
+            margin-bottom: 30px;
+            font-family: Arial, sans-serif;
+        }
+
+        .order-number span {
+            display: block;
+            color: #777;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .order-number strong {
+            color: #211d18;
+            font-size: 18px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 14px 25px;
+            background: #211d18;
+            color: #f4d58d;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .button.light {
+            background: transparent;
+            color: #211d18;
+            border: 1px solid #cfc3b3;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 25px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 600px) {
+            nav {
+                display: none;
+            }
+
+            .brand {
+                font-size: 21px;
+            }
+
+            .success-box {
+                padding: 40px 22px;
+            }
+
+            h1 {
+                font-size: 33px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+        <a href="/wishlist">♡</a>
+        <a href="/orders">Orders</a>
+    </div>
+
+</header>
+
+
+<main class="page">
+
+    <div class="success-box">
+
+        <div class="check">
+            ✓
+        </div>
+
+        <div class="eyebrow">
+            Thank You
+        </div>
+
+        <h1>
+            Order Confirmed
+        </h1>
+
+        <p class="message">
+            Your order has been successfully placed.
+            Thank you for choosing Majisa Jewellers.
+            We will contact you regarding delivery and
+            order updates.
+        </p>
+
+
+        {% if order_id %}
+
+        <div class="order-number">
+
+            <span>
+                ORDER NUMBER
+            </span>
+
+            <strong>
+                #{{ order_id }}
+            </strong>
+
+        </div>
+
+        {% endif %}
+
+
+        <div class="buttons">
+
+            <a
+                href="/orders"
+                class="button"
+            >
+                VIEW MY ORDERS
+            </a>
+
+            <a
+                href="/products"
+                class="button light"
+            >
+                CONTINUE SHOPPING
+            </a>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+    >
+        Instagram
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
