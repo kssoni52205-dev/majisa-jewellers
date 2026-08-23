@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Shopping Bag | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .page {
+            max-width: 1150px;
+            margin: auto;
+            padding: 60px 5%;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .heading small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .heading h1 {
+            font-size: 45px;
+            margin-top: 8px;
+        }
+
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 1fr 330px;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .cart-items {
+            background: white;
+            border: 1px solid #e2d8ca;
+        }
+
+        .cart-item {
+            display: grid;
+            grid-template-columns: 110px 1fr auto;
+            gap: 20px;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e5ddd2;
+        }
+
+        .cart-item:last-child {
+            border-bottom: 0;
+        }
+
+        .product-image {
+            width: 110px;
+            height: 110px;
+            object-fit: cover;
+            background: #eee7da;
+        }
+
+        .no-image {
+            width: 110px;
+            height: 110px;
+            background: #eee7da;
+        }
+
+        .category {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .product-name {
+            font-size: 21px;
+            margin-bottom: 8px;
+        }
+
+        .price {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+
+        .quantity {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .subtotal {
+            text-align: right;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+
+        .remove {
+            display: inline-block;
+            margin-top: 10px;
+            color: #9b7127;
+            font-size: 12px;
+            font-weight: normal;
+        }
+
+        .summary {
+            background: #211d18;
+            color: white;
+            padding: 28px;
+            position: sticky;
+            top: 30px;
+        }
+
+        .summary h2 {
+            color: #f4d58d;
+            margin-bottom: 25px;
+            font-size: 25px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 13px 0;
+            border-bottom: 1px solid #403a33;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .total {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f4d58d;
+            border-bottom: 0;
+            padding-top: 20px;
+        }
+
+        .checkout {
+            display: block;
+            text-align: center;
+            background: #f4d58d;
+            color: #211d18;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+
+        .continue {
+            display: block;
+            text-align: center;
+            border: 1px solid #b9aa95;
+            color: #ddd;
+            padding: 13px;
+            margin-top: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .clear {
+            display: block;
+            text-align: center;
+            margin-top: 18px;
+            color: #c9bca9;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+
+        .empty {
+            background: white;
+            border: 1px solid #e2d8ca;
+            text-align: center;
+            padding: 80px 25px;
+        }
+
+        .empty h2 {
+            font-size: 30px;
+            margin-bottom: 12px;
+        }
+
+        .empty p {
+            font-family: Arial, sans-serif;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .shop-button {
+            display: inline-block;
+            background: #211d18;
+            color: #f4d58d;
+            padding: 14px 25px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 30px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            margin-top: 50px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 800px) {
+            nav {
+                display: none;
+            }
+
+            .cart-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .summary {
+                position: static;
+            }
+        }
+
+        @media (max-width: 550px) {
+            .cart-item {
+                grid-template-columns: 80px 1fr;
+                gap: 13px;
+            }
+
+            .product-image,
+            .no-image {
+                width: 80px;
+                height: 80px;
+            }
+
+            .subtotal {
+                grid-column: 2;
+                text-align: left;
+            }
+
+            .heading h1 {
+                font-size: 35px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+        <a href="/wishlist">♡</a>
+        <a href="/cart">🛒 {{ cart_count }}</a>
+        <a href="/login">Account</a>
+    </div>
+
+</header>
+
+
+<main class="page">
+
+    <div class="heading">
+        <small>Your Selection</small>
+        <h1>Shopping Bag</h1>
+    </div>
+
+
+    {% if items %}
+
+    <div class="cart-layout">
+
+        <!-- CART ITEMS -->
+
+        <div class="cart-items">
+
+            {% for item in items %}
+
+            <div class="cart-item">
+
+                {% if item["product"]["image"] %}
+
+                <img
+                    class="product-image"
+                    src="{{ url_for(
+                        'static',
+                        filename='images/' + item['product']['image']
+                    ) }}"
+                    alt="{{ item['product']['name'] }}"
+                >
+
+                {% else %}
+
+                <div class="no-image"></div>
+
+                {% endif %}
+
+
+                <div>
+
+                    <div class="category">
+                        {{ item["product"]["category"] }}
+                    </div>
+
+                    <div class="product-name">
+                        {{ item["product"]["name"] }}
+                    </div>
+
+                    <div class="price">
+                        ₹{{ "%.0f"|format(item["product"]["price"]) }}
+                    </div>
+
+                    <div class="quantity">
+                        Quantity: {{ item["quantity"] }}
+                    </div>
+
+                    <a
+                        href="/cart/remove/{{ item['product']['id'] }}"
+                        class="remove"
+                    >
+                        Remove
+                    </a>
+
+                </div>
+
+
+                <div class="subtotal">
+
+                    ₹{{ "%.0f"|format(item["subtotal"]) }}
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+
+        <!-- ORDER SUMMARY -->
+
+        <aside class="summary">
+
+            <h2>
+                Order Summary
+            </h2>
+
+            <div class="summary-row">
+                <span>Items</span>
+                <span>{{ cart_count }}</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span>₹{{ "%.0f"|format(total) }}</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Delivery</span>
+                <span>Calculated at checkout</span>
+            </div>
+
+            <div class="summary-row total">
+                <span>Total</span>
+                <span>₹{{ "%.0f"|format(total) }}</span>
+            </div>
+
+
+            <a
+                href="/checkout"
+                class="checkout"
+            >
+                PROCEED TO CHECKOUT
+            </a>
+
+
+            <a
+                href="/products"
+                class="continue"
+            >
+                CONTINUE SHOPPING
+            </a>
+
+
+            <a
+                href="/cart/clear"
+                class="clear"
+            >
+                Clear Shopping Bag
+            </a>
+
+        </aside>
+
+    </div>
+
+
+    {% else %}
+
+    <!-- EMPTY CART -->
+
+    <div class="empty">
+
+        <h2>
+            Your shopping bag is empty
+        </h2>
+
+        <p>
+            Discover something beautiful from
+            the Majisa Jewellers collection.
+        </p>
+
+        <a
+            href="/products"
+            class="shop-button"
+        >
+            EXPLORE COLLECTION
+        </a>
+
+    </div>
+
+    {% endif %}
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+    >
+        Instagram
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
