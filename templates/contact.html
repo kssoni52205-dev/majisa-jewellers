@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Contact Us | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: auto;
+            padding: 60px 5%;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 45px;
+        }
+
+        .heading small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .heading h1 {
+            font-size: 45px;
+            margin-top: 8px;
+        }
+
+        .heading p {
+            max-width: 600px;
+            margin: 15px auto 0;
+            color: #666;
+            font-family: Arial, sans-serif;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .box {
+            background: white;
+            border: 1px solid #e1d8cb;
+            padding: 30px;
+        }
+
+        .box h2 {
+            font-size: 26px;
+            margin-bottom: 25px;
+        }
+
+        .contact-item {
+            display: flex;
+            gap: 15px;
+            padding: 18px 0;
+            border-bottom: 1px solid #e5ddd2;
+        }
+
+        .contact-item:last-child {
+            border-bottom: 0;
+        }
+
+        .icon {
+            width: 40px;
+            height: 40px;
+            background: #211d18;
+            color: #f4d58d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .contact-info strong {
+            display: block;
+            margin-bottom: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .contact-info span,
+        .contact-info a {
+            color: #666;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .contact-info a {
+            color: #9b7127;
+        }
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 7px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .field input,
+        .field textarea {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #d6ccbe;
+            background: white;
+            outline: none;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .field input:focus,
+        .field textarea:focus {
+            border-color: #9b7127;
+        }
+
+        .field textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        .submit {
+            width: 100%;
+            padding: 15px;
+            border: 0;
+            background: #211d18;
+            color: #f4d58d;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+
+        .instagram {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f5efe5;
+            text-align: center;
+        }
+
+        .instagram p {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .instagram a {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 30px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            margin-top: 30px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 800px) {
+            nav {
+                display: none;
+            }
+
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .heading h1 {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+        <a href="/wishlist">♡</a>
+        <a href="/cart">🛒 {{ cart_count }}</a>
+        <a href="/login">Account</a>
+    </div>
+
+</header>
+
+
+<main class="page">
+
+    <div class="heading">
+
+        <small>
+            We'd Love To Hear From You
+        </small>
+
+        <h1>
+            Contact Us
+        </h1>
+
+        <p>
+            Have a question about an order, product or anything
+            else? Send us a message and our team will get back
+            to you.
+        </p>
+
+    </div>
+
+
+    <div class="contact-grid">
+
+
+        <!-- CONTACT INFORMATION -->
+
+        <section class="box">
+
+            <h2>
+                Get In Touch
+            </h2>
+
+
+            <div class="contact-item">
+
+                <div class="icon">
+                    ☎
+                </div>
+
+                <div class="contact-info">
+
+                    <strong>
+                        Phone
+                    </strong>
+
+                    <a href="tel:8949144970">
+                        8949144970
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <div class="contact-item">
+
+                <div class="icon">
+                    ✉
+                </div>
+
+                <div class="contact-info">
+
+                    <strong>
+                        Email
+                    </strong>
+
+                    <a href="mailto:info@majisajewellers.com">
+                        info@majisajewellers.com
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <div class="contact-item">
+
+                <div class="icon">
+                    ◎
+                </div>
+
+                <div class="contact-info">
+
+                    <strong>
+                        Instagram
+                    </strong>
+
+                    <a
+                        href="https://instagram.com/majisa_art_jewellers"
+                        target="_blank"
+                    >
+                        @majisa_art_jewellers
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <div class="contact-item">
+
+                <div class="icon">
+                    ⌂
+                </div>
+
+                <div class="contact-info">
+
+                    <strong>
+                        Store
+                    </strong>
+
+                    <span>
+                        Please contact us for store location
+                        and visiting information.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="instagram">
+
+                <p>
+                    Follow Majisa Jewellers on Instagram
+                </p>
+
+                <a
+                    href="https://instagram.com/majisa_art_jewellers"
+                    target="_blank"
+                >
+                    @majisa_art_jewellers
+                </a>
+
+            </div>
+
+        </section>
+
+
+        <!-- CONTACT FORM -->
+
+        <section class="box">
+
+            <h2>
+                Send A Message
+            </h2>
+
+
+            <form method="POST" action="/contact">
+
+                <div class="field">
+
+                    <label for="name">
+                        Your Name *
+                    </label>
+
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        placeholder="Enter your name"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="email">
+                        Email Address *
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="phone">
+                        Mobile Number
+                    </label>
+
+                    <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        placeholder="Enter your mobile number"
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="message">
+                        Message *
+                    </label>
+
+                    <textarea
+                        id="message"
+                        name="message"
+                        placeholder="How can we help you?"
+                        required
+                    ></textarea>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="submit"
+                >
+                    SEND MESSAGE
+                </button>
+
+            </form>
+
+        </section>
+
+    </div>
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+    >
+        Instagram
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
