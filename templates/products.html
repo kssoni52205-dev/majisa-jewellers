@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Shop Jewellery | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 20px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .actions {
+            font-family: Arial, sans-serif;
+            display: flex;
+            gap: 12px;
+        }
+
+        .page {
+            padding: 55px 6%;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .heading small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .heading h1 {
+            font-size: 45px;
+            margin-top: 8px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .categories {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .category {
+            border: 1px solid #d8cbb8;
+            padding: 10px 16px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            background: white;
+        }
+
+        .category.active,
+        .category:hover {
+            background: #211d18;
+            color: #f4d58d;
+        }
+
+        .search {
+            display: flex;
+            gap: 5px;
+        }
+
+        .search input {
+            width: 210px;
+            padding: 11px;
+            border: 1px solid #d8cbb8;
+            outline: none;
+        }
+
+        .search button {
+            padding: 11px 18px;
+            border: 0;
+            background: #211d18;
+            color: #f4d58d;
+            cursor: pointer;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 22px;
+        }
+
+        .product {
+            background: white;
+            border: 1px solid #e4dacb;
+        }
+
+        .product img,
+        .no-image {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            background: #eee7da;
+        }
+
+        .info {
+            padding: 17px;
+        }
+
+        .category-name {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 19px;
+            margin: 7px 0;
+        }
+
+        .price {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            margin-bottom: 13px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 7px;
+        }
+
+        .btn {
+            flex: 1;
+            text-align: center;
+            padding: 10px 5px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            background: #211d18;
+            color: #f4d58d;
+        }
+
+        .btn.light {
+            background: #eee7da;
+            color: #211d18;
+        }
+
+        .empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 70px 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        footer {
+            margin-top: 70px;
+            background: #15120f;
+            color: #ccc;
+            padding: 30px 6%;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 950px) {
+            .products {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            nav {
+                display: none;
+            }
+        }
+
+        @media (max-width: 650px) {
+            .products {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .heading h1 {
+                font-size: 34px;
+            }
+
+            .search {
+                width: 100%;
+            }
+
+            .search input {
+                flex: 1;
+                width: auto;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .products {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+        <a href="/wishlist">♡</a>
+        <a href="/cart">🛒 {{ cart_count }}</a>
+        <a href="/login">Account</a>
+    </div>
+
+</header>
+
+
+<main class="page">
+
+    <div class="heading">
+        <small>Majisa Collection</small>
+        <h1>Shop Jewellery</h1>
+    </div>
+
+
+    <div class="toolbar">
+
+        <div class="categories">
+
+            <a
+                href="/products"
+                class="category {% if not selected_category %}active{% endif %}"
+            >
+                All
+            </a>
+
+            {% for category in categories %}
+
+            <a
+                href="/products?category={{ category['category'] }}"
+                class="category {% if selected_category == category['category'] %}active{% endif %}"
+            >
+                {{ category['category'] }}
+            </a>
+
+            {% endfor %}
+
+        </div>
+
+
+        <form action="/search" method="GET" class="search">
+
+            <input
+                type="text"
+                name="q"
+                placeholder="Search jewellery..."
+                value="{{ search }}"
+            >
+
+            <button type="submit">
+                Search
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <div class="products">
+
+        {% for product in products %}
+
+        <article class="product">
+
+            {% if product["image"] %}
+
+            <img
+                src="{{ url_for('static', filename='images/' + product['image']) }}"
+                alt="{{ product['name'] }}"
+            >
+
+            {% else %}
+
+            <div class="no-image"></div>
+
+            {% endif %}
+
+
+            <div class="info">
+
+                <div class="category-name">
+                    {{ product["category"] }}
+                </div>
+
+                <h2>
+                    {{ product["name"] }}
+                </h2>
+
+                <div class="price">
+                    ₹{{ "%.0f"|format(product["price"]) }}
+                </div>
+
+
+                <div class="buttons">
+
+                    <a
+                        href="/product/{{ product['id'] }}"
+                        class="btn light"
+                    >
+                        VIEW
+                    </a>
+
+                    <a
+                        href="/cart/add/{{ product['id'] }}"
+                        class="btn"
+                    >
+                        ADD TO BAG
+                    </a>
+
+                </div>
+
+            </div>
+
+        </article>
+
+        {% else %}
+
+        <div class="empty">
+
+            <h2>No jewellery found</h2>
+
+            <p>
+                Try another category or search.
+            </p>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a href="https://instagram.com/majisa_art_jewellers"
+       target="_blank">
+        Instagram
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
