@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #f5f1e9;
+            color: #211d18;
+            font-family: Arial, sans-serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .layout {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* SIDEBAR */
+
+        .sidebar {
+            width: 245px;
+            background: #211d18;
+            color: white;
+            padding: 25px 18px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+        }
+
+        .brand {
+            color: #f4d58d;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            padding: 0 10px 30px;
+            border-bottom: 1px solid #403a33;
+        }
+
+        .admin-label {
+            color: #999;
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 25px 10px 10px;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .menu a {
+            padding: 13px 12px;
+            color: #d5d0c9;
+            font-size: 13px;
+            border-radius: 3px;
+        }
+
+        .menu a:hover,
+        .menu a.active {
+            background: #403a33;
+            color: #f4d58d;
+        }
+
+        .logout {
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: 25px;
+            border-top: 1px solid #403a33;
+            padding-top: 18px;
+            color: #bbb;
+            font-size: 12px;
+        }
+
+        .logout:hover {
+            color: #f4d58d;
+        }
+
+        /* MAIN */
+
+        .main {
+            margin-left: 245px;
+            width: calc(100% - 245px);
+            padding: 35px 4%;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 35px;
+        }
+
+        .topbar small {
+            color: #9b7127;
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .topbar h1 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 36px;
+            margin-top: 5px;
+        }
+
+        .store-link {
+            padding: 11px 18px;
+            border: 1px solid #cfc4b4;
+            background: white;
+            font-size: 12px;
+        }
+
+        .store-link:hover {
+            background: #211d18;
+            color: #f4d58d;
+        }
+
+        /* STATS */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+
+        .stat {
+            background: white;
+            border: 1px solid #e1d8cb;
+            padding: 23px;
+        }
+
+        .stat-label {
+            color: #777;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 30px;
+        }
+
+        .stat-note {
+            color: #9b7127;
+            font-size: 11px;
+            margin-top: 7px;
+        }
+
+        /* CONTENT */
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 22px;
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid #e1d8cb;
+            padding: 25px;
+            margin-bottom: 22px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .panel-header h2 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 23px;
+        }
+
+        .view-all {
+            color: #9b7127;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* ORDERS */
+
+        .order {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            padding: 16px 0;
+            border-bottom: 1px solid #e8e0d6;
+        }
+
+        .order:last-child {
+            border-bottom: 0;
+        }
+
+        .order-number {
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .order-customer {
+            color: #777;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .order-right {
+            text-align: right;
+        }
+
+        .order-total {
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .status {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 4px 8px;
+            background: #f2eadc;
+            color: #8b6827;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        /* QUICK ACTIONS */
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .quick-action {
+            border: 1px solid #ded5c8;
+            padding: 18px 12px;
+            text-align: center;
+            font-size: 11px;
+            background: #faf8f4;
+        }
+
+        .quick-action:hover {
+            background: #211d18;
+            color: #f4d58d;
+        }
+
+        .quick-icon {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        /* SUMMARY */
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 13px 0;
+            border-bottom: 1px solid #e8e0d6;
+            font-size: 13px;
+        }
+
+        .summary-row:last-child {
+            border-bottom: 0;
+        }
+
+        .summary-label {
+            color: #777;
+        }
+
+        /* RESPONSIVE */
+
+        @media (max-width: 1100px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 750px) {
+            .sidebar {
+                width: 70px;
+                padding: 20px 8px;
+            }
+
+            .brand {
+                font-size: 0;
+                text-align: center;
+                padding: 10px 0 25px;
+            }
+
+            .brand::after {
+                content: "MJ";
+                font-size: 18px;
+            }
+
+            .admin-label,
+            .menu span,
+            .logout span {
+                display: none;
+            }
+
+            .menu a {
+                text-align: center;
+                font-size: 18px;
+                padding: 13px 5px;
+            }
+
+            .logout {
+                text-align: center;
+            }
+
+            .main {
+                margin-left: 70px;
+                width: calc(100% - 70px);
+                padding: 25px 18px;
+            }
+
+            .topbar h1 {
+                font-size: 29px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <a href="/admin/dashboard" class="brand">
+            Majisa Jewellers
+        </a>
+
+        <div class="admin-label">
+            Administration
+        </div>
+
+        <nav class="menu">
+
+            <a
+                href="/admin/dashboard"
+                class="active"
+            >
+                📊 <span>Dashboard</span>
+            </a>
+
+            <a href="/admin/products">
+                ◈ <span>Products</span>
+            </a>
+
+            <a href="/admin/orders">
+                ◎ <span>Orders</span>
+            </a>
+
+            <a href="/admin/customers">
+                ♙ <span>Customers</span>
+            </a>
+
+            <a href="/admin/settings">
+                ⚙ <span>Settings</span>
+            </a>
+
+        </nav>
+
+        <a
+            href="/admin/logout"
+            class="logout"
+        >
+            ↪ <span>Logout</span>
+        </a>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+
+    <main class="main">
+
+        <div class="topbar">
+
+            <div>
+
+                <small>
+                    Store Administration
+                </small>
+
+                <h1>
+                    Dashboard
+                </h1>
+
+            </div>
+
+            <a
+                href="/"
+                class="store-link"
+            >
+                VIEW STORE →
+            </a>
+
+        </div>
+
+
+        <!-- STATISTICS -->
+
+        <section class="stats">
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    Total Orders
+                </div>
+
+                <div class="stat-value">
+                    {{ total_orders|default(0) }}
+                </div>
+
+                <div class="stat-note">
+                    All orders
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    Total Products
+                </div>
+
+                <div class="stat-value">
+                    {{ total_products|default(0) }}
+                </div>
+
+                <div class="stat-note">
+                    Products listed
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    Customers
+                </div>
+
+                <div class="stat-value">
+                    {{ total_customers|default(0) }}
+                </div>
+
+                <div class="stat-note">
+                    Registered users
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    Revenue
+                </div>
+
+                <div class="stat-value">
+                    ₹{{ total_revenue|default(0) }}
+                </div>
+
+                <div class="stat-note">
+                    Total sales
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <div class="content-grid">
+
+
+            <!-- RECENT ORDERS -->
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <h2>
+                        Recent Orders
+                    </h2>
+
+                    <a
+                        href="/admin/orders"
+                        class="view-all"
+                    >
+                        VIEW ALL
+                    </a>
+
+                </div>
+
+
+                {% if recent_orders %}
+
+                    {% for order in recent_orders %}
+
+                    <div class="order">
+
+                        <div>
+
+                            <div class="order-number">
+                                Order #{{ order["id"] }}
+                            </div>
+
+                            <div class="order-customer">
+                                {{ order["customer_name"]|default("Customer") }}
+                            </div>
+
+                        </div>
+
+
+                        <div class="order-right">
+
+                            <div class="order-total">
+                                ₹{{ order["total"]|default(0) }}
+                            </div>
+
+                            <div class="status">
+                                {{ order["status"]|default("Pending") }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <div style="
+                        text-align:center;
+                        padding:35px 10px;
+                        color:#888;
+                        font-size:13px;
+                    ">
+                        No orders found yet.
+                    </div>
+
+                {% endif %}
+
+            </section>
+
+
+            <div>
+
+
+                <!-- QUICK ACTIONS -->
+
+                <section class="panel">
+
+                    <div class="panel-header">
+
+                        <h2>
+                            Quick Actions
+                        </h2>
+
+                    </div>
+
+
+                    <div class="quick-actions">
+
+                        <a
+                            href="/admin/products"
+                            class="quick-action"
+                        >
+                            <span class="quick-icon">＋</span>
+                            Manage Products
+                        </a>
+
+                        <a
+                            href="/admin/orders"
+                            class="quick-action"
+                        >
+                            <span class="quick-icon">◎</span>
+                            Manage Orders
+                        </a>
+
+                        <a
+                            href="/admin/customers"
+                            class="quick-action"
+                        >
+                            <span class="quick-icon">♙</span>
+                            Customers
+                        </a>
+
+                        <a
+                            href="/"
+                            class="quick-action"
+                        >
+                            <span class="quick-icon">⌂</span>
+                            Open Store
+                        </a>
+
+                    </div>
+
+                </section>
+
+
+                <!-- STORE SUMMARY -->
+
+                <section class="panel">
+
+                    <div class="panel-header">
+
+                        <h2>
+                            Store Summary
+                        </h2>
+
+                    </div>
+
+
+                    <div class="summary-row">
+
+                        <span class="summary-label">
+                            Pending Orders
+                        </span>
+
+                        <strong>
+                            {{ pending_orders|default(0) }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="summary-row">
+
+                        <span class="summary-label">
+                            Completed Orders
+                        </span>
+
+                        <strong>
+                            {{ completed_orders|default(0) }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="summary-row">
+
+                        <span class="summary-label">
+                            Low Stock Products
+                        </span>
+
+                        <strong>
+                            {{ low_stock|default(0) }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="summary-row">
+
+                        <span class="summary-label">
+                            New Customers
+                        </span>
+
+                        <strong>
+                            {{ new_customers|default(0) }}
+                        </strong>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>
