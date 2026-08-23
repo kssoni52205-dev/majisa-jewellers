@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Login | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 20px 5%;
+            text-align: center;
+        }
+
+        .brand {
+            color: #f4d58d;
+            text-decoration: none;
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .page {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 50px 20px;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 430px;
+            background: white;
+            border: 1px solid #e1d8cb;
+            padding: 40px;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .heading small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .heading h1 {
+            font-size: 36px;
+            margin-top: 9px;
+        }
+
+        .heading p {
+            color: #777;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #d6ccbe;
+            outline: none;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        input:focus {
+            border-color: #9b7127;
+        }
+
+        .button {
+            width: 100%;
+            padding: 15px;
+            border: 0;
+            background: #211d18;
+            color: #f4d58d;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            opacity: 0.9;
+        }
+
+        .back {
+            display: block;
+            text-align: center;
+            margin-top: 22px;
+            color: #777;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        .back:hover {
+            color: #9b7127;
+        }
+
+        .security {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e5ddd2;
+            text-align: center;
+            color: #888;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 25px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #f4d58d;
+            text-decoration: none;
+        }
+
+        @media (max-width: 600px) {
+            .login-box {
+                padding: 30px 22px;
+            }
+
+            .heading h1 {
+                font-size: 31px;
+            }
+
+            .brand {
+                font-size: 21px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+</header>
+
+
+<main class="page">
+
+    <section class="login-box">
+
+        <div class="heading">
+
+            <small>
+                Secure Access
+            </small>
+
+            <h1>
+                Admin Login
+            </h1>
+
+            <p>
+                Sign in to manage your Majisa Jewellers
+                store.
+            </p>
+
+        </div>
+
+
+        <form method="POST" action="/admin/login">
+
+            <div class="field">
+
+                <label for="username">
+                    Username
+                </label>
+
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Enter admin username"
+                    autocomplete="username"
+                    required
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter admin password"
+                    autocomplete="current-password"
+                    required
+                >
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="button"
+            >
+                LOGIN TO ADMIN PANEL
+            </button>
+
+        </form>
+
+
+        <a
+            href="/"
+            class="back"
+        >
+            ← Back to Store
+        </a>
+
+
+        <div class="security">
+            This area is restricted to authorized store
+            administrators only.
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+    8949144970
+
+</footer>
+
+</body>
+</html>
