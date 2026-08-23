@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Profile | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .page {
+            max-width: 900px;
+            margin: auto;
+            padding: 60px 5%;
+            min-height: 75vh;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .heading small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .heading h1 {
+            font-size: 44px;
+            margin-top: 8px;
+        }
+
+        .profile-box {
+            background: white;
+            border: 1px solid #e1d8cb;
+            padding: 35px;
+        }
+
+        .section-title {
+            font-size: 25px;
+            margin-bottom: 22px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .field {
+            margin-bottom: 5px;
+        }
+
+        .field.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #d6ccbe;
+            background: white;
+            outline: none;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #9b7127;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .save-button {
+            margin-top: 25px;
+            padding: 14px 28px;
+            border: 0;
+            background: #211d18;
+            color: #f4d58d;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+
+        .account-links {
+            margin-top: 25px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .account-link {
+            padding: 16px;
+            border: 1px solid #e1d8cb;
+            background: #f7f1e8;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+
+        .account-link:hover {
+            background: #211d18;
+            color: #f4d58d;
+        }
+
+        .logout {
+            display: block;
+            margin-top: 15px;
+            text-align: center;
+            padding: 14px;
+            border: 1px solid #d6ccbe;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+
+        .logout:hover {
+            background: #211d18;
+            color: #f4d58d;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 30px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 700px) {
+            nav {
+                display: none;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .field.full {
+                grid-column: auto;
+            }
+
+            .account-links {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-box {
+                padding: 25px 20px;
+            }
+
+            .heading h1 {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+        <a href="/wishlist">♡</a>
+        <a href="/cart">🛒 {{ cart_count }}</a>
+        <a href="/orders">Orders</a>
+    </div>
+
+</header>
+
+
+<main class="page">
+
+    <div class="heading">
+
+        <small>
+            Your Account
+        </small>
+
+        <h1>
+            My Profile
+        </h1>
+
+    </div>
+
+
+    <section class="profile-box">
+
+        <h2 class="section-title">
+            Personal Information
+        </h2>
+
+
+        <form method="POST" action="/profile">
+
+            <div class="form-grid">
+
+                <div class="field">
+
+                    <label for="name">
+                        Full Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value="{{ user['name'] }}"
+                        placeholder="Enter your name"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="email">
+                        Email Address
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value="{{ user['email'] }}"
+                        placeholder="Enter your email"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="phone">
+                        Mobile Number
+                    </label>
+
+                    <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        value="{{ user['phone'] }}"
+                        placeholder="Enter your mobile number"
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="city">
+                        City
+                    </label>
+
+                    <input
+                        type="text"
+                        id="city"
+                        name="city"
+                        value="{{ user['city'] }}"
+                        placeholder="Enter your city"
+                    >
+
+                </div>
+
+
+                <div class="field full">
+
+                    <label for="address">
+                        Delivery Address
+                    </label>
+
+                    <textarea
+                        id="address"
+                        name="address"
+                        placeholder="Enter your complete delivery address"
+                    >{{ user['address'] }}</textarea>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="save-button"
+            >
+                SAVE CHANGES
+            </button>
+
+        </form>
+
+
+        <div class="account-links">
+
+            <a
+                href="/orders"
+                class="account-link"
+            >
+                MY ORDERS
+            </a>
+
+            <a
+                href="/wishlist"
+                class="account-link"
+            >
+                MY WISHLIST
+            </a>
+
+            <a
+                href="/cart"
+                class="account-link"
+            >
+                MY CART
+            </a>
+
+        </div>
+
+
+        <a
+            href="/logout"
+            class="logout"
+        >
+            LOG OUT
+        </a>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+    >
+        @majisa_art_jewellers
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
