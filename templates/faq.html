@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FAQ | Majisa Jewellers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .page {
+            max-width: 900px;
+            margin: auto;
+            padding: 65px 5%;
+            min-height: 75vh;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 45px;
+        }
+
+        .heading small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .heading h1 {
+            font-size: 45px;
+            margin-top: 8px;
+        }
+
+        .heading p {
+            max-width: 600px;
+            margin: 15px auto 0;
+            color: #666;
+            font-family: Arial, sans-serif;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .faq-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .faq {
+            background: white;
+            border: 1px solid #e1d8cb;
+        }
+
+        .faq summary {
+            cursor: pointer;
+            padding: 21px 24px;
+            list-style: none;
+            font-size: 17px;
+            font-weight: bold;
+            position: relative;
+            padding-right: 55px;
+        }
+
+        .faq summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .faq summary::after {
+            content: "+";
+            position: absolute;
+            right: 24px;
+            top: 17px;
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: normal;
+        }
+
+        .faq[open] summary::after {
+            content: "−";
+        }
+
+        .answer {
+            border-top: 1px solid #e5ddd2;
+            padding: 18px 24px 22px;
+            color: #666;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .help {
+            margin-top: 45px;
+            background: #211d18;
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .help h2 {
+            color: #f4d58d;
+            font-size: 29px;
+            margin-bottom: 10px;
+        }
+
+        .help p {
+            color: #ccc;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+
+        .button {
+            display: inline-block;
+            background: #f4d58d;
+            color: #211d18;
+            padding: 13px 25px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 30px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 700px) {
+            nav {
+                display: none;
+            }
+
+            .brand {
+                font-size: 21px;
+            }
+
+            .heading h1 {
+                font-size: 36px;
+            }
+
+            .faq summary {
+                font-size: 15px;
+                padding: 18px 45px 18px 18px;
+            }
+
+            .answer {
+                padding: 16px 18px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <a href="/" class="brand">
+        Majisa Jewellers
+    </a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/products">Shop</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+        <a href="/wishlist">♡</a>
+        <a href="/cart">🛒 {{ cart_count }}</a>
+        <a href="/login">Account</a>
+    </div>
+
+</header>
+
+
+<main class="page">
+
+    <div class="heading">
+
+        <small>
+            Need Help?
+        </small>
+
+        <h1>
+            Frequently Asked Questions
+        </h1>
+
+        <p>
+            Find answers to some of the most common questions
+            about shopping with Majisa Jewellers.
+        </p>
+
+    </div>
+
+
+    <div class="faq-list">
+
+
+        <details class="faq">
+
+            <summary>
+                How can I place an order?
+            </summary>
+
+            <div class="answer">
+                Browse our collection, open the product you like,
+                add it to your cart and proceed to checkout.
+                Enter your delivery details and complete the order.
+            </div>
+
+        </details>
+
+
+        <details class="faq">
+
+            <summary>
+                Do I need an account to place an order?
+            </summary>
+
+            <div class="answer">
+                You can browse products without an account.
+                If the checkout flow requires an account, you can
+                quickly create one using the registration page.
+            </div>
+
+        </details>
+
+
+        <details class="faq">
+
+            <summary>
+                How can I check my order?
+            </summary>
+
+            <div class="answer">
+                After logging in, open the My Orders section.
+                Your placed orders and their current status will
+                be displayed there.
+            </div>
+
+        </details>
+
+
+        <details class="faq">
+
+            <summary>
+                Can I add products to my wishlist?
+            </summary>
+
+            <div class="answer">
+                Yes. Use the wishlist option on products you want
+                to save for later. Your saved products can be
+                viewed from the Wishlist page.
+            </div>
+
+        </details>
+
+
+        <details class="faq">
+
+            <summary>
+                How can I contact Majisa Jewellers?
+            </summary>
+
+            <div class="answer">
+                You can contact us through our Contact Us page,
+                call us at 8949144970, or message us through our
+                Instagram account.
+            </div>
+
+        </details>
+
+
+        <details class="faq">
+
+            <summary>
+                Where can I find my order details?
+            </summary>
+
+            <div class="answer">
+                Go to My Orders and select the order you want
+                to view. The order details page shows the items,
+                payment information, delivery address and total.
+            </div>
+
+        </details>
+
+
+        <details class="faq">
+
+            <summary>
+                What payment methods are available?
+            </summary>
+
+            <div class="answer">
+                Available payment options are shown during
+                checkout. The exact options depend on the payment
+                methods configured for the store.
+            </div>
+
+        </details>
+
+
+        <details class="faq">
+
+            <summary>
+                How can I get help with an existing order?
+            </summary>
+
+            <div class="answer">
+                Contact our team with your order number and
+                the issue you are facing. We will help you with
+                the next steps.
+            </div>
+
+        </details>
+
+    </div>
+
+
+    <section class="help">
+
+        <h2>
+            Still Have Questions?
+        </h2>
+
+        <p>
+            Our team is happy to help you.
+        </p>
+
+        <a
+            href="/contact"
+            class="button"
+        >
+            CONTACT US
+        </a>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+    >
+        @majisa_art_jewellers
+    </a>
+
+    · 8949144970
+
+</footer>
+
+</body>
+</html>
