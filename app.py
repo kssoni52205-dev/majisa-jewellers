@@ -1,3 +1,4 @@
+```python
 import os
 import sqlite3
 import secrets
@@ -14,7 +15,11 @@ from flask import (
     jsonify
 )
 
+from werkzeug.utils import secure_filename
+
+
 app = Flask(__name__)
+
 
 # ==========================================================
 # CONFIG
@@ -35,7 +40,108 @@ ADMIN_PASSWORD = os.environ.get(
     "change-this-password"
 )
 
-DATABASE = "majisa.db"
+DATABASE = os.path.join(
+    app.root_path,
+    "majisa.db"
+)
+
+UPLOAD_FOLDER = os.path.join(
+    app.root_path,
+    "static",
+    "images"
+)
+
+os.makedirs(
+    UPLOAD_FOLDER,
+    exist_ok=True
+)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+ALLOWED_EXTENSIONS = {
+    "png",
+    "jpg",
+    "jpeg",
+    "webp"
+}
+
+
+# ==========================================================
+# IMAGE HELPERS
+# ==========================================================
+
+def allowed_file(filename):
+
+    return (
+        "." in filename
+        and
+        filename.rsplit(
+            ".",
+            1
+        )[1].lower()
+        in ALLOWED_EXTENSIONS
+    )
+
+
+def save_product_image(file):
+
+    if not file:
+        return ""
+
+    if not file.filename:
+        return ""
+
+    if not allowed_file(file.filename):
+
+        raise ValueError(
+            "Only JPG, JPEG, PNG and WEBP images are allowed."
+        )
+
+    original_name = secure_filename(
+        file.filename
+    )
+
+    extension = os.path.splitext(
+        original_name
+    )[1].lower()
+
+    filename = (
+        f"product_"
+        f"{secrets.token_hex(10)}"
+        f"{extension}"
+    )
+
+    file.save(
+        os.path.join(
+            app.config["UPLOAD_FOLDER"],
+            filename
+        )
+    )
+
+    return filename
+
+
+def delete_product_image(filename):
+
+    if not filename:
+        return
+
+    filename = os.path.basename(
+        filename
+    )
+
+    file_path = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
+
+    try:
+
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    except OSError:
+        pass
 
 
 # ==========================================================
@@ -43,21 +149,39 @@ DATABASE = "majisa.db"
 # ==========================================================
 
 def get_db():
-    conn = sqlite3.connect(DATABASE)
+
+    conn = sqlite3.connect(
+        DATABASE
+    )
+
     conn.row_factory = sqlite3.Row
+
     return conn
 
 
-def add_column_if_missing(conn, table, column, definition):
+def add_column_if_missing(
+    conn,
+    table,
+    column,
+    definition
+):
+
     columns = conn.execute(
         f"PRAGMA table_info({table})"
     ).fetchall()
 
-    existing = [row["name"] for row in columns]
+    existing = [
+        row["name"]
+        for row in columns
+    ]
 
     if column not in existing:
+
         conn.execute(
-            f"ALTER TABLE {table} ADD COLUMN {column} {definition}"
+            f"""
+            ALTER TABLE {table}
+            ADD COLUMN {column} {definition}
+            """
         )
 
 
@@ -189,14 +313,23 @@ def init_db():
 
     conn.execute("""
         INSERT OR IGNORE INTO settings
-        (id, store_name, phone, instagram)
+        (
+            id,
+            store_name,
+            phone,
+            instagram
+        )
         VALUES
-        (1, 'Majisa Jewellers', '8949144970',
-        'majisa_art_jewellers')
+        (
+            1,
+            'Majisa Jewellers',
+            '8949144970',
+            'majisa_art_jewellers'
+        )
     """)
 
     # ------------------------------------------------------
-    # SAFE MIGRATIONS FOR EXISTING DATABASE
+    # SAFE MIGRATIONS
     # ------------------------------------------------------
 
     add_column_if_missing(
@@ -264,12 +397,18 @@ def admin_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
 
-        if not session.get("admin_logged_in"):
+        if not session.get(
+            "admin_logged_in"
+        ):
+
             return redirect(
                 url_for("admin_login")
             )
 
-        return view(*args, **kwargs)
+        return view(
+            *args,
+            **kwargs
+        )
 
     return wrapped
 
@@ -280,6 +419,7 @@ def login_required(view):
     def wrapped(*args, **kwargs):
 
         if not session.get("user_id"):
+
             return redirect(
                 url_for(
                     "login",
@@ -287,16 +427,24 @@ def login_required(view):
                 )
             )
 
-        return view(*args, **kwargs)
+        return view(
+            *args,
+            **kwargs
+        )
 
     return wrapped
 
 
 def get_cart():
-    return session.get("cart", {})
+
+    return session.get(
+        "cart",
+        {}
+    )
 
 
 def save_cart(cart):
+
     session["cart"] = cart
     session.modified = True
 
@@ -316,7 +464,11 @@ def get_settings():
     conn = get_db()
 
     settings = conn.execute(
-        "SELECT * FROM settings WHERE id = 1"
+        """
+        SELECT *
+        FROM settings
+        WHERE id = 1
+        """
     ).fetchone()
 
     conn.close()
@@ -325,7 +477,7 @@ def get_settings():
 
 
 # ==========================================================
-# GLOBAL TEMPLATE SETTINGS
+# GLOBAL TEMPLATE DATA
 # ==========================================================
 
 @app.context_processor
@@ -350,14 +502,16 @@ def home():
     conn = get_db()
 
     featured = conn.execute("""
-        SELECT * FROM products
+        SELECT *
+        FROM products
         WHERE featured = 1
         ORDER BY id DESC
         LIMIT 8
     """).fetchall()
 
     latest = conn.execute("""
-        SELECT * FROM products
+        SELECT *
+        FROM products
         ORDER BY id DESC
         LIMIT 12
     """).fetchall()
@@ -393,7 +547,8 @@ def products():
     if search:
 
         items = conn.execute("""
-            SELECT * FROM products
+            SELECT *
+            FROM products
             WHERE name LIKE ?
                OR category LIKE ?
                OR description LIKE ?
@@ -407,15 +562,19 @@ def products():
     elif category:
 
         items = conn.execute("""
-            SELECT * FROM products
+            SELECT *
+            FROM products
             WHERE category = ?
             ORDER BY id DESC
-        """, (category,)).fetchall()
+        """, (
+            category,
+        )).fetchall()
 
     else:
 
         items = conn.execute("""
-            SELECT * FROM products
+            SELECT *
+            FROM products
             ORDER BY id DESC
         """).fetchall()
 
@@ -437,25 +596,36 @@ def products():
     )
 
 
-@app.route("/product/<int:product_id>")
+@app.route(
+    "/product/<int:product_id>"
+)
 def product_detail(product_id):
 
     conn = get_db()
 
     product = conn.execute(
-        "SELECT * FROM products WHERE id = ?",
+        """
+        SELECT *
+        FROM products
+        WHERE id = ?
+        """,
         (product_id,)
     ).fetchone()
 
-    reviews = conn.execute("""
-        SELECT * FROM reviews
+    reviews = conn.execute(
+        """
+        SELECT *
+        FROM reviews
         WHERE product_id = ?
         ORDER BY id DESC
-    """, (product_id,)).fetchall()
+        """,
+        (product_id,)
+    ).fetchall()
 
     conn.close()
 
     if product is None:
+
         return "Product not found", 404
 
     return render_template(
@@ -498,7 +668,9 @@ def cart():
             total=0
         )
 
-    product_ids = list(cart.keys())
+    product_ids = list(
+        cart.keys()
+    )
 
     placeholders = ",".join(
         ["?"] * len(product_ids)
@@ -508,7 +680,8 @@ def cart():
 
     products_list = conn.execute(
         f"""
-        SELECT * FROM products
+        SELECT *
+        FROM products
         WHERE id IN ({placeholders})
         """,
         product_ids
@@ -557,13 +730,18 @@ def add_to_cart(product_id):
     conn = get_db()
 
     product = conn.execute(
-        "SELECT id FROM products WHERE id = ?",
+        """
+        SELECT id
+        FROM products
+        WHERE id = ?
+        """,
         (product_id,)
     ).fetchone()
 
     conn.close()
 
     if product is None:
+
         return "Product not found", 404
 
     cart = get_cart()
@@ -643,7 +821,8 @@ def wishlist():
 
     products_list = conn.execute(
         f"""
-        SELECT * FROM products
+        SELECT *
+        FROM products
         WHERE id IN ({placeholders})
         """,
         wishlist_ids
@@ -728,16 +907,24 @@ def register():
 
         try:
 
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO users
-                (name, email, password, phone)
+                (
+                    name,
+                    email,
+                    password,
+                    phone
+                )
                 VALUES (?, ?, ?, ?)
-            """, (
-                name,
-                email,
-                password,
-                phone
-            ))
+                """,
+                (
+                    name,
+                    email,
+                    password,
+                    phone
+                )
+            )
 
             conn.commit()
 
@@ -792,14 +979,18 @@ def login():
 
         conn = get_db()
 
-        user = conn.execute("""
-            SELECT * FROM users
+        user = conn.execute(
+            """
+            SELECT *
+            FROM users
             WHERE email = ?
             AND password = ?
-        """, (
-            email,
-            password
-        )).fetchone()
+            """,
+            (
+                email,
+                password
+            )
+        ).fetchone()
 
         conn.close()
 
@@ -862,7 +1053,11 @@ def profile():
     conn = get_db()
 
     user = conn.execute(
-        "SELECT * FROM users WHERE id = ?",
+        """
+        SELECT *
+        FROM users
+        WHERE id = ?
+        """,
         (user_id,)
     ).fetchone()
 
@@ -885,18 +1080,21 @@ def profile():
 
         if name:
 
-            conn.execute("""
+            conn.execute(
+                """
                 UPDATE users
                 SET name = ?,
                     phone = ?,
                     address = ?
                 WHERE id = ?
-            """, (
-                name,
-                phone,
-                address,
-                user_id
-            ))
+                """,
+                (
+                    name,
+                    phone,
+                    address,
+                    user_id
+                )
+            )
 
             conn.commit()
 
@@ -940,25 +1138,33 @@ def forgot_password():
         conn = get_db()
 
         user = conn.execute(
-            "SELECT * FROM users WHERE email = ?",
+            """
+            SELECT *
+            FROM users
+            WHERE email = ?
+            """,
             (email,)
         ).fetchone()
 
         if user:
 
-            token = secrets.token_urlsafe(32)
+            token = secrets.token_urlsafe(
+                32
+            )
 
-            conn.execute("""
+            conn.execute(
+                """
                 UPDATE users
                 SET reset_token = ?
                 WHERE id = ?
-            """, (
-                token,
-                user["id"]
-            ))
+                """,
+                (
+                    token,
+                    user["id"]
+                )
+            )
 
             conn.commit()
-
             conn.close()
 
             return redirect(
@@ -991,10 +1197,14 @@ def reset_password(token):
 
     conn = get_db()
 
-    user = conn.execute("""
-        SELECT * FROM users
+    user = conn.execute(
+        """
+        SELECT *
+        FROM users
         WHERE reset_token = ?
-    """, (token,)).fetchone()
+        """,
+        (token,)
+    ).fetchone()
 
     if user is None:
 
@@ -1057,15 +1267,18 @@ def reset_password(token):
                 )
             )
 
-        conn.execute("""
+        conn.execute(
+            """
             UPDATE users
             SET password = ?,
                 reset_token = ''
             WHERE id = ?
-        """, (
-            password,
-            user["id"]
-        ))
+            """,
+            (
+                password,
+                user["id"]
+            )
+        )
 
         conn.commit()
         conn.close()
@@ -1157,7 +1370,8 @@ def checkout():
 
         products_list = conn.execute(
             f"""
-            SELECT * FROM products
+            SELECT *
+            FROM products
             WHERE id IN ({placeholders})
             """,
             product_ids
@@ -1180,7 +1394,11 @@ def checkout():
             )
 
         settings = conn.execute(
-            "SELECT * FROM settings WHERE id = 1"
+            """
+            SELECT *
+            FROM settings
+            WHERE id = 1
+            """
         ).fetchone()
 
         shipping_charge = float(
@@ -1188,7 +1406,8 @@ def checkout():
         )
 
         free_shipping = float(
-            settings["free_shipping"] or 999999999
+            settings["free_shipping"]
+            or 999999999
         )
 
         shipping = (
@@ -1199,7 +1418,8 @@ def checkout():
 
         total = subtotal + shipping
 
-        cursor = conn.execute("""
+        cursor = conn.execute(
+            """
             INSERT INTO orders
             (
                 user_id,
@@ -1216,20 +1436,22 @@ def checkout():
                 payment_status
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            session.get("user_id"),
-            customer_name,
-            phone,
-            address,
-            total,
-            "Pending",
-            payment_method,
-            email,
-            subtotal,
-            shipping,
-            0,
-            "Pending"
-        ))
+            """,
+            (
+                session.get("user_id"),
+                customer_name,
+                phone,
+                address,
+                total,
+                "Pending",
+                payment_method,
+                email,
+                subtotal,
+                shipping,
+                0,
+                "Pending"
+            )
+        )
 
         order_id = cursor.lastrowid
 
@@ -1242,7 +1464,8 @@ def checkout():
                 )
             )
 
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO order_items
                 (
                     order_id,
@@ -1252,13 +1475,15 @@ def checkout():
                     quantity
                 )
                 VALUES (?, ?, ?, ?, ?)
-            """, (
-                order_id,
-                product["id"],
-                product["name"],
-                product["price"],
-                quantity
-            ))
+                """,
+                (
+                    order_id,
+                    product["id"],
+                    product["name"],
+                    product["price"],
+                    quantity
+                )
+            )
 
         conn.commit()
         conn.close()
@@ -1302,13 +1527,15 @@ def orders():
 
     conn = get_db()
 
-    orders_list = conn.execute("""
-        SELECT * FROM orders
+    orders_list = conn.execute(
+        """
+        SELECT *
+        FROM orders
         WHERE user_id = ?
         ORDER BY id DESC
-    """, (
-        user_id,
-    )).fetchall()
+        """,
+        (user_id,)
+    ).fetchall()
 
     conn.close()
 
@@ -1330,26 +1557,34 @@ def order_detail(order_id):
 
     conn = get_db()
 
-    order = conn.execute("""
-        SELECT * FROM orders
+    order = conn.execute(
+        """
+        SELECT *
+        FROM orders
         WHERE id = ?
         AND user_id = ?
-    """, (
-        order_id,
-        user_id
-    )).fetchone()
+        """,
+        (
+            order_id,
+            user_id
+        )
+    ).fetchone()
 
-    items = conn.execute("""
+    items = conn.execute(
+        """
         SELECT *
         FROM order_items
         WHERE order_id = ?
-    """, (
-        order_id,
-    )).fetchall()
+        """,
+        (
+            order_id,
+        )
+    ).fetchall()
 
     conn.close()
 
     if order is None:
+
         return "Order not found", 404
 
     return render_template(
@@ -1401,7 +1636,8 @@ def add_review(product_id):
 
         conn = get_db()
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO reviews
             (
                 product_id,
@@ -1410,12 +1646,14 @@ def add_review(product_id):
                 message
             )
             VALUES (?, ?, ?, ?)
-        """, (
-            product_id,
-            name,
-            rating,
-            message
-        ))
+            """,
+            (
+                product_id,
+                name,
+                rating,
+                message
+            )
+        )
 
         conn.commit()
         conn.close()
@@ -1434,6 +1672,7 @@ def add_review(product_id):
 
 @app.route("/contact")
 def contact():
+
     return render_template(
         "contact.html"
     )
@@ -1441,6 +1680,7 @@ def contact():
 
 @app.route("/about")
 def about():
+
     return render_template(
         "about.html"
     )
@@ -1448,6 +1688,7 @@ def about():
 
 @app.route("/faq")
 def faq():
+
     return render_template(
         "faq.html"
     )
@@ -1459,6 +1700,10 @@ def faq():
 
 @app.route(
     "/admin",
+    methods=["GET", "POST"]
+)
+@app.route(
+    "/admin/login",
     methods=["GET", "POST"]
 )
 def admin_login():
@@ -1542,32 +1787,33 @@ def admin_dashboard():
         "SELECT COUNT(*) FROM reviews"
     ).fetchone()[0]
 
-    products_list = conn.execute("""
+    products_list = conn.execute(
+        """
         SELECT *
         FROM products
         ORDER BY id DESC
-    """).fetchall()
+        """
+    ).fetchall()
 
-    orders_list = conn.execute("""
+    orders_list = conn.execute(
+        """
         SELECT *
         FROM orders
         ORDER BY id DESC
         LIMIT 20
-    """).fetchall()
+        """
+    ).fetchall()
 
     conn.close()
 
     return render_template(
         "admin_dashboard.html",
-
         products=products_list,
         orders=orders_list,
-
         products_count=products_count,
         orders_count=orders_count,
         users_count=users_count,
         reviews_count=reviews_count,
-
         total_products=products_count,
         total_orders=orders_count,
         total_customers=users_count,
@@ -1592,31 +1838,38 @@ def admin_products():
 
     if search:
 
-        products_list = conn.execute("""
+        products_list = conn.execute(
+            """
             SELECT *
             FROM products
             WHERE name LIKE ?
                OR category LIKE ?
             ORDER BY id DESC
-        """, (
-            f"%{search}%",
-            f"%{search}%"
-        )).fetchall()
+            """,
+            (
+                f"%{search}%",
+                f"%{search}%"
+            )
+        ).fetchall()
 
     else:
 
-        products_list = conn.execute("""
+        products_list = conn.execute(
+            """
             SELECT *
             FROM products
             ORDER BY id DESC
-        """).fetchall()
+            """
+        ).fetchall()
 
-    categories = conn.execute("""
+    categories = conn.execute(
+        """
         SELECT DISTINCT category
         FROM products
         WHERE category != ''
         ORDER BY category
-    """).fetchall()
+        """
+    ).fetchall()
 
     conn.close()
 
@@ -1650,29 +1903,30 @@ def admin_add_product():
     ).strip()
 
     try:
+
         price = float(
             request.form.get(
                 "price",
                 0
             ) or 0
         )
+
     except ValueError:
+
         price = 0
 
     try:
+
         old_price = float(
             request.form.get(
                 "old_price",
                 0
             ) or 0
         )
-    except ValueError:
-        old_price = 0
 
-    image = request.form.get(
-        "image",
-        ""
-    ).strip()
+    except ValueError:
+
+        old_price = 0
 
     description = request.form.get(
         "description",
@@ -1680,13 +1934,16 @@ def admin_add_product():
     ).strip()
 
     try:
+
         stock = int(
             request.form.get(
                 "stock",
                 0
             ) or 0
         )
+
     except ValueError:
+
         stock = 0
 
     featured = (
@@ -1705,9 +1962,40 @@ def admin_add_product():
             url_for("admin_products")
         )
 
+    # ------------------------------------------------------
+    # IMAGE UPLOAD
+    # ------------------------------------------------------
+
+    image = ""
+
+    image_file = request.files.get(
+        "image"
+    )
+
+    if image_file and image_file.filename:
+
+        try:
+
+            image = save_product_image(
+                image_file
+            )
+
+        except ValueError as error:
+
+            flash(str(error))
+
+            return redirect(
+                url_for("admin_products")
+            )
+
+    # ------------------------------------------------------
+    # SAVE PRODUCT
+    # ------------------------------------------------------
+
     conn = get_db()
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO products
         (
             name,
@@ -1720,16 +2008,18 @@ def admin_add_product():
             featured
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        name,
-        category,
-        price,
-        old_price,
-        image,
-        description,
-        stock,
-        featured
-    ))
+        """,
+        (
+            name,
+            category,
+            price,
+            old_price,
+            image,
+            description,
+            stock,
+            featured
+        )
+    )
 
     conn.commit()
     conn.close()
@@ -1740,6 +2030,203 @@ def admin_add_product():
 
     return redirect(
         url_for("admin_products")
+    )
+
+
+# ==========================================================
+# ADMIN EDIT PRODUCT
+# ==========================================================
+
+@app.route(
+    "/admin/product/edit/<int:product_id>",
+    methods=["GET", "POST"]
+)
+@admin_required
+def admin_edit_product(product_id):
+
+    conn = get_db()
+
+    product = conn.execute(
+        """
+        SELECT *
+        FROM products
+        WHERE id = ?
+        """,
+        (
+            product_id,
+        )
+    ).fetchone()
+
+    if product is None:
+
+        conn.close()
+
+        flash(
+            "Product not found."
+        )
+
+        return redirect(
+            url_for("admin_products")
+        )
+
+    if request.method == "POST":
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        category = request.form.get(
+            "category",
+            ""
+        ).strip()
+
+        try:
+
+            price = float(
+                request.form.get(
+                    "price",
+                    0
+                ) or 0
+            )
+
+        except ValueError:
+
+            price = 0
+
+        try:
+
+            old_price = float(
+                request.form.get(
+                    "old_price",
+                    0
+                ) or 0
+            )
+
+        except ValueError:
+
+            old_price = 0
+
+        description = request.form.get(
+            "description",
+            ""
+        ).strip()
+
+        try:
+
+            stock = int(
+                request.form.get(
+                    "stock",
+                    0
+                ) or 0
+            )
+
+        except ValueError:
+
+            stock = 0
+
+        featured = (
+            1
+            if request.form.get("featured")
+            else 0
+        )
+
+        if not name or not category:
+
+            conn.close()
+
+            flash(
+                "Product name and category are required."
+            )
+
+            return redirect(
+                url_for(
+                    "admin_edit_product",
+                    product_id=product_id
+                )
+            )
+
+        image = product["image"]
+
+        new_image = request.files.get(
+            "image"
+        )
+
+        if new_image and new_image.filename:
+
+            try:
+
+                uploaded_image = save_product_image(
+                    new_image
+                )
+
+            except ValueError as error:
+
+                conn.close()
+
+                flash(str(error))
+
+                return redirect(
+                    url_for(
+                        "admin_edit_product",
+                        product_id=product_id
+                    )
+                )
+
+            old_image = image
+
+            image = uploaded_image
+
+            delete_product_image(
+                old_image
+            )
+
+        conn.execute(
+            """
+            UPDATE products
+            SET
+                name = ?,
+                category = ?,
+                price = ?,
+                old_price = ?,
+                image = ?,
+                description = ?,
+                stock = ?,
+                featured = ?
+            WHERE id = ?
+            """,
+            (
+                name,
+                category,
+                price,
+                old_price,
+                image,
+                description,
+                stock,
+                featured,
+                product_id
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+        flash(
+            "Product updated successfully."
+        )
+
+        return redirect(
+            url_for("admin_products")
+        )
+
+    conn.close()
+
+    return render_template(
+        "admin_products.html",
+        products=[product],
+        edit_product=product,
+        categories=[],
+        search=""
     )
 
 
@@ -1756,14 +2243,41 @@ def admin_delete_product(product_id):
 
     conn = get_db()
 
+    product = conn.execute(
+        """
+        SELECT image
+        FROM products
+        WHERE id = ?
+        """,
+        (
+            product_id,
+        )
+    ).fetchone()
+
+    if product:
+
+        delete_product_image(
+            product["image"]
+        )
+
     conn.execute(
-        "DELETE FROM reviews WHERE product_id = ?",
-        (product_id,)
+        """
+        DELETE FROM reviews
+        WHERE product_id = ?
+        """,
+        (
+            product_id,
+        )
     )
 
     conn.execute(
-        "DELETE FROM products WHERE id = ?",
-        (product_id,)
+        """
+        DELETE FROM products
+        WHERE id = ?
+        """,
+        (
+            product_id,
+        )
     )
 
     conn.commit()
@@ -1817,7 +2331,9 @@ def admin_orders():
             )
         """
 
-        search_value = f"%{search}%"
+        search_value = (
+            f"%{search}%"
+        )
 
         params.extend([
             search_value,
@@ -1865,15 +2381,19 @@ def admin_order_detail(order_id):
 
     conn = get_db()
 
-    order = conn.execute("""
+    order = conn.execute(
+        """
         SELECT *
         FROM orders
         WHERE id = ?
-    """, (
-        order_id,
-    )).fetchone()
+        """,
+        (
+            order_id,
+        )
+    ).fetchone()
 
-    order_items = conn.execute("""
+    order_items = conn.execute(
+        """
         SELECT
             oi.*,
             p.image
@@ -1882,9 +2402,11 @@ def admin_order_detail(order_id):
             ON oi.product_id = p.id
         WHERE oi.order_id = ?
         ORDER BY oi.id ASC
-    """, (
-        order_id,
-    )).fetchall()
+        """,
+        (
+            order_id,
+        )
+    ).fetchall()
 
     conn.close()
 
@@ -1933,32 +2455,39 @@ def admin_update_order_status(
     ]
 
     if status not in allowed_statuses:
+
         status = "Pending"
 
     conn = get_db()
 
-    conn.execute("""
+    conn.execute(
+        """
         UPDATE orders
         SET status = ?
         WHERE id = ?
-    """, (
-        status,
-        order_id
-    ))
+        """,
+        (
+            status,
+            order_id
+        )
+    )
 
     if status in [
         "Completed",
         "Delivered"
     ]:
 
-        conn.execute("""
+        conn.execute(
+            """
             UPDATE orders
             SET payment_status = 'Paid'
             WHERE id = ?
             AND payment_method != 'COD'
-        """, (
-            order_id,
-        ))
+            """,
+            (
+                order_id,
+            )
+        )
 
     conn.commit()
     conn.close()
@@ -1976,7 +2505,7 @@ def admin_update_order_status(
 
 
 # ==========================================================
-# OLD ORDER STATUS ROUTE - COMPATIBILITY
+# OLD ORDER STATUS COMPATIBILITY
 # ==========================================================
 
 @app.route(
@@ -2006,13 +2535,16 @@ def admin_cancel_order(order_id):
 
     conn = get_db()
 
-    conn.execute("""
+    conn.execute(
+        """
         UPDATE orders
         SET status = 'Cancelled'
         WHERE id = ?
-    """, (
-        order_id,
-    ))
+        """,
+        (
+            order_id,
+        )
+    )
 
     conn.commit()
     conn.close()
@@ -2074,7 +2606,9 @@ def admin_customers():
                 OR u.phone LIKE ?
         """
 
-        search_value = f"%{search}%"
+        search_value = (
+            f"%{search}%"
+        )
 
         params.extend([
             search_value,
@@ -2096,20 +2630,24 @@ def admin_customers():
         "SELECT COUNT(*) FROM users"
     ).fetchone()[0]
 
-    new_customers = conn.execute("""
+    new_customers = conn.execute(
+        """
         SELECT COUNT(*)
         FROM users
         WHERE created_at >= datetime(
             'now',
             '-30 days'
         )
-    """).fetchone()[0]
+        """
+    ).fetchone()[0]
 
-    active_customers = conn.execute("""
+    active_customers = conn.execute(
+        """
         SELECT COUNT(DISTINCT user_id)
         FROM orders
         WHERE user_id IS NOT NULL
-    """).fetchone()[0]
+        """
+    ).fetchone()[0]
 
     conn.close()
 
@@ -2135,26 +2673,34 @@ def admin_customer_detail(user_id):
     conn = get_db()
 
     customer = conn.execute(
-        "SELECT * FROM users WHERE id = ?",
-        (user_id,)
+        """
+        SELECT *
+        FROM users
+        WHERE id = ?
+        """,
+        (
+            user_id,
+        )
     ).fetchone()
 
-    customer_orders = conn.execute("""
+    customer_orders = conn.execute(
+        """
         SELECT *
         FROM orders
         WHERE user_id = ?
         ORDER BY id DESC
-    """, (
-        user_id,
-    )).fetchall()
+        """,
+        (
+            user_id,
+        )
+    ).fetchall()
 
     conn.close()
 
     if customer is None:
+
         return "Customer not found", 404
 
-    # Agar alag detail template nahi hai,
-    # customer ko orders page par safely bhej do.
     return render_template(
         "orders.html",
         orders=customer_orders,
@@ -2233,23 +2779,29 @@ def admin_settings():
         )
 
         try:
+
             shipping_charge = float(
                 request.form.get(
                     "shipping_charge",
                     0
                 ) or 0
             )
+
         except ValueError:
+
             shipping_charge = 0
 
         try:
+
             free_shipping = float(
                 request.form.get(
                     "free_shipping",
                     999
                 ) or 999
             )
+
         except ValueError:
+
             free_shipping = 999
 
         delivery_time = request.form.get(
@@ -2267,7 +2819,8 @@ def admin_settings():
             ""
         ).strip()
 
-        conn.execute("""
+        conn.execute(
+            """
             UPDATE settings
             SET
                 store_name = ?,
@@ -2287,24 +2840,26 @@ def admin_settings():
                 store_status = ?,
                 maintenance_message = ?
             WHERE id = 1
-        """, (
-            store_name,
-            phone,
-            email,
-            instagram,
-            address,
-            city,
-            pincode,
-            business_hours,
-            currency,
-            cod,
-            upi,
-            shipping_charge,
-            free_shipping,
-            delivery_time,
-            store_status,
-            maintenance_message
-        ))
+            """,
+            (
+                store_name,
+                phone,
+                email,
+                instagram,
+                address,
+                city,
+                pincode,
+                business_hours,
+                currency,
+                cod,
+                upi,
+                shipping_charge,
+                free_shipping,
+                delivery_time,
+                store_status,
+                maintenance_message
+            )
+        )
 
         conn.commit()
 
@@ -2319,7 +2874,11 @@ def admin_settings():
         )
 
     settings = conn.execute(
-        "SELECT * FROM settings WHERE id = 1"
+        """
+        SELECT *
+        FROM settings
+        WHERE id = 1
+        """
     ).fetchone()
 
     conn.close()
@@ -2339,11 +2898,13 @@ def api_products():
 
     conn = get_db()
 
-    products_list = conn.execute("""
+    products_list = conn.execute(
+        """
         SELECT *
         FROM products
         ORDER BY id DESC
-    """).fetchall()
+        """
+    ).fetchall()
 
     conn.close()
 
@@ -2414,3 +2975,4 @@ if __name__ == "__main__":
         port=port,
         debug=False
     )
+```
