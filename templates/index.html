@@ -85,26 +85,23 @@
         /* HERO */
 
         .hero {
-            min-height: 540px;
-            display: flex;
-            align-items: center;
-            padding: 70px 7%;
+            background: #faf7f0;
+        }
 
-            background-image:
-                linear-gradient(
-                    90deg,
-                    rgba(250,247,240,0.92) 0%,
-                    rgba(250,247,240,0.58) 35%,
-                    rgba(250,247,240,0.08) 75%
-                ),
-                url("/static/images/banner.png");
-
-            background-size: cover;
-            background-position: center;
+        .hero-banner {
+            width: 100%;
+            display: block;
+            height: auto;
+            max-height: 650px;
+            object-fit: contain;
+            object-position: center;
         }
 
         .hero-content {
-            max-width: 560px;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 25px 65px;
+            text-align: center;
         }
 
         .eyebrow {
@@ -112,22 +109,23 @@
             letter-spacing: 4px;
             font-family: Arial, sans-serif;
             font-size: 12px;
-            margin-bottom: 18px;
+            margin-bottom: 14px;
             color: #9b7127;
         }
 
         .hero h1 {
-            font-size: clamp(42px, 6vw, 76px);
-            line-height: 1;
-            margin-bottom: 24px;
+            font-size: clamp(38px, 5vw, 64px);
+            line-height: 1.05;
+            margin-bottom: 20px;
         }
 
         .hero p {
             font-family: Arial, sans-serif;
             line-height: 1.7;
             font-size: 16px;
-            max-width: 500px;
-            margin-bottom: 30px;
+            max-width: 650px;
+            margin: 0 auto 28px;
+            color: #514a42;
         }
 
         .button {
@@ -186,11 +184,12 @@
             padding: 25px;
             position: relative;
             overflow: hidden;
-            transition: 0.2s;
+            transition: 0.25s;
         }
 
         .category:hover {
             transform: translateY(-4px);
+            box-shadow: 0 12px 25px rgba(33, 29, 24, 0.12);
         }
 
         .category div {
@@ -220,6 +219,12 @@
             background: white;
             border: 1px solid #e8dfd1;
             overflow: hidden;
+            transition: 0.25s;
+        }
+
+        .product:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px rgba(33, 29, 24, 0.10);
         }
 
         .product-image {
@@ -227,6 +232,7 @@
             aspect-ratio: 1 / 1;
             background: #eee7da;
             object-fit: cover;
+            display: block;
         }
 
         .product-info {
@@ -265,6 +271,12 @@
             color: #f4d58d;
             font-family: Arial, sans-serif;
             font-size: 12px;
+            transition: 0.2s;
+        }
+
+        .small-button:hover {
+            background: #9b7127;
+            color: white;
         }
 
         .small-button.light {
@@ -272,10 +284,18 @@
             color: #211d18;
         }
 
+        .small-button.light:hover {
+            background: #d9cfbe;
+        }
+
         /* WHY US */
 
         .why-us {
             background: #211d18;
+            color: white;
+        }
+
+        .why-us .section-heading h2 {
             color: white;
         }
 
@@ -313,7 +333,7 @@
         footer {
             background: #15120f;
             color: white;
-            padding: 50px 6% 25px;
+            padding: 55px 6% 25px;
         }
 
         .footer-grid {
@@ -340,6 +360,36 @@
             color: #f4d58d;
         }
 
+        .social-link {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 6px;
+        }
+
+        .social-icon {
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 5px;
+            flex-shrink: 0;
+        }
+
+        .whatsapp-icon {
+            background: #25D366;
+            color: white;
+        }
+
+        .instagram-icon {
+            background: linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7);
+            color: white;
+        }
+
         .copyright {
             border-top: 1px solid #39332c;
             padding-top: 20px;
@@ -352,6 +402,7 @@
         /* MOBILE */
 
         @media (max-width: 900px) {
+
             nav {
                 display: none;
             }
@@ -391,23 +442,22 @@
                 gap: 8px;
             }
 
-            .hero {
-                min-height: 500px;
-                padding: 50px 6%;
+            .hero-banner {
+                width: 100%;
+                max-height: none;
+                object-fit: contain;
+            }
 
-                background-image:
-                    linear-gradient(
-                        180deg,
-                        rgba(250,247,240,0.70),
-                        rgba(250,247,240,0.90)
-                    ),
-                    url("/static/images/banner.png");
-
-                background-position: center;
+            .hero-content {
+                padding: 42px 20px 48px;
             }
 
             .hero h1 {
-                font-size: 44px;
+                font-size: 40px;
+            }
+
+            .hero p {
+                font-size: 15px;
             }
 
             .categories,
@@ -422,6 +472,11 @@
 
             .section-heading h2 {
                 font-size: 32px;
+            }
+
+            footer {
+                padding-left: 7%;
+                padding-right: 7%;
             }
         }
     </style>
@@ -453,8 +508,8 @@
     </nav>
 
     <div class="header-actions">
-        <a href="/wishlist">♡</a>
-        <a href="/cart">🛒 {{ cart_count }}</a>
+        <a href="/wishlist" aria-label="Wishlist">♡</a>
+        <a href="/cart" aria-label="Cart">🛒 {{ cart_count }}</a>
         <a href="/login">Account</a>
     </div>
 
@@ -464,6 +519,12 @@
 <!-- HERO -->
 
 <section class="hero">
+
+    <img
+        src="{{ url_for('static', filename='images/banner.png') }}"
+        alt="Majisa Jewellers Collection"
+        class="hero-banner"
+    >
 
     <div class="hero-content">
 
@@ -737,46 +798,65 @@
 
         <div>
             <h3>Majisa Jewellers</h3>
+
             <p>
                 Elegant jewellery for every
                 celebration and everyday moment.
             </p>
         </div>
 
+
         <div>
             <h3>Shop</h3>
+
             <a href="/products">All Jewellery</a><br>
             <a href="/products?category=Earrings">Earrings</a><br>
             <a href="/products?category=Necklaces">Necklaces</a><br>
             <a href="/products?category=Rings">Rings</a>
         </div>
 
+
         <div>
             <h3>Help</h3>
+
             <a href="/faq">FAQ</a><br>
             <a href="/contact">Contact Us</a><br>
             <a href="/orders">My Orders</a>
         </div>
 
+
         <div>
-            <h3>Follow</h3>
+            <h3>Follow Us</h3>
+
+            <!-- Instagram -->
 
             <a
                 href="https://instagram.com/majisa_art_jewellers"
                 target="_blank"
                 rel="noopener noreferrer"
+                class="social-link"
             >
-                Instagram
+                <span class="social-icon instagram-icon">◎</span>
+                <span>majisa_art_jewellers</span>
             </a>
 
-            <br>
 
-            <a href="tel:8949144970">
-                8949144970
+            <!-- WhatsApp -->
+
+            <a
+                href="https://wa.me/918949144970"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="social-link"
+            >
+                <span class="social-icon whatsapp-icon">WA</span>
+                <span>8949144970</span>
             </a>
+
         </div>
 
     </div>
+
 
     <div class="copyright">
         © 2026 Majisa Jewellers. All rights reserved.
