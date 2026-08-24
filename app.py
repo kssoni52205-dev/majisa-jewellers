@@ -1,4 +1,4 @@
-
+```python
 import os
 import sqlite3
 import secrets
@@ -1497,73 +1497,86 @@ def checkout():
             )
         )
 
+    # ------------------------------------------------------
+    # CHECKOUT GET PAGE
+    # ------------------------------------------------------
+
     cart = get_cart()
 
-product_ids = list(cart.keys())
+    product_ids = list(
+        cart.keys()
+    )
 
-placeholders = ",".join(["?"] * len(product_ids))
+    placeholders = ",".join(
+        ["?"] * len(product_ids)
+    )
 
-conn = get_db()
+    conn = get_db()
 
-products_list = conn.execute(
-    f"""
-    SELECT *
-    FROM products
-    WHERE id IN ({placeholders})
-    """,
-    product_ids
-).fetchall()
+    products_list = conn.execute(
+        f"""
+        SELECT *
+        FROM products
+        WHERE id IN ({placeholders})
+        """,
+        product_ids
+    ).fetchall()
 
-subtotal = 0
+    subtotal = 0
 
-for product in products_list:
+    for product in products_list:
 
-    quantity = int(
-        cart.get(
-            str(product["id"]),
-            0
+        quantity = int(
+            cart.get(
+                str(product["id"]),
+                0
+            )
         )
+
+        subtotal += (
+            product["price"] *
+            quantity
+        )
+
+    settings = conn.execute(
+        """
+        SELECT *
+        FROM settings
+        WHERE id = 1
+        """
+    ).fetchone()
+
+    shipping_charge = float(
+        settings["shipping_charge"] or 0
     )
 
-    subtotal += (
-        product["price"] *
-        quantity
+    free_shipping = float(
+        settings["free_shipping"]
+        or 999999999
     )
 
-settings = conn.execute(
-    """
-    SELECT *
-    FROM settings
-    WHERE id = 1
-    """
-).fetchone()
+    shipping = (
+        0
+        if subtotal >= free_shipping
+        else shipping_charge
+    )
 
-shipping_charge = float(
-    settings["shipping_charge"] or 0
-)
+    total = subtotal + shipping
 
-free_shipping = float(
-    settings["free_shipping"] or 999999999
-)
+    conn.close()
 
-shipping = (
-    0
-    if subtotal >= free_shipping
-    else shipping_charge
-)
+    return render_template(
+        "checkout.html",
+        products=products_list,
+        subtotal=subtotal,
+        shipping=shipping,
+        total=total
+    )
 
-total = subtotal + shipping
 
-conn.close()
-
-return render_template(
-    "checkout.html",
-    products=products_list,
-    subtotal=subtotal,
-    shipping=shipping,
-    total=total
-)
-
+# ==========================================================
+# ORDER SUCCESS
+# ==========================================================
 
 @app.route(
     "/order-success/<int:order_id>"
@@ -3038,3 +3051,4 @@ if __name__ == "__main__":
         port=port,
         debug=False
     )
+```
