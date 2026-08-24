@@ -1,10 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Manage Products | Majisa Jewellers</title>
+    <title>Admin Products - Majisa Jewellers</title>
 
     <style>
         * {
@@ -14,9 +14,9 @@
         }
 
         body {
-            background: #f5f1e9;
-            color: #211d18;
             font-family: Arial, sans-serif;
+            background: #f7f3eb;
+            color: #211d18;
         }
 
         a {
@@ -24,211 +24,248 @@
             color: inherit;
         }
 
-        .sidebar {
-            width: 245px;
+        .topbar {
             background: #211d18;
-            color: white;
-            padding: 25px 18px;
-            position: fixed;
-            left: 0;
-            top: 0;
-            bottom: 0;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
         }
 
         .brand {
-            color: #f4d58d;
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: 22px;
+            font-family: Georgia, serif;
+            font-size: 24px;
             font-weight: bold;
-            letter-spacing: 1.5px;
-            padding: 0 10px 30px;
-            border-bottom: 1px solid #403a33;
+            letter-spacing: 1px;
         }
 
-        .admin-label {
-            color: #999;
-            font-size: 10px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin: 25px 10px 10px;
-        }
-
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .menu a {
-            padding: 13px 12px;
-            color: #d5d0c9;
-            font-size: 13px;
-            border-radius: 3px;
-        }
-
-        .menu a:hover,
-        .menu a.active {
-            background: #403a33;
-            color: #f4d58d;
-        }
-
-        .logout {
-            position: absolute;
-            left: 18px;
-            right: 18px;
-            bottom: 25px;
-            border-top: 1px solid #403a33;
-            padding-top: 18px;
-            color: #bbb;
-            font-size: 12px;
-        }
-
-        .logout:hover {
-            color: #f4d58d;
-        }
-
-        .main {
-            margin-left: 245px;
-            width: calc(100% - 245px);
-            padding: 35px 4%;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: end;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .topbar small {
-            color: #9b7127;
-            font-size: 10px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .topbar h1 {
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: 36px;
-            margin-top: 5px;
-        }
-
-        .store-link,
-        .add-button {
-            padding: 11px 18px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .store-link {
-            border: 1px solid #cfc4b4;
-            background: white;
-        }
-
-        .add-button {
-            background: #211d18;
-            color: #f4d58d;
-        }
-
-        .store-link:hover {
-            background: #211d18;
-            color: #f4d58d;
-        }
-
-        .add-button:hover {
-            opacity: .9;
-        }
-
-        .actions {
+        .top-actions {
             display: flex;
             gap: 10px;
-            align-items: center;
-        }
-
-        .panel {
-            background: white;
-            border: 1px solid #e1d8cb;
-            padding: 25px;
-        }
-
-        .toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
             flex-wrap: wrap;
+        }
+
+        .top-actions a {
+            border: 1px solid #6e5a36;
+            padding: 9px 14px;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+
+        .top-actions a:hover {
+            background: #9b7127;
+            color: white;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1400px;
+            margin: 35px auto;
+        }
+
+        .page-title {
             margin-bottom: 25px;
         }
 
-        .search {
-            display: flex;
-            gap: 8px;
-            flex: 1;
-            min-width: 240px;
+        .page-title h1 {
+            font-family: Georgia, serif;
+            font-size: 36px;
+            margin-bottom: 7px;
         }
 
-        .search input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #d6ccbe;
-            outline: none;
+        .page-title p {
+            color: #777;
+            font-size: 14px;
+        }
+
+        .flash {
+            background: #e9f7e9;
+            border: 1px solid #b9dfb9;
+            color: #286328;
+            padding: 13px 16px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e4dbcc;
+            border-radius: 7px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        }
+
+        .card h2 {
+            font-family: Georgia, serif;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
             font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 7px;
         }
 
-        .search input:focus {
+        input,
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid #d9d0c2;
+            border-radius: 4px;
+            padding: 11px 12px;
+            font-size: 14px;
+            background: #fff;
+            color: #211d18;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
             border-color: #9b7127;
         }
 
-        .search button {
-            padding: 12px 18px;
-            border: 0;
-            background: #211d18;
-            color: #f4d58d;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: bold;
+        .image-upload {
+            border: 2px dashed #d5c7ae;
+            background: #faf7f0;
+            padding: 18px;
+            border-radius: 6px;
         }
 
-        .filter select {
-            padding: 11px 14px;
-            border: 1px solid #d6ccbe;
-            background: white;
-            outline: none;
-            font-size: 13px;
+        .image-upload input {
+            border: none;
+            padding: 0;
+            background: transparent;
+        }
+
+        .upload-note {
+            font-size: 11px;
+            color: #777;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .preview {
+            margin-top: 12px;
+            display: none;
+        }
+
+        .preview img {
+            width: 100%;
+            max-height: 220px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 5px 0 20px;
+        }
+
+        .checkbox-row input {
+            width: auto;
+        }
+
+        .checkbox-row label {
+            margin: 0;
+            font-weight: normal;
+        }
+
+        .submit-btn {
+            width: 100%;
+            border: none;
+            background: #211d18;
+            color: #f4d58d;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: .5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .submit-btn:hover {
+            background: #9b7127;
+            color: white;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            flex: 1;
+        }
+
+        .search-btn {
+            background: #211d18;
+            color: #f4d58d;
+            border: none;
+            padding: 0 20px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .search-btn:hover {
+            background: #9b7127;
+            color: white;
         }
 
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 18px;
         }
 
         .product-card {
-            border: 1px solid #e1d8cb;
+            border: 1px solid #e5ddd1;
             background: #fff;
             overflow: hidden;
+            border-radius: 6px;
         }
 
         .product-image {
             width: 100%;
-            height: 210px;
-            background: #f3eee6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .product-image img {
-            width: 100%;
-            height: 100%;
+            aspect-ratio: 1 / 1;
             object-fit: cover;
+            display: block;
+            background: #eee7da;
         }
 
         .no-image {
-            color: #999;
-            font-size: 12px;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eee7da;
+            color: #8c806d;
+            font-size: 13px;
         }
 
         .product-info {
@@ -237,166 +274,110 @@
 
         .category {
             color: #9b7127;
-            font-size: 9px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 7px;
+            font-size: 10px;
+            font-weight: bold;
         }
 
         .product-name {
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: 18px;
-            margin-bottom: 9px;
+            font-family: Georgia, serif;
+            font-size: 19px;
+            margin: 7px 0;
         }
 
         .price {
             font-weight: bold;
-            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .old-price {
+            color: #999;
+            text-decoration: line-through;
+            font-size: 13px;
+            margin-left: 6px;
+            font-weight: normal;
         }
 
         .stock {
-            color: #777;
-            font-size: 11px;
-            margin-top: 7px;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 14px;
         }
 
-        .card-actions {
-            display: flex;
-            gap: 7px;
-            margin-top: 15px;
-        }
-
-        .card-actions a,
-        .card-actions button {
-            flex: 1;
-            padding: 9px 5px;
-            text-align: center;
-            border: 1px solid #d6ccbe;
-            background: white;
+        .featured {
+            display: inline-block;
+            background: #f4d58d;
+            color: #211d18;
+            padding: 4px 7px;
             font-size: 10px;
             font-weight: bold;
-            cursor: pointer;
+            margin-bottom: 12px;
+            border-radius: 3px;
         }
 
-        .card-actions a:hover {
-            background: #211d18;
-            color: #f4d58d;
+        .delete-btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #d8b5b5;
+            color: #9a3030;
+            background: #fff;
+            font-size: 12px;
+            border-radius: 4px;
         }
 
-        .delete-button {
-            color: #9a4d42;
+        .delete-btn:hover {
+            background: #9a3030;
+            color: white;
         }
 
         .empty {
-            grid-column: 1 / -1;
             text-align: center;
-            padding: 60px 20px;
-            color: #888;
-            border: 1px dashed #d6ccbe;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid #e8e0d6;
+            padding: 50px 20px;
             color: #777;
-            font-size: 12px;
+            background: #fff;
+            border: 1px solid #e4dbcc;
         }
 
-        .pages {
-            display: flex;
-            gap: 5px;
-        }
+        @media (max-width: 1100px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
 
-        .page-number {
-            min-width: 32px;
-            padding: 8px;
-            text-align: center;
-            border: 1px solid #d6ccbe;
-        }
-
-        .page-number.active {
-            background: #211d18;
-            color: #f4d58d;
-        }
-
-        @media (max-width: 1150px) {
             .products-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 750px) {
             .products-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-        }
-
-        @media (max-width: 750px) {
-            .sidebar {
-                width: 70px;
-                padding: 20px 8px;
-            }
-
-            .brand {
-                font-size: 0;
-                text-align: center;
-                padding: 10px 0 25px;
-            }
-
-            .brand::after {
-                content: "MJ";
-                font-size: 18px;
-            }
-
-            .admin-label,
-            .menu span,
-            .logout span {
-                display: none;
-            }
-
-            .menu a {
-                text-align: center;
-                font-size: 18px;
-                padding: 13px 5px;
-            }
-
-            .logout {
-                text-align: center;
-            }
-
-            .main {
-                margin-left: 70px;
-                width: calc(100% - 70px);
-                padding: 25px 18px;
-            }
 
             .topbar {
-                align-items: flex-start;
                 flex-direction: column;
-            }
-
-            .topbar h1 {
-                font-size: 29px;
+                align-items: flex-start;
             }
         }
 
         @media (max-width: 520px) {
+            .container {
+                width: 94%;
+                margin: 20px auto;
+            }
+
             .products-grid {
                 grid-template-columns: 1fr;
             }
 
-            .actions {
-                width: 100%;
+            .page-title h1 {
+                font-size: 29px;
             }
 
-            .store-link,
-            .add-button {
-                flex: 1;
-                text-align: center;
+            .card {
+                padding: 18px;
             }
         }
     </style>
@@ -404,288 +385,381 @@
 
 <body>
 
-<aside class="sidebar">
+<header class="topbar">
 
-    <a href="/admin/dashboard" class="brand">
+    <a href="{{ url_for('admin_dashboard') }}" class="brand">
         Majisa Jewellers
     </a>
 
-    <div class="admin-label">
-        Administration
+    <div class="top-actions">
+        <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('admin_orders') }}">Orders</a>
+        <a href="{{ url_for('admin_customers') }}">Customers</a>
+        <a href="{{ url_for('admin_settings') }}">Settings</a>
+        <a href="{{ url_for('admin_logout') }}">Logout</a>
     </div>
 
-    <nav class="menu">
-
-        <a href="/admin/dashboard">
-            📊 <span>Dashboard</span>
-        </a>
-
-        <a href="/admin/products" class="active">
-            ◈ <span>Products</span>
-        </a>
-
-        <a href="/admin/orders">
-            ◎ <span>Orders</span>
-        </a>
-
-        <a href="/admin/customers">
-            ♙ <span>Customers</span>
-        </a>
-
-        <a href="/admin/settings">
-            ⚙ <span>Settings</span>
-        </a>
-
-    </nav>
-
-    <a href="/admin/logout" class="logout">
-        ↪ <span>Logout</span>
-    </a>
-
-</aside>
+</header>
 
 
-<main class="main">
+<main class="container">
 
-    <div class="topbar">
-
-        <div>
-            <small>
-                Store Administration
-            </small>
-
-            <h1>
-                Products
-            </h1>
-        </div>
-
-        <div class="actions">
-
-            <a href="/" class="store-link">
-                VIEW STORE
-            </a>
-
-            <a href="/admin/products/new" class="add-button">
-                + ADD PRODUCT
-            </a>
-
-        </div>
-
+    <div class="page-title">
+        <h1>Products</h1>
+        <p>Add, manage and delete your jewellery products.</p>
     </div>
 
 
-    <section class="panel">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-        <div class="toolbar">
+
+    <div class="layout">
+
+
+        <!-- ADD PRODUCT -->
+
+        <section class="card">
+
+            <h2>Add Product</h2>
 
             <form
-                class="search"
-                method="GET"
-                action="/admin/products"
+                action="{{ url_for('admin_add_product') }}"
+                method="POST"
+                enctype="multipart/form-data"
             >
 
-                <input
-                    type="search"
-                    name="q"
-                    value="{{ request.args.get('q', '') }}"
-                    placeholder="Search products..."
-                >
+                <div class="form-group">
+                    <label for="name">
+                        Product Name *
+                    </label>
 
-                <button type="submit">
-                    SEARCH
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        placeholder="e.g. Royal Gold Earrings"
+                        required
+                    >
+                </div>
+
+
+                <div class="form-group">
+                    <label for="category">
+                        Category *
+                    </label>
+
+                    <input
+                        type="text"
+                        id="category"
+                        name="category"
+                        list="category-list"
+                        placeholder="Earrings, Rings, Necklaces..."
+                        required
+                    >
+
+                    <datalist id="category-list">
+
+                        {% for category in categories %}
+                            <option value="{{ category['category'] }}">
+                        {% endfor %}
+
+                    </datalist>
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="price">
+                        Selling Price (₹) *
+                    </label>
+
+                    <input
+                        type="number"
+                        id="price"
+                        name="price"
+                        min="0"
+                        step="0.01"
+                        placeholder="4999"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="old_price">
+                        Old Price (Optional)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="old_price"
+                        name="old_price"
+                        min="0"
+                        step="0.01"
+                        placeholder="5999"
+                    >
+
+                </div>
+
+
+                <!-- IMAGE UPLOAD -->
+
+                <div class="form-group">
+
+                    <label for="image">
+                        Product Photo
+                    </label>
+
+                    <div class="image-upload">
+
+                        <input
+                            type="file"
+                            id="image"
+                            name="image"
+                            accept="image/png,image/jpeg,image/jpg,image/webp"
+                            onchange="previewImage(event)"
+                        >
+
+                        <div class="upload-note">
+                            JPG, JPEG, PNG or WEBP.
+                            Recommended: square product photo.
+                        </div>
+
+                        <div class="preview" id="preview">
+                            <img id="previewImage" src="" alt="Preview">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="description">
+                        Description
+                    </label>
+
+                    <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Write product details..."
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="stock">
+                        Stock
+                    </label>
+
+                    <input
+                        type="number"
+                        id="stock"
+                        name="stock"
+                        min="0"
+                        value="0"
+                    >
+
+                </div>
+
+
+                <div class="checkbox-row">
+
+                    <input
+                        type="checkbox"
+                        id="featured"
+                        name="featured"
+                        value="1"
+                    >
+
+                    <label for="featured">
+                        Show this product as Featured
+                    </label>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="submit-btn"
+                >
+                    ADD PRODUCT
                 </button>
 
             </form>
 
+        </section>
 
-            <form
-                class="filter"
-                method="GET"
-                action="/admin/products"
-            >
 
-                <select
-                    name="category"
-                    onchange="this.form.submit()"
+        <!-- PRODUCTS -->
+
+        <section>
+
+            <div class="card">
+
+                <form
+                    class="search-bar"
+                    method="GET"
+                    action="{{ url_for('admin_products') }}"
                 >
 
-                    <option value="">
-                        All Categories
-                    </option>
-
-                    {% for category in categories|default([]) %}
-
-                    <option
-                        value="{{ category }}"
-                        {% if request.args.get('category') == category %}selected{% endif %}
+                    <input
+                        type="search"
+                        name="q"
+                        value="{{ search }}"
+                        placeholder="Search products..."
                     >
-                        {{ category }}
-                    </option>
 
-                    {% endfor %}
+                    <button
+                        type="submit"
+                        class="search-btn"
+                    >
+                        Search
+                    </button>
 
-                </select>
-
-            </form>
-
-        </div>
+                </form>
 
 
-        <div class="products-grid">
+                {% if products %}
 
-            {% if products %}
+                    <div class="products-grid">
 
-                {% for product in products %}
+                        {% for product in products %}
 
-                <article class="product-card">
+                            <article class="product-card">
 
-                    <div class="product-image">
+                                {% if product["image"] %}
 
-                        {% if product["image"] %}
+                                    <img
+                                        class="product-image"
+                                        src="{{ url_for('static', filename='images/' + product['image']) }}"
+                                        alt="{{ product['name'] }}"
+                                        loading="lazy"
+                                    >
 
-                            <img
-                                src="{{ product['image'] }}"
-                                alt="{{ product['name'] }}"
-                            >
+                                {% else %}
 
-                        {% else %}
+                                    <div class="no-image">
+                                        No Image
+                                    </div>
 
-                            <span class="no-image">
-                                No Image
-                            </span>
+                                {% endif %}
 
-                        {% endif %}
+
+                                <div class="product-info">
+
+                                    <div class="category">
+                                        {{ product["category"] }}
+                                    </div>
+
+                                    <div class="product-name">
+                                        {{ product["name"] }}
+                                    </div>
+
+
+                                    <div class="price">
+
+                                        ₹{{ "%.0f"|format(product["price"]) }}
+
+                                        {% if product["old_price"] and product["old_price"] > product["price"] %}
+
+                                            <span class="old-price">
+                                                ₹{{ "%.0f"|format(product["old_price"]) }}
+                                            </span>
+
+                                        {% endif %}
+
+                                    </div>
+
+
+                                    <div class="stock">
+                                        Stock: {{ product["stock"] }}
+                                    </div>
+
+
+                                    {% if product["featured"] %}
+
+                                        <div class="featured">
+                                            FEATURED
+                                        </div>
+
+                                    {% endif %}
+
+
+                                    <a
+                                        href="{{ url_for('admin_delete_product', product_id=product['id']) }}"
+                                        class="delete-btn"
+                                        onclick="return confirm('Are you sure you want to delete this product?');"
+                                    >
+                                        DELETE PRODUCT
+                                    </a>
+
+                                </div>
+
+                            </article>
+
+                        {% endfor %}
 
                     </div>
 
+                {% else %}
 
-                    <div class="product-info">
-
-                        <div class="category">
-                            {{ product["category"]|default("Jewellery") }}
-                        </div>
-
-                        <h2 class="product-name">
-                            {{ product["name"] }}
-                        </h2>
-
-                        <div class="price">
-                            ₹{{ product["price"]|default(0) }}
-                        </div>
-
-                        <div class="stock">
-                            Stock:
-                            {{ product["stock"]|default(0) }}
-                        </div>
-
-
-                        <div class="card-actions">
-
-                            <a
-                                href="/admin/products/{{ product['id'] }}/edit"
-                            >
-                                EDIT
-                            </a>
-
-                            <form
-                                method="POST"
-                                action="/admin/products/{{ product['id'] }}/delete"
-                                style="flex:1;"
-                                onsubmit="return confirm('Delete this product?');"
-                            >
-
-                                <button
-                                    type="submit"
-                                    class="delete-button"
-                                    style="width:100%;"
-                                >
-                                    DELETE
-                                </button>
-
-                            </form>
-
-                        </div>
-
+                    <div class="empty">
+                        No products found.
                     </div>
-
-                </article>
-
-                {% endfor %}
-
-            {% else %}
-
-                <div class="empty">
-
-                    <strong>
-                        No products found
-                    </strong>
-
-                    <br><br>
-
-                    Add your first product to start building
-                    your jewellery collection.
-
-                    <br><br>
-
-                    <a
-                        href="/admin/products/new"
-                        class="add-button"
-                    >
-                        + ADD PRODUCT
-                    </a>
-
-                </div>
-
-            {% endif %}
-
-        </div>
-
-
-        {% if products %}
-
-        <div class="pagination">
-
-            <span>
-                Showing products
-            </span>
-
-            <div class="pages">
-
-                {% if page and page > 1 %}
-
-                <a
-                    href="?page={{ page - 1 }}"
-                    class="page-number"
-                >
-                    ←
-                </a>
-
-                {% endif %}
-
-                <span class="page-number active">
-                    {{ page|default(1) }}
-                </span>
-
-                {% if has_next %}
-
-                <a
-                    href="?page={{ page|default(1) + 1 }}"
-                    class="page-number"
-                >
-                    →
-                </a>
 
                 {% endif %}
 
             </div>
 
-        </div>
+        </section>
 
-        {% endif %}
-
-    </section>
+    </div>
 
 </main>
 
+
+<script>
+
+function previewImage(event) {
+
+    const input = event.target;
+    const preview = document.getElementById("preview");
+    const image = document.getElementById("previewImage");
+
+    if (!input.files || !input.files[0]) {
+        preview.style.display = "none";
+        image.src = "";
+        return;
+    }
+
+    const file = input.files[0];
+
+    if (!file.type.startsWith("image/")) {
+        preview.style.display = "none";
+        image.src = "";
+        return;
+    }
+
+    image.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+}
+
+</script>
+
 </body>
 </html>
+```
