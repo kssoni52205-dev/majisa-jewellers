@@ -1,4 +1,3 @@
-```python
 import os
 import sqlite3
 import secrets
@@ -3051,4 +3050,4 @@ if __name__ == "__main__":
         port=port,
         debug=False
     )
-```
+    
