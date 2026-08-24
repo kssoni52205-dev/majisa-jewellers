@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,8 +6,10 @@
 
     <title>Majisa Jewellers</title>
 
-    <meta name="description"
-          content="Majisa Jewellers - Elegant jewellery for every occasion.">
+    <meta
+        name="description"
+        content="Majisa Jewellers - Elegant jewellery for every occasion."
+    >
 
     <style>
         * {
@@ -28,7 +29,13 @@
             text-decoration: none;
         }
 
-        /* HEADER */
+        img {
+            max-width: 100%;
+        }
+
+        /* ==========================================
+           HEADER
+        ========================================== */
 
         header {
             background: #211d18;
@@ -50,6 +57,7 @@
             font-size: 24px;
             letter-spacing: 1px;
             font-weight: bold;
+            white-space: nowrap;
         }
 
         .brand-logo {
@@ -67,6 +75,10 @@
             font-size: 14px;
         }
 
+        nav a {
+            transition: 0.2s;
+        }
+
         nav a:hover {
             color: white;
         }
@@ -76,13 +88,20 @@
             gap: 15px;
             font-family: Arial, sans-serif;
             align-items: center;
+            white-space: nowrap;
+        }
+
+        .header-actions a {
+            transition: 0.2s;
         }
 
         .header-actions a:hover {
             color: white;
         }
 
-        /* HERO */
+        /* ==========================================
+           HERO
+        ========================================== */
 
         .hero {
             background: #faf7f0;
@@ -145,7 +164,9 @@
             color: white;
         }
 
-        /* SECTION */
+        /* ==========================================
+           SECTIONS
+        ========================================== */
 
         .section {
             padding: 70px 6%;
@@ -168,46 +189,83 @@
             margin-top: 10px;
         }
 
-        /* CATEGORIES */
+        /* ==========================================
+           CATEGORY CARDS
+        ========================================== */
 
         .categories {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 18px;
+            gap: 20px;
         }
 
         .category {
-            min-height: 210px;
-            background: #eee7da;
-            display: flex;
-            align-items: end;
-            padding: 25px;
+            min-height: 430px;
             position: relative;
             overflow: hidden;
-            transition: 0.25s;
+            display: flex;
+            align-items: end;
+            background: #eee7da;
+            border: 1px solid #e1d4bf;
+            transition: 0.3s ease;
+        }
+
+        .category-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.45s ease;
+        }
+
+        .category::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to top,
+                rgba(20, 15, 10, 0.78) 0%,
+                rgba(20, 15, 10, 0.35) 42%,
+                rgba(20, 15, 10, 0.08) 72%,
+                rgba(20, 15, 10, 0) 100%
+            );
+            z-index: 1;
         }
 
         .category:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 25px rgba(33, 29, 24, 0.12);
+            transform: translateY(-6px);
+            box-shadow: 0 16px 32px rgba(33, 29, 24, 0.16);
         }
 
-        .category div {
+        .category:hover .category-image {
+            transform: scale(1.06);
+        }
+
+        .category-content {
             position: relative;
             z-index: 2;
+            width: 100%;
+            padding: 28px 22px;
+            color: white;
         }
 
-        .category h3 {
-            font-size: 25px;
-            margin-bottom: 6px;
+        .category-content h3 {
+            font-size: 28px;
+            margin-bottom: 7px;
         }
 
-        .category p {
+        .category-content p {
             font-family: Arial, sans-serif;
             font-size: 13px;
+            line-height: 1.5;
+            color: #f4eee5;
         }
 
-        /* PRODUCTS */
+        /* ==========================================
+           PRODUCTS
+        ========================================== */
 
         .products {
             display: grid;
@@ -288,7 +346,9 @@
             background: #d9cfbe;
         }
 
-        /* WHY US */
+        /* ==========================================
+           WHY US
+        ========================================== */
 
         .why-us {
             background: #211d18;
@@ -328,7 +388,9 @@
             color: #ddd;
         }
 
-        /* FOOTER */
+        /* ==========================================
+           FOOTER
+        ========================================== */
 
         footer {
             background: #15120f;
@@ -364,7 +426,7 @@
             display: flex;
             align-items: center;
             gap: 9px;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .social-icon {
@@ -386,7 +448,12 @@
         }
 
         .instagram-icon {
-            background: linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7);
+            background: linear-gradient(
+                135deg,
+                #f9ce34,
+                #ee2a7b,
+                #6228d7
+            );
             color: white;
         }
 
@@ -399,17 +466,23 @@
             color: #999;
         }
 
-        /* MOBILE */
+        /* ==========================================
+           MOBILE
+        ========================================== */
+
+        @media (max-width: 1100px) {
+
+            .categories,
+            .products {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+        }
 
         @media (max-width: 900px) {
 
             nav {
                 display: none;
-            }
-
-            .categories,
-            .products {
-                grid-template-columns: repeat(2, 1fr);
             }
 
             .footer-grid {
@@ -419,6 +492,7 @@
             .why-grid {
                 grid-template-columns: 1fr;
             }
+
         }
 
         @media (max-width: 600px) {
@@ -466,6 +540,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .category {
+                min-height: 420px;
+            }
+
             .section {
                 padding: 50px 5%;
             }
@@ -478,11 +556,16 @@
                 padding-left: 7%;
                 padding-right: 7%;
             }
+
         }
     </style>
 </head>
 
 <body>
+
+<!-- ==========================================
+     HEADER
+========================================== -->
 
 <header>
 
@@ -499,24 +582,59 @@
     </a>
 
     <nav>
+
         <a href="/">Home</a>
-        <a href="/products">Shop</a>
-        <a href="/products?category=Earrings">Earrings</a>
-        <a href="/products?category=Necklaces">Necklaces</a>
-        <a href="/products?category=Rings">Rings</a>
-        <a href="/contact">Contact</a>
+
+        <a href="/products">
+            Shop
+        </a>
+
+        <a href="/products?category=Earrings">
+            Earrings
+        </a>
+
+        <a href="/products?category=Necklaces">
+            Necklaces
+        </a>
+
+        <a href="/products?category=Rings">
+            Rings
+        </a>
+
+        <a href="/contact">
+            Contact
+        </a>
+
     </nav>
 
     <div class="header-actions">
-        <a href="/wishlist" aria-label="Wishlist">♡</a>
-        <a href="/cart" aria-label="Cart">🛒 {{ cart_count }}</a>
-        <a href="/login">Account</a>
+
+        <a
+            href="/wishlist"
+            aria-label="Wishlist"
+        >
+            ♡
+        </a>
+
+        <a
+            href="/cart"
+            aria-label="Cart"
+        >
+            🛒 {{ cart_count }}
+        </a>
+
+        <a href="/login">
+            Account
+        </a>
+
     </div>
 
 </header>
 
 
-<!-- HERO -->
+<!-- ==========================================
+     HERO
+========================================== -->
 
 <section class="hero">
 
@@ -542,7 +660,10 @@
             occasion and everyday moment.
         </p>
 
-        <a href="/products" class="button">
+        <a
+            href="/products"
+            class="button"
+        >
             SHOP COLLECTION
         </a>
 
@@ -551,43 +672,141 @@
 </section>
 
 
-<!-- CATEGORIES -->
+<!-- ==========================================
+     SHOP BY CATEGORY
+========================================== -->
 
 <section class="section">
 
     <div class="section-heading">
-        <small>Explore</small>
-        <h2>Shop by Category</h2>
+
+        <small>
+            Explore
+        </small>
+
+        <h2>
+            Shop by Category
+        </h2>
+
     </div>
+
 
     <div class="categories">
 
-        <a href="/products?category=Earrings" class="category">
-            <div>
-                <h3>Earrings</h3>
-                <p>Elegant everyday styles</p>
+
+        <!-- EARRINGS -->
+
+        <a
+            href="/products?category=Earrings"
+            class="category"
+        >
+
+            <img
+                src="{{ url_for('static', filename='images/earrings.jpg') }}"
+                alt="Earrings"
+                class="category-image"
+                loading="lazy"
+            >
+
+            <div class="category-content">
+
+                <h3>
+                    Earrings
+                </h3>
+
+                <p>
+                    Elegant everyday styles
+                </p>
+
             </div>
+
         </a>
 
-        <a href="/products?category=Necklaces" class="category">
-            <div>
-                <h3>Necklaces</h3>
-                <p>Statement pieces</p>
+
+        <!-- NECKLACES -->
+
+        <a
+            href="/products?category=Necklaces"
+            class="category"
+        >
+
+            <img
+                src="{{ url_for('static', filename='images/necklaces.jpg') }}"
+                alt="Necklaces"
+                class="category-image"
+                loading="lazy"
+            >
+
+            <div class="category-content">
+
+                <h3>
+                    Necklaces
+                </h3>
+
+                <p>
+                    Statement pieces
+                </p>
+
             </div>
+
         </a>
 
-        <a href="/products?category=Rings" class="category">
-            <div>
-                <h3>Rings</h3>
-                <p>Beautiful details</p>
+
+        <!-- RINGS -->
+
+        <a
+            href="/products?category=Rings"
+            class="category"
+        >
+
+            <img
+                src="{{ url_for('static', filename='images/rings.jpg') }}"
+                alt="Rings"
+                class="category-image"
+                loading="lazy"
+            >
+
+            <div class="category-content">
+
+                <h3>
+                    Rings
+                </h3>
+
+                <p>
+                    Beautiful details
+                </p>
+
             </div>
+
         </a>
 
-        <a href="/products?category=Bangles" class="category">
-            <div>
-                <h3>Bangles</h3>
-                <p>Classic elegance</p>
+
+        <!-- BANGLES -->
+
+        <a
+            href="/products?category=Bangles"
+            class="category"
+        >
+
+            <img
+                src="{{ url_for('static', filename='images/bangles.jpg') }}"
+                alt="Bangles"
+                class="category-image"
+                loading="lazy"
+            >
+
+            <div class="category-content">
+
+                <h3>
+                    Bangles
+                </h3>
+
+                <p>
+                    Classic elegance
+                </p>
+
             </div>
+
         </a>
 
     </div>
@@ -595,14 +814,24 @@
 </section>
 
 
-<!-- FEATURED -->
+<!-- ==========================================
+     FEATURED PRODUCTS
+========================================== -->
 
 <section class="section">
 
     <div class="section-heading">
-        <small>Our Selection</small>
-        <h2>Featured Jewellery</h2>
+
+        <small>
+            Our Selection
+        </small>
+
+        <h2>
+            Featured Jewellery
+        </h2>
+
     </div>
+
 
     <div class="products">
 
@@ -613,14 +842,20 @@
             <article class="product">
 
                 {% if product["image"] %}
+
                     <img
                         class="product-image"
                         src="{{ url_for('static', filename='images/' + product['image']) }}"
                         alt="{{ product['name'] }}"
+                        loading="lazy"
                     >
+
                 {% else %}
+
                     <div class="product-image"></div>
+
                 {% endif %}
+
 
                 <div class="product-info">
 
@@ -635,6 +870,7 @@
                     <div class="price">
                         ₹{{ "%.0f"|format(product["price"]) }}
                     </div>
+
 
                     <div class="product-buttons">
 
@@ -662,7 +898,13 @@
 
         {% else %}
 
-            <p style="grid-column:1/-1;text-align:center;font-family:Arial,sans-serif;">
+            <p
+                style="
+                    grid-column:1/-1;
+                    text-align:center;
+                    font-family:Arial,sans-serif;
+                "
+            >
                 Our jewellery collection is coming soon.
             </p>
 
@@ -673,42 +915,79 @@
 </section>
 
 
-<!-- WHY MAJISA -->
+<!-- ==========================================
+     WHY MAJISA
+========================================== -->
 
 <section class="section why-us">
 
     <div class="section-heading">
-        <small>Why Majisa</small>
-        <h2>Made for Every Moment</h2>
+
+        <small>
+            Why Majisa
+        </small>
+
+        <h2>
+            Made for Every Moment
+        </h2>
+
     </div>
+
 
     <div class="why-grid">
 
+
         <div class="why-item">
-            <div class="why-icon">✦</div>
-            <h3>Elegant Designs</h3>
+
+            <div class="why-icon">
+                ✦
+            </div>
+
+            <h3>
+                Elegant Designs
+            </h3>
+
             <p>
                 Carefully selected jewellery with
                 timeless and contemporary styling.
             </p>
+
         </div>
 
+
         <div class="why-item">
-            <div class="why-icon">◇</div>
-            <h3>Quality First</h3>
+
+            <div class="why-icon">
+                ◇
+            </div>
+
+            <h3>
+                Quality First
+            </h3>
+
             <p>
                 We focus on beautiful finishing,
                 comfortable designs and reliable quality.
             </p>
+
         </div>
 
+
         <div class="why-item">
-            <div class="why-icon">♡</div>
-            <h3>Made for You</h3>
+
+            <div class="why-icon">
+                ♡
+            </div>
+
+            <h3>
+                Made for You
+            </h3>
+
             <p>
                 Jewellery chosen to make your
                 celebrations and everyday moments special.
             </p>
+
         </div>
 
     </div>
@@ -716,14 +995,24 @@
 </section>
 
 
-<!-- LATEST -->
+<!-- ==========================================
+     LATEST ARRIVALS
+========================================== -->
 
 <section class="section">
 
     <div class="section-heading">
-        <small>New In</small>
-        <h2>Latest Arrivals</h2>
+
+        <small>
+            New In
+        </small>
+
+        <h2>
+            Latest Arrivals
+        </h2>
+
     </div>
+
 
     <div class="products">
 
@@ -732,14 +1021,20 @@
         <article class="product">
 
             {% if product["image"] %}
+
                 <img
                     class="product-image"
                     src="{{ url_for('static', filename='images/' + product['image']) }}"
                     alt="{{ product['name'] }}"
+                    loading="lazy"
                 >
+
             {% else %}
+
                 <div class="product-image"></div>
+
             {% endif %}
+
 
             <div class="product-info">
 
@@ -754,6 +1049,7 @@
                 <div class="price">
                     ₹{{ "%.0f"|format(product["price"]) }}
                 </div>
+
 
                 <div class="product-buttons">
 
@@ -779,9 +1075,15 @@
 
         {% else %}
 
-        <p style="grid-column:1/-1;text-align:center;font-family:Arial,sans-serif;">
-            New jewellery will appear here.
-        </p>
+            <p
+                style="
+                    grid-column:1/-1;
+                    text-align:center;
+                    font-family:Arial,sans-serif;
+                "
+            >
+                New jewellery will appear here.
+            </p>
 
         {% endfor %}
 
@@ -790,45 +1092,101 @@
 </section>
 
 
-<!-- FOOTER -->
+<!-- ==========================================
+     FOOTER
+========================================== -->
 
 <footer>
 
     <div class="footer-grid">
 
+
+        <!-- BRAND -->
+
         <div>
-            <h3>Majisa Jewellers</h3>
+
+            <h3>
+                Majisa Jewellers
+            </h3>
 
             <p>
                 Elegant jewellery for every
                 celebration and everyday moment.
             </p>
+
         </div>
 
 
-        <div>
-            <h3>Shop</h3>
+        <!-- SHOP -->
 
-            <a href="/products">All Jewellery</a><br>
-            <a href="/products?category=Earrings">Earrings</a><br>
-            <a href="/products?category=Necklaces">Necklaces</a><br>
-            <a href="/products?category=Rings">Rings</a>
+        <div>
+
+            <h3>
+                Shop
+            </h3>
+
+            <a href="/products">
+                All Jewellery
+            </a>
+            <br>
+
+            <a href="/products?category=Earrings">
+                Earrings
+            </a>
+            <br>
+
+            <a href="/products?category=Necklaces">
+                Necklaces
+            </a>
+            <br>
+
+            <a href="/products?category=Rings">
+                Rings
+            </a>
+            <br>
+
+            <a href="/products?category=Bangles">
+                Bangles
+            </a>
+
         </div>
 
 
-        <div>
-            <h3>Help</h3>
+        <!-- HELP -->
 
-            <a href="/faq">FAQ</a><br>
-            <a href="/contact">Contact Us</a><br>
-            <a href="/orders">My Orders</a>
+        <div>
+
+            <h3>
+                Help
+            </h3>
+
+            <a href="/faq">
+                FAQ
+            </a>
+            <br>
+
+            <a href="/contact">
+                Contact Us
+            </a>
+            <br>
+
+            <a href="/orders">
+                My Orders
+            </a>
+
         </div>
 
 
-        <div>
-            <h3>Follow Us</h3>
+        <!-- SOCIAL -->
 
-            <!-- Instagram -->
+        <div>
+
+            <h3>
+                Follow Us
+            </h3>
+
+
+            <!-- INSTAGRAM -->
 
             <a
                 href="https://instagram.com/majisa_art_jewellers"
@@ -836,12 +1194,19 @@
                 rel="noopener noreferrer"
                 class="social-link"
             >
-                <span class="social-icon instagram-icon">◎</span>
-                <span>majisa_art_jewellers</span>
+
+                <span class="social-icon instagram-icon">
+                    ◎
+                </span>
+
+                <span>
+                    majisa_art_jewellers
+                </span>
+
             </a>
 
 
-            <!-- WhatsApp -->
+            <!-- WHATSAPP -->
 
             <a
                 href="https://wa.me/918949144970"
@@ -849,8 +1214,15 @@
                 rel="noopener noreferrer"
                 class="social-link"
             >
-                <span class="social-icon whatsapp-icon">WA</span>
-                <span>8949144970</span>
+
+                <span class="social-icon whatsapp-icon">
+                    WA
+                </span>
+
+                <span>
+                    8949144970
+                </span>
+
             </a>
 
         </div>
@@ -859,11 +1231,14 @@
 
 
     <div class="copyright">
-        © 2026 Majisa Jewellers. All rights reserved.
+
+        © 2026 Majisa Jewellers.
+        All rights reserved.
+
     </div>
 
 </footer>
 
+
 </body>
 </html>
-```
