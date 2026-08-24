@@ -1497,9 +1497,72 @@ def checkout():
             )
         )
 
-    return render_template(
-        "checkout.html"
+    cart = get_cart()
+
+product_ids = list(cart.keys())
+
+placeholders = ",".join(["?"] * len(product_ids))
+
+conn = get_db()
+
+products_list = conn.execute(
+    f"""
+    SELECT *
+    FROM products
+    WHERE id IN ({placeholders})
+    """,
+    product_ids
+).fetchall()
+
+subtotal = 0
+
+for product in products_list:
+
+    quantity = int(
+        cart.get(
+            str(product["id"]),
+            0
+        )
     )
+
+    subtotal += (
+        product["price"] *
+        quantity
+    )
+
+settings = conn.execute(
+    """
+    SELECT *
+    FROM settings
+    WHERE id = 1
+    """
+).fetchone()
+
+shipping_charge = float(
+    settings["shipping_charge"] or 0
+)
+
+free_shipping = float(
+    settings["free_shipping"] or 999999999
+)
+
+shipping = (
+    0
+    if subtotal >= free_shipping
+    else shipping_charge
+)
+
+total = subtotal + shipping
+
+conn.close()
+
+return render_template(
+    "checkout.html",
+    products=products_list,
+    subtotal=subtotal,
+    shipping=shipping,
+    total=total
+)
 
 
 @app.route(
