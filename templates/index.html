@@ -34,6 +34,200 @@
         }
 
         /* ==========================================
+           PREMIUM SCROLL + HOVER ANIMATIONS
+        ========================================== */
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        @keyframes heroImageIn {
+            from {
+                opacity: 0;
+                transform: scale(1.04);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes heroTextIn {
+            from {
+                opacity: 0;
+                transform: translateY(28px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes floatSoft {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .hero-banner {
+            animation: heroImageIn 1s ease both;
+        }
+
+        .hero-content .eyebrow {
+            animation: heroTextIn .7s .15s ease both;
+        }
+
+        .hero-content h1 {
+            animation: heroTextIn .8s .25s ease both;
+        }
+
+        .hero-content p {
+            animation: heroTextIn .8s .35s ease both;
+        }
+
+        .hero-content .button {
+            animation: heroTextIn .8s .45s ease both;
+        }
+
+        .category,
+        .product,
+        .why-item {
+            opacity: 0;
+            transform: translateY(28px);
+            transition:
+                opacity .7s ease,
+                transform .7s ease,
+                box-shadow .35s ease;
+        }
+
+        .category.visible,
+        .product.visible,
+        .why-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .category:nth-child(2) { transition-delay: .08s; }
+        .category:nth-child(3) { transition-delay: .16s; }
+        .category:nth-child(4) { transition-delay: .24s; }
+
+        .product:nth-child(2) { transition-delay: .06s; }
+        .product:nth-child(3) { transition-delay: .12s; }
+        .product:nth-child(4) { transition-delay: .18s; }
+
+        .product-media {
+            position: relative;
+            overflow: hidden;
+            background: #eee7da;
+        }
+
+        .product-media .product-image,
+        .product-media .product-video {
+            transition: transform .55s cubic-bezier(.2,.7,.2,1);
+        }
+
+        .product:hover .product-media .product-image,
+        .product:hover .product-media .product-video {
+            transform: scale(1.045);
+        }
+
+        .product-video {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            display: block;
+            background: #eee7da;
+        }
+
+        .sale-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 4;
+            background: #9b7127;
+            color: white;
+            padding: 7px 10px;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: .4px;
+            border-radius: 999px;
+            box-shadow: 0 8px 18px rgba(33, 29, 24, .16);
+        }
+
+        .price-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .current-price {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .old-price {
+            font-family: Arial, sans-serif;
+            color: #999;
+            text-decoration: line-through;
+            font-size: 13px;
+        }
+
+        .discount-text {
+            font-family: Arial, sans-serif;
+            color: #9a3030;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .view-all-wrap {
+            text-align: center;
+            margin-top: 34px;
+        }
+
+        .view-all-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            letter-spacing: .7px;
+            color: #9b7127;
+            border-bottom: 1px solid #9b7127;
+            padding-bottom: 4px;
+        }
+
+        .view-all-link span {
+            transition: transform .25s ease;
+        }
+
+        .view-all-link:hover span {
+            transform: translateX(5px);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .category,
+            .product,
+            .why-item {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+        /* ==========================================
            HEADER
         ========================================== */
 
@@ -841,20 +1035,41 @@
 
             <article class="product">
 
-                {% if product["image"] %}
+                <div class="product-media">
 
-                    <img
-                        class="product-image"
-                        src="{{ url_for('static', filename='images/' + product['image']) }}"
-                        alt="{{ product['name'] }}"
-                        loading="lazy"
-                    >
+                    {% if product["video"] %}
+                        <video
+                            class="product-video"
+                            muted
+                            loop
+                            playsinline
+                            preload="metadata"
+                            onmouseenter="this.play()"
+                            onmouseleave="this.pause(); this.currentTime = 0;"
+                        >
+                            <source
+                                src="{{ url_for('static', filename='videos/' + product['video']) }}"
+                                type="video/mp4"
+                            >
+                        </video>
+                    {% elif product["image"] %}
+                        <img
+                            class="product-image"
+                            src="{{ url_for('static', filename='images/' + product['image']) }}"
+                            alt="{{ product['name'] }}"
+                            loading="lazy"
+                        >
+                    {% else %}
+                        <div class="product-image"></div>
+                    {% endif %}
 
-                {% else %}
+                    {% if product["discount"] and product["discount"] > 0 %}
+                        <div class="sale-badge">
+                            -{{ "%.0f"|format(product["discount"]) }}% OFF
+                        </div>
+                    {% endif %}
 
-                    <div class="product-image"></div>
-
-                {% endif %}
+                </div>
 
 
                 <div class="product-info">
@@ -867,8 +1082,20 @@
                         {{ product["name"] }}
                     </h3>
 
-                    <div class="price">
-                        ₹{{ "%.0f"|format(product["price"]) }}
+                    <div class="price-row">
+                        <span class="current-price">
+                            ₹{{ "%.0f"|format(product["price"]) }}
+                        </span>
+
+                        {% if product["discount"] and product["discount"] > 0 and product["old_price"] %}
+                            <span class="old-price">
+                                ₹{{ "%.0f"|format(product["old_price"]) }}
+                            </span>
+
+                            <span class="discount-text">
+                                {{ "%.0f"|format(product["discount"]) }}% OFF
+                            </span>
+                        {% endif %}
                     </div>
 
 
@@ -1239,6 +1466,42 @@
 
 </footer>
 
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const animatedItems = document.querySelectorAll(
+        ".category, .product, .why-item"
+    );
+
+    const observer = new IntersectionObserver(
+        function (entries, obs) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("visible");
+                    obs.unobserve(entry.target);
+                }
+            });
+        },
+        {
+            threshold: 0.12,
+            rootMargin: "0px 0px -30px 0px"
+        }
+    );
+
+    animatedItems.forEach(function (item) {
+        observer.observe(item);
+    });
+
+    document.querySelectorAll(".product-video").forEach(function (video) {
+        video.addEventListener("loadeddata", function () {
+            video.style.opacity = "1";
+        });
+    });
+
+});
+</script>
 
 </body>
 </html>
