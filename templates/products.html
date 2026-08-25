@@ -1,410 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Shop Jewellery | Majisa Jewellers</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background: #faf7f0;
-            color: #211d18;
-            font-family: Georgia, "Times New Roman", serif;
-        }
-
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        header {
-            background: #211d18;
-            color: #f4d58d;
-            padding: 18px 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .brand {
-            font-size: 25px;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        nav {
-            display: flex;
-            gap: 20px;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-        }
-
-        .actions {
-            font-family: Arial, sans-serif;
-            display: flex;
-            gap: 12px;
-        }
-
-        .page {
-            padding: 55px 6%;
-        }
-
-        .heading {
-            text-align: center;
-            margin-bottom: 35px;
-        }
-
-        .heading small {
-            color: #9b7127;
-            font-family: Arial, sans-serif;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-
-        .heading h1 {
-            font-size: 45px;
-            margin-top: 8px;
-        }
-
-        .toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .categories {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .category {
-            border: 1px solid #d8cbb8;
-            padding: 10px 16px;
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-            background: white;
-        }
-
-        .category.active,
-        .category:hover {
-            background: #211d18;
-            color: #f4d58d;
-        }
-
-        .search {
-            display: flex;
-            gap: 5px;
-        }
-
-        .search input {
-            width: 210px;
-            padding: 11px;
-            border: 1px solid #d8cbb8;
-            outline: none;
-        }
-
-        .search button {
-            padding: 11px 18px;
-            border: 0;
-            background: #211d18;
-            color: #f4d58d;
-            cursor: pointer;
-        }
-
-        .products {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 22px;
-        }
-
-        .product {
-            background: white;
-            border: 1px solid #e4dacb;
-        }
-
-        .product img,
-        .no-image {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            object-fit: cover;
-            background: #eee7da;
-        }
-
-        .info {
-            padding: 17px;
-        }
-
-        .category-name {
-            color: #9b7127;
-            font-family: Arial, sans-serif;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        h2 {
-            font-size: 19px;
-            margin: 7px 0;
-        }
-
-        .price {
-            font-family: Arial, sans-serif;
-            font-weight: bold;
-            margin-bottom: 13px;
-        }
-
-        .buttons {
-            display: flex;
-            gap: 7px;
-        }
-
-        .btn {
-            flex: 1;
-            text-align: center;
-            padding: 10px 5px;
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            background: #211d18;
-            color: #f4d58d;
-        }
-
-        .btn.light {
-            background: #eee7da;
-            color: #211d18;
-        }
-
-        .empty {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 70px 20px;
-            font-family: Arial, sans-serif;
-        }
-
-        footer {
-            margin-top: 70px;
-            background: #15120f;
-            color: #ccc;
-            padding: 30px 6%;
-            text-align: center;
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-        }
-
-        footer a {
-            color: #f4d58d;
-        }
-
-        @media (max-width: 950px) {
-            .products {
-                grid-template-columns: repeat(3, 1fr);
-            }
-
-            nav {
-                display: none;
-            }
-        }
-
-        @media (max-width: 650px) {
-            .products {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .heading h1 {
-                font-size: 34px;
-            }
-
-            .search {
-                width: 100%;
-            }
-
-            .search input {
-                flex: 1;
-                width: auto;
-            }
-        }
-
-        @media (max-width: 430px) {
-            .products {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop | Majisa Jewellers</title>
+<meta name="description" content="Shop elegant jewellery at Majisa Jewellers.">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:#faf7f0;color:#211d18;font-family:Georgia,"Times New Roman",serif}
+a{text-decoration:none;color:inherit}
+img{max-width:100%}
+header{background:#211d18;color:#f4d58d;padding:14px 5%;display:flex;align-items:center;justify-content:space-between;gap:20px;position:sticky;top:0;z-index:1000}
+.brand{font-size:24px;font-weight:bold;letter-spacing:1.5px}
+nav{display:flex;gap:20px;font:14px Arial,sans-serif}
+nav a,.actions a{transition:.25s}
+nav a:hover,.actions a:hover{color:#fff}
+.actions{display:flex;gap:14px;font:14px Arial,sans-serif}
+.page{max-width:1300px;margin:auto;padding:55px 5%}
+.page-head{text-align:center;margin-bottom:35px}
+.page-head small{color:#9b7127;font:12px Arial,sans-serif;letter-spacing:3px;text-transform:uppercase}
+.page-head h1{font-size:46px;margin-top:10px}
+.page-head p{max-width:650px;margin:14px auto 0;color:#666;font:15px/1.7 Arial,sans-serif}
+.shop-tools{background:#fff;border:1px solid #e5dccf;padding:18px;margin-bottom:30px;box-shadow:0 8px 25px rgba(33,29,24,.05)}
+.tool-row{display:flex;gap:12px;flex-wrap:wrap}
+.search-box{flex:1 1 260px}
+input{width:100%;padding:12px;border:1px solid #d8cdbd;background:#fff;color:#211d18;font:14px Arial,sans-serif}
+.tool-button{border:0;background:#211d18;color:#f4d58d;padding:12px 18px;font:13px Arial,sans-serif;cursor:pointer}
+.tool-button:hover{background:#9b7127;color:#fff}
+.filter-title{font:12px Arial,sans-serif;color:#777;text-transform:uppercase;letter-spacing:1.5px;margin:18px 0 10px}
+.price-links,.category-links{display:flex;gap:8px;flex-wrap:wrap}
+.filter-link{padding:9px 12px;border:1px solid #d8cdbd;font:12px Arial,sans-serif;background:#faf7f0}
+.filter-link.active,.filter-link:hover{background:#211d18;color:#f4d58d;border-color:#211d18}
+.products{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.product{background:#fff;border:1px solid #e8dfd1;overflow:hidden;opacity:0;transform:translateY(24px);animation:cardIn .7s ease forwards;transition:.28s}
+.product:hover{transform:translateY(-6px);box-shadow:0 16px 30px rgba(33,29,24,.11)}
+.product-media{position:relative;background:#eee7da;overflow:hidden}
+.product-image{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;transition:transform .55s ease}
+.product:hover .product-image{transform:scale(1.045)}
+.sale-badge{position:absolute;top:12px;left:12px;z-index:2;background:#b3342f;color:#fff;padding:7px 9px;font:bold 11px Arial,sans-serif}
+.video-badge{position:absolute;right:12px;top:12px;z-index:2;background:rgba(33,29,24,.9);color:#f4d58d;padding:7px 9px;font:11px Arial,sans-serif}
+.product-info{padding:17px}
+.category{color:#9b7127;font:bold 10px Arial,sans-serif;text-transform:uppercase;letter-spacing:1px}
+.product h3{font-size:19px;margin:8px 0 10px}
+.price{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:15px;font:bold 17px Arial,sans-serif}
+.old-price{color:#999;text-decoration:line-through;font:13px Arial,sans-serif}
+.discount-text{color:#b3342f;font:12px Arial,sans-serif}
+.buttons{display:flex;gap:8px}
+.button{flex:1;text-align:center;padding:11px 8px;background:#211d18;color:#f4d58d;font:12px Arial,sans-serif}
+.button.light{background:#eee7da;color:#211d18}
+.button:hover{background:#9b7127;color:#fff}
+.button.light:hover{background:#d9cfbe;color:#211d18}
+.empty{background:#fff;border:1px solid #e4dbcc;padding:65px 20px;text-align:center;color:#777;font:14px Arial,sans-serif}
+footer{background:#15120f;color:#ccc;padding:45px 6% 22px;margin-top:65px;font-family:Arial,sans-serif}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:30px;margin-bottom:35px}
+footer h3{color:#f4d58d;margin-bottom:12px}
+footer p,footer a{font-size:13px;line-height:1.9;color:#ccc}
+footer a:hover{color:#f4d58d}
+.social-link{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.social-icon{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;flex-shrink:0}
+.social-svg{width:16px;height:16px;display:block}
+.instagram-icon{background:linear-gradient(135deg,#f9ce34,#ee2a7b,#6228d7);color:#fff}
+.whatsapp-icon{background:#25D366;color:#fff}
+.copyright{border-top:1px solid #39332c;padding-top:18px;text-align:center;font-size:11px;color:#999}
+@keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+@media(max-width:1000px){.products{grid-template-columns:repeat(3,1fr)}.footer-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){nav{display:none}.products{grid-template-columns:repeat(2,1fr)}.page{padding:40px 5%}.page-head h1{font-size:36px}}
+@media(max-width:520px){.products{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr}.brand{font-size:18px}.actions{font-size:12px;gap:9px}}
+</style>
 </head>
-
 <body>
-
 <header>
-
-    <a href="/" class="brand">
-        Majisa Jewellers
-    </a>
-
-    <nav>
-        <a href="/">Home</a>
-        <a href="/products">Shop</a>
-        <a href="/contact">Contact</a>
-    </nav>
-
-    <div class="actions">
-        <a href="/wishlist">♡</a>
-        <a href="/cart">🛒 {{ cart_count }}</a>
-        <a href="/login">Account</a>
-    </div>
-
+<a href="/" class="brand">Majisa Jewellers</a>
+<nav>
+<a href="/">Home</a><a href="/products">Shop</a>
+<a href="/products?category=Earrings">Earrings</a>
+<a href="/products?category=Necklaces">Necklaces</a>
+<a href="/products?category=Rings">Rings</a>
+<a href="/contact">Contact</a>
+</nav>
+<div class="actions"><a href="/wishlist">♡</a><a href="/cart">🛒 {{ cart_count }}</a><a href="/login">Account</a></div>
 </header>
 
-
 <main class="page">
+<section class="page-head">
+<small>Our Collection</small>
+<h1>Shop Jewellery</h1>
+<p>Explore traditional and contemporary pieces across every price range.</p>
+</section>
 
-    <div class="heading">
-        <small>Majisa Collection</small>
-        <h1>Shop Jewellery</h1>
-    </div>
+<section class="shop-tools">
+<form method="GET" action="/products">
+{% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+<div class="tool-row">
+<div class="search-box"><input type="search" name="search" value="{{ search }}" placeholder="Search earrings, rings, necklaces..."></div>
+<button class="tool-button" type="submit">SEARCH</button>
+</div>
+</form>
 
+<div class="filter-title">Shop by Price</div>
+<div class="price-links">
+<a href="/products{% if selected_category %}?category={{ selected_category|urlencode }}{% endif %}" class="filter-link {% if not selected_price_max %}active{% endif %}">All Prices</a>
+<a href="/products?price_max=499{% if selected_category %}&category={{ selected_category|urlencode }}{% endif %}" class="filter-link {% if selected_price_max == 499 %}active{% endif %}">Under ₹499</a>
+<a href="/products?price_max=999{% if selected_category %}&category={{ selected_category|urlencode }}{% endif %}" class="filter-link {% if selected_price_max == 999 %}active{% endif %}">Under ₹999</a>
+<a href="/products?price_max=1499{% if selected_category %}&category={{ selected_category|urlencode }}{% endif %}" class="filter-link {% if selected_price_max == 1499 %}active{% endif %}">Under ₹1,499</a>
+<a href="/products?price_max=2999{% if selected_category %}&category={{ selected_category|urlencode }}{% endif %}" class="filter-link {% if selected_price_max == 2999 %}active{% endif %}">Under ₹2,999</a>
+</div>
 
-    <div class="toolbar">
+{% if categories %}
+<div class="filter-title">Shop by Category</div>
+<div class="category-links">
+<a href="/products{% if selected_price_max %}?price_max={{ selected_price_max }}{% endif %}" class="filter-link {% if not selected_category %}active{% endif %}">All Categories</a>
+{% for category in categories %}
+<a href="/products?category={{ category['category']|urlencode }}{% if selected_price_max %}&price_max={{ selected_price_max }}{% endif %}" class="filter-link {% if selected_category == category['category'] %}active{% endif %}">{{ category["category"] }}</a>
+{% endfor %}
+</div>
+{% endif %}
+</section>
 
-        <div class="categories">
-
-            <a
-                href="/products"
-                class="category {% if not selected_category %}active{% endif %}"
-            >
-                All
-            </a>
-
-            {% for category in categories %}
-
-            <a
-                href="/products?category={{ category['category'] }}"
-                class="category {% if selected_category == category['category'] %}active{% endif %}"
-            >
-                {{ category['category'] }}
-            </a>
-
-            {% endfor %}
-
-        </div>
-
-
-        <form action="/search" method="GET" class="search">
-
-            <input
-                type="text"
-                name="q"
-                placeholder="Search jewellery..."
-                value="{{ search }}"
-            >
-
-            <button type="submit">
-                Search
-            </button>
-
-        </form>
-
-    </div>
-
-
-    <div class="products">
-
-        {% for product in products %}
-
-        <article class="product">
-
-            {% if product["image"] %}
-
-            <img
-                src="{{ url_for('static', filename='images/' + product['image']) }}"
-                alt="{{ product['name'] }}"
-            >
-
-            {% else %}
-
-            <div class="no-image"></div>
-
-            {% endif %}
-
-
-            <div class="info">
-
-                <div class="category-name">
-                    {{ product["category"] }}
-                </div>
-
-                <h2>
-                    {{ product["name"] }}
-                </h2>
-
-                <div class="price">
-                    ₹{{ "%.0f"|format(product["price"]) }}
-                </div>
-
-
-                <div class="buttons">
-
-                    <a
-                        href="/product/{{ product['id'] }}"
-                        class="btn light"
-                    >
-                        VIEW
-                    </a>
-
-                    <a
-                        href="/cart/add/{{ product['id'] }}"
-                        class="btn"
-                    >
-                        ADD TO BAG
-                    </a>
-
-                </div>
-
-            </div>
-
-        </article>
-
-        {% else %}
-
-        <div class="empty">
-
-            <h2>No jewellery found</h2>
-
-            <p>
-                Try another category or search.
-            </p>
-
-        </div>
-
-        {% endfor %}
-
-    </div>
-
+{% if products %}
+<section class="products">
+{% for product in products %}
+<article class="product" style="animation-delay:{{ loop.index0 * 0.06 }}s;">
+<div class="product-media">
+{% if product["image"] %}
+<img class="product-image" src="{{ url_for('static', filename='images/' + product['image']) }}" alt="{{ product['name'] }}" loading="lazy">
+{% else %}
+<div class="product-image"></div>
+{% endif %}
+{% if product["discount"] and product["discount"] > 0 %}
+<span class="sale-badge">{{ "%.0f"|format(product["discount"]) }}% OFF</span>
+{% elif product["old_price"] and product["old_price"] > product["price"] %}
+<span class="sale-badge">SALE</span>
+{% endif %}
+{% if product["video"] %}<span class="video-badge">VIDEO</span>{% endif %}
+</div>
+<div class="product-info">
+<div class="category">{{ product["category"] }}</div>
+<h3>{{ product["name"] }}</h3>
+<div class="price">
+<span>₹{{ "%.0f"|format(product["price"]) }}</span>
+{% if product["old_price"] and product["old_price"] > product["price"] %}
+<span class="old-price">₹{{ "%.0f"|format(product["old_price"]) }}</span>
+{% endif %}
+{% if product["discount"] and product["discount"] > 0 %}
+<span class="discount-text">{{ "%.0f"|format(product["discount"]) }}% OFF</span>
+{% endif %}
+</div>
+<div class="buttons">
+<a href="/product/{{ product['id'] }}" class="button light">VIEW</a>
+<a href="/cart/add/{{ product['id'] }}" class="button">ADD TO BAG</a>
+</div>
+</div>
+</article>
+{% endfor %}
+</section>
+{% else %}
+<div class="empty">No jewellery found for this selection.</div>
+{% endif %}
 </main>
 
-
 <footer>
-
-    © 2026 Majisa Jewellers ·
-
-    <a href="https://instagram.com/majisa_art_jewellers"
-       target="_blank">
-        Instagram
-    </a>
-
-    · 8949144970
-
+<div class="footer-grid">
+<div><h3>Majisa Jewellers</h3><p>Elegant jewellery for every celebration and everyday moment.</p></div>
+<div><h3>Shop</h3><a href="/products">All Jewellery</a><br><a href="/products?category=Earrings">Earrings</a><br><a href="/products?category=Necklaces">Necklaces</a><br><a href="/products?category=Rings">Rings</a><br><a href="/products?category=Bangles">Bangles</a></div>
+<div><h3>Help</h3><a href="/faq">FAQ</a><br><a href="/contact">Contact Us</a><br><a href="/orders">My Orders</a></div>
+<div><h3>Follow Us</h3>
+<a href="https://instagram.com/majisa_art_jewellers" target="_blank" rel="noopener noreferrer" class="social-link">
+<span class="social-icon instagram-icon"><svg class="social-svg" viewBox="0 0 24 24" aria-hidden="true">
+<rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
+<circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/>
+<circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/>
+</svg></span><span>majisa_art_jewellers</span></a>
+<a href="https://wa.me/918949144970" target="_blank" rel="noopener noreferrer" class="social-link">
+<span class="social-icon whatsapp-icon"><svg class="social-svg" viewBox="0 0 24 24" aria-hidden="true">
+<path d="M20.1 3.9A10 10 0 0 0 3.4 16.2L2.5 21.5l5.4-.9A10 10 0 1 0 20.1 3.9Z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+<path d="M8.2 7.4c.2-.4.5-.5.9-.5h.8c.2 0 .5.1.6.4l.8 1.9c.1.2.1.5 0 .7l-.6.8c-.1.2-.1.4 0 .6.5.9 1.2 1.6 2.1 2.1.2.1.4.1.6-.1l.8-.6c.2-.1.5-.1.7 0l1.9.8c.3.1.4.3.4.6v.8c0 .4-.2.7-.5.9-.4.2-1 .3-1.5.2-1.2-.2-2.6-.9-3.8-2.1-1.2-1.2-1.9-2.6-2.1-3.8-.1-.5 0-1.1.2-1.5Z" fill="currentColor"/>
+</svg></span><span>8949144970</span></a>
+</div>
+</div>
+<div class="copyright">© 2026 Majisa Jewellers. All rights reserved.</div>
 </footer>
-
 </body>
 </html>
