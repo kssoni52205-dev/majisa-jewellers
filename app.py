@@ -864,21 +864,20 @@ def search():
 # CART
 # ==========================================================
 
+
 @app.route("/cart")
 def cart():
 
     cart = get_cart()
-        if not cart:
 
+    if not cart:
         return render_template(
             "cart.html",
             items=[],
             total=0
         )
 
-    product_ids = list(
-        cart.keys()
-    )
+    product_ids = list(cart.keys())
 
     placeholders = ",".join(
         ["?"] * len(product_ids)
@@ -949,7 +948,6 @@ def add_to_cart(product_id):
     conn.close()
 
     if product is None:
-
         return "Product not found", 404
 
     cart = get_cart()
