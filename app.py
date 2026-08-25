@@ -50,18 +50,36 @@ UPLOAD_FOLDER = os.path.join(
     "images"
 )
 
+VIDEO_UPLOAD_FOLDER = os.path.join(
+    app.root_path,
+    "static",
+    "videos"
+)
+
 os.makedirs(
     UPLOAD_FOLDER,
     exist_ok=True
 )
 
+os.makedirs(
+    VIDEO_UPLOAD_FOLDER,
+    exist_ok=True
+)
+
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["VIDEO_UPLOAD_FOLDER"] = VIDEO_UPLOAD_FOLDER
 
 ALLOWED_EXTENSIONS = {
     "png",
     "jpg",
     "jpeg",
     "webp"
+}
+
+ALLOWED_VIDEO_EXTENSIONS = {
+    "mp4",
+    "webm",
+    "mov"
 }
 
 
@@ -143,6 +161,108 @@ def delete_product_image(filename):
         pass
 
 
+def allowed_video_file(filename):
+
+    return (
+        "." in filename
+        and
+        filename.rsplit(
+            ".",
+            1
+        )[1].lower()
+        in ALLOWED_VIDEO_EXTENSIONS
+    )
+
+
+def save_product_video(file):
+
+    if not file:
+        return ""
+
+    if not file.filename:
+        return ""
+
+    if not allowed_video_file(file.filename):
+
+        raise ValueError(
+            "Only MP4, WEBM and MOV videos are allowed."
+        )
+
+    original_name = secure_filename(
+        file.filename
+    )
+
+    extension = os.path.splitext(
+        original_name
+    )[1].lower()
+
+    filename = (
+        f"product_video_"
+        f"{secrets.token_hex(10)}"
+        f"{extension}"
+    )
+
+    file.save(
+        os.path.join(
+            app.config["VIDEO_UPLOAD_FOLDER"],
+            filename
+        )
+    )
+
+    return filename
+
+
+def delete_product_video(filename):
+
+    if not filename:
+        return
+
+    filename = os.path.basename(
+        filename
+    )
+
+    file_path = os.path.join(
+        app.config["VIDEO_UPLOAD_FOLDER"],
+        filename
+    )
+
+    try:
+
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    except OSError:
+        pass
+
+
+def calculate_product_price(old_price, discount, fallback_price=0):
+
+    try:
+        old_price = float(old_price or 0)
+    except (TypeError, ValueError):
+        old_price = 0
+
+    try:
+        discount = float(discount or 0)
+    except (TypeError, ValueError):
+        discount = 0
+
+    discount = max(0, min(100, discount))
+
+    if old_price > 0 and discount > 0:
+        return round(
+            old_price - (old_price * discount / 100),
+            2
+        )
+
+    try:
+        fallback_price = float(fallback_price or 0)
+    except (TypeError, ValueError):
+        fallback_price = 0
+
+    return round(max(0, fallback_price), 2)
+
+
 # ==========================================================
 # DATABASE
 # ==========================================================
@@ -188,10 +308,6 @@ def init_db():
 
     conn = get_db()
 
-    # ------------------------------------------------------
-    # PRODUCTS
-    # ------------------------------------------------------
-
     conn.execute("""
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -199,17 +315,15 @@ def init_db():
             category TEXT NOT NULL,
             price REAL NOT NULL DEFAULT 0,
             old_price REAL DEFAULT 0,
+            discount REAL DEFAULT 0,
             image TEXT DEFAULT '',
+            video TEXT DEFAULT '',
             description TEXT DEFAULT '',
             stock INTEGER DEFAULT 0,
             featured INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-
-    # ------------------------------------------------------
-    # USERS
-    # ------------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -222,10 +336,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-
-    # ------------------------------------------------------
-    # ORDERS
-    # ------------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS orders (
@@ -241,10 +351,6 @@ def init_db():
         )
     """)
 
-    # ------------------------------------------------------
-    # ORDER ITEMS
-    # ------------------------------------------------------
-
     conn.execute("""
         CREATE TABLE IF NOT EXISTS order_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -255,10 +361,6 @@ def init_db():
             quantity INTEGER NOT NULL
         )
     """)
-
-    # ------------------------------------------------------
-    # REVIEWS
-    # ------------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS reviews (
@@ -271,10 +373,6 @@ def init_db():
         )
     """)
 
-    # ------------------------------------------------------
-    # COUPONS
-    # ------------------------------------------------------
-
     conn.execute("""
         CREATE TABLE IF NOT EXISTS coupons (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -283,10 +381,6 @@ def init_db():
             active INTEGER DEFAULT 1
         )
     """)
-
-    # ------------------------------------------------------
-    # STORE SETTINGS
-    # ------------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS settings (
@@ -326,10 +420,6 @@ def init_db():
             'majisa_art_jewellers'
         )
     """)
-
-    # ------------------------------------------------------
-    # SAFE MIGRATIONS
-    # ------------------------------------------------------
 
     add_column_if_missing(
         conn,
@@ -380,16 +470,26 @@ def init_db():
         "TEXT DEFAULT 'Pending'"
     )
 
+    add_column_if_missing(
+        conn,
+        "products",
+        "discount",
+        "REAL DEFAULT 0"
+    )
+
+    add_column_if_missing(
+        conn,
+        "products",
+        "video",
+        "TEXT DEFAULT ''"
+    )
+
     conn.commit()
     conn.close()
 
 
 init_db()
 
-
-# ==========================================================
-# HELPERS
-# ==========================================================
 
 def admin_required(view):
 
@@ -475,10 +575,6 @@ def get_settings():
     return settings
 
 
-# ==========================================================
-# GLOBAL TEMPLATE DATA
-# ==========================================================
-
 @app.context_processor
 def inject_global_data():
 
@@ -490,10 +586,6 @@ def inject_global_data():
         "site_instagram": "majisa_art_jewellers"
     }
 
-
-# ==========================================================
-# HOME
-# ==========================================================
 
 @app.route("/")
 def home():
@@ -523,10 +615,6 @@ def home():
         latest=latest
     )
 
-
-# ==========================================================
-# PRODUCTS
-# ==========================================================
 
 @app.route("/products")
 def products():
@@ -649,10 +737,6 @@ def search():
         )
     )
 
-
-# ==========================================================
-# CART
-# ==========================================================
 
 @app.route("/cart")
 def cart():
@@ -791,9 +875,7 @@ def clear_cart():
     return redirect(
         url_for("cart")
     )
-
-
-# ==========================================================
+    # ==========================================================
 # WISHLIST
 # ==========================================================
 
@@ -1739,9 +1821,7 @@ def add_review(product_id):
             product_id=product_id
         )
     )
-
-
-# ==========================================================
+    # ==========================================================
 # CONTACT / ABOUT / FAQ
 # ==========================================================
 
@@ -1979,19 +2059,6 @@ def admin_add_product():
 
     try:
 
-        price = float(
-            request.form.get(
-                "price",
-                0
-            ) or 0
-        )
-
-    except ValueError:
-
-        price = 0
-
-    try:
-
         old_price = float(
             request.form.get(
                 "old_price",
@@ -2002,6 +2069,43 @@ def admin_add_product():
     except ValueError:
 
         old_price = 0
+
+    try:
+
+        discount = float(
+            request.form.get(
+                "discount",
+                0
+            ) or 0
+        )
+
+    except ValueError:
+
+        discount = 0
+
+    discount = max(
+        0,
+        min(100, discount)
+    )
+
+    try:
+
+        submitted_price = float(
+            request.form.get(
+                "price",
+                0
+            ) or 0
+        )
+
+    except ValueError:
+
+        submitted_price = 0
+
+    price = calculate_product_price(
+        old_price,
+        discount,
+        submitted_price
+    )
 
     description = request.form.get(
         "description",
@@ -2037,6 +2141,7 @@ def admin_add_product():
             url_for("admin_products")
         )
 
+
     # ------------------------------------------------------
     # IMAGE UPLOAD
     # ------------------------------------------------------
@@ -2063,6 +2168,39 @@ def admin_add_product():
                 url_for("admin_products")
             )
 
+
+    # ------------------------------------------------------
+    # VIDEO UPLOAD
+    # ------------------------------------------------------
+
+    video = ""
+
+    video_file = request.files.get(
+        "video"
+    )
+
+    if video_file and video_file.filename:
+
+        try:
+
+            video = save_product_video(
+                video_file
+            )
+
+        except ValueError as error:
+
+            if image:
+                delete_product_image(
+                    image
+                )
+
+            flash(str(error))
+
+            return redirect(
+                url_for("admin_products")
+            )
+
+
     # ------------------------------------------------------
     # SAVE PRODUCT
     # ------------------------------------------------------
@@ -2077,19 +2215,23 @@ def admin_add_product():
             category,
             price,
             old_price,
+            discount,
             image,
+            video,
             description,
             stock,
             featured
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             name,
             category,
             price,
             old_price,
+            discount,
             image,
+            video,
             description,
             stock,
             featured
@@ -2097,6 +2239,7 @@ def admin_add_product():
     )
 
     conn.commit()
+
     conn.close()
 
     flash(
@@ -2144,6 +2287,7 @@ def admin_edit_product(product_id):
             url_for("admin_products")
         )
 
+
     if request.method == "POST":
 
         name = request.form.get(
@@ -2156,18 +2300,6 @@ def admin_edit_product(product_id):
             ""
         ).strip()
 
-        try:
-
-            price = float(
-                request.form.get(
-                    "price",
-                    0
-                ) or 0
-            )
-
-        except ValueError:
-
-            price = 0
 
         try:
 
@@ -2182,10 +2314,59 @@ def admin_edit_product(product_id):
 
             old_price = 0
 
+
+        try:
+
+            discount = float(
+                request.form.get(
+                    "discount",
+                    0
+                ) or 0
+            )
+
+        except ValueError:
+
+            discount = 0
+
+        discount = max(
+            0,
+            min(100, discount)
+        )
+
+
+        try:
+
+            submitted_price = float(
+                request.form.get(
+                    "price",
+                    0
+                ) or 0
+            )
+
+        except ValueError:
+
+            submitted_price = 0
+
+
+        if submitted_price <= 0:
+
+            submitted_price = (
+                product["price"] or 0
+            )
+
+
+        price = calculate_product_price(
+            old_price,
+            discount,
+            submitted_price
+        )
+
+
         description = request.form.get(
             "description",
             ""
         ).strip()
+
 
         try:
 
@@ -2200,11 +2381,13 @@ def admin_edit_product(product_id):
 
             stock = 0
 
+
         featured = (
             1
             if request.form.get("featured")
             else 0
         )
+
 
         if not name or not category:
 
@@ -2221,7 +2404,15 @@ def admin_edit_product(product_id):
                 )
             )
 
-        image = product["image"]
+
+        image = product["image"] or ""
+
+        video = product["video"] or ""
+
+
+        # --------------------------------------------------
+        # NEW IMAGE
+        # --------------------------------------------------
 
         new_image = request.files.get(
             "image"
@@ -2256,6 +2447,45 @@ def admin_edit_product(product_id):
                 old_image
             )
 
+
+        # --------------------------------------------------
+        # NEW VIDEO
+        # --------------------------------------------------
+
+        new_video = request.files.get(
+            "video"
+        )
+
+        if new_video and new_video.filename:
+
+            try:
+
+                uploaded_video = save_product_video(
+                    new_video
+                )
+
+            except ValueError as error:
+
+                conn.close()
+
+                flash(str(error))
+
+                return redirect(
+                    url_for(
+                        "admin_edit_product",
+                        product_id=product_id
+                    )
+                )
+
+            old_video = video
+
+            video = uploaded_video
+
+            delete_product_video(
+                old_video
+            )
+
+
         conn.execute(
             """
             UPDATE products
@@ -2264,7 +2494,9 @@ def admin_edit_product(product_id):
                 category = ?,
                 price = ?,
                 old_price = ?,
+                discount = ?,
                 image = ?,
+                video = ?,
                 description = ?,
                 stock = ?,
                 featured = ?
@@ -2275,7 +2507,9 @@ def admin_edit_product(product_id):
                 category,
                 price,
                 old_price,
+                discount,
                 image,
+                video,
                 description,
                 stock,
                 featured,
@@ -2284,6 +2518,7 @@ def admin_edit_product(product_id):
         )
 
         conn.commit()
+
         conn.close()
 
         flash(
@@ -2293,6 +2528,7 @@ def admin_edit_product(product_id):
         return redirect(
             url_for("admin_products")
         )
+
 
     conn.close()
 
@@ -2320,7 +2556,7 @@ def admin_delete_product(product_id):
 
     product = conn.execute(
         """
-        SELECT image
+        SELECT image, video
         FROM products
         WHERE id = ?
         """,
@@ -2335,6 +2571,11 @@ def admin_delete_product(product_id):
             product["image"]
         )
 
+        delete_product_video(
+            product["video"]
+        )
+
+
     conn.execute(
         """
         DELETE FROM reviews
@@ -2344,6 +2585,7 @@ def admin_delete_product(product_id):
             product_id,
         )
     )
+
 
     conn.execute(
         """
@@ -2356,6 +2598,7 @@ def admin_delete_product(product_id):
     )
 
     conn.commit()
+
     conn.close()
 
     flash(
@@ -2395,6 +2638,7 @@ def admin_orders():
 
     params = []
 
+
     if search:
 
         query += """
@@ -2417,17 +2661,22 @@ def admin_orders():
             search_value
         ])
 
+
     if status:
 
         query += """
             AND status = ?
         """
 
-        params.append(status)
+        params.append(
+            status
+        )
+
 
     query += """
         ORDER BY id DESC
     """
+
 
     orders_list = conn.execute(
         query,
@@ -2493,14 +2742,13 @@ def admin_order_detail(order_id):
             order_items=[]
         ), 404
 
+
     return render_template(
         "admin_order_detail.html",
         order=order,
         order_items=order_items
     )
-
-
-# ==========================================================
+    # ==========================================================
 # ADMIN UPDATE ORDER STATUS
 # ==========================================================
 
@@ -2965,6 +3213,63 @@ def admin_settings():
 
 
 # ==========================================================
+# API - PRICE PREVIEW
+# ==========================================================
+
+@app.route("/api/price-preview")
+def api_price_preview():
+
+    try:
+
+        old_price = float(
+            request.args.get(
+                "old_price",
+                0
+            ) or 0
+        )
+
+    except ValueError:
+
+        old_price = 0
+
+    try:
+
+        discount = float(
+            request.args.get(
+                "discount",
+                0
+            ) or 0
+        )
+
+    except ValueError:
+
+        discount = 0
+
+    discount = max(
+        0,
+        min(100, discount)
+    )
+
+    price = calculate_product_price(
+        old_price,
+        discount,
+        0
+    )
+
+    return jsonify({
+        "old_price": round(
+            old_price,
+            2
+        ),
+        "discount": round(
+            discount,
+            2
+        ),
+        "price": price
+    })
+
+
+# ==========================================================
 # API - PRODUCTS
 # ==========================================================
 
@@ -3050,4 +3355,3 @@ if __name__ == "__main__":
         port=port,
         debug=False
     )
-    
