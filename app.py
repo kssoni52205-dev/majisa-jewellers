@@ -247,20 +247,34 @@ def calculate_product_price(old_price, discount, fallback_price=0):
     except (TypeError, ValueError):
         discount = 0
 
-    discount = max(0, min(100, discount))
+    discount = max(
+        0,
+        min(100, discount)
+    )
 
     if old_price > 0 and discount > 0:
+
         return round(
-            old_price - (old_price * discount / 100),
+            old_price -
+            (
+                old_price *
+                discount /
+                100
+            ),
             2
         )
 
     try:
-        fallback_price = float(fallback_price or 0)
+        fallback_price = float(
+            fallback_price or 0
+        )
     except (TypeError, ValueError):
         fallback_price = 0
 
-    return round(max(0, fallback_price), 2)
+    return round(
+        max(0, fallback_price),
+        2
+    )
 
 
 # ==========================================================
@@ -308,6 +322,10 @@ def init_db():
 
     conn = get_db()
 
+    # ------------------------------------------------------
+    # PRODUCTS
+    # ------------------------------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -325,6 +343,10 @@ def init_db():
         )
     """)
 
+    # ------------------------------------------------------
+    # USERS
+    # ------------------------------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -336,6 +358,10 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # ------------------------------------------------------
+    # ORDERS
+    # ------------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS orders (
@@ -351,6 +377,10 @@ def init_db():
         )
     """)
 
+    # ------------------------------------------------------
+    # ORDER ITEMS
+    # ------------------------------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS order_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -361,6 +391,10 @@ def init_db():
             quantity INTEGER NOT NULL
         )
     """)
+
+    # ------------------------------------------------------
+    # REVIEWS
+    # ------------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS reviews (
@@ -373,6 +407,10 @@ def init_db():
         )
     """)
 
+    # ------------------------------------------------------
+    # COUPONS
+    # ------------------------------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS coupons (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -381,6 +419,10 @@ def init_db():
             active INTEGER DEFAULT 1
         )
     """)
+
+    # ------------------------------------------------------
+    # STORE SETTINGS
+    # ------------------------------------------------------
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS settings (
@@ -420,6 +462,10 @@ def init_db():
             'majisa_art_jewellers'
         )
     """)
+
+    # ------------------------------------------------------
+    # SAFE MIGRATIONS
+    # ------------------------------------------------------
 
     add_column_if_missing(
         conn,
@@ -491,6 +537,10 @@ def init_db():
 init_db()
 
 
+# ==========================================================
+# HELPERS
+# ==========================================================
+
 def admin_required(view):
 
     @wraps(view)
@@ -517,7 +567,9 @@ def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
 
-        if not session.get("user_id"):
+        if not session.get(
+            "user_id"
+        ):
 
             return redirect(
                 url_for(
@@ -575,6 +627,10 @@ def get_settings():
     return settings
 
 
+# ==========================================================
+# GLOBAL TEMPLATE DATA
+# ==========================================================
+
 @app.context_processor
 def inject_global_data():
 
@@ -586,6 +642,10 @@ def inject_global_data():
         "site_instagram": "majisa_art_jewellers"
     }
 
+
+# ==========================================================
+# HOME
+# ==========================================================
 
 @app.route("/")
 def home():
@@ -616,6 +676,10 @@ def home():
     )
 
 
+# ==========================================================
+# PRODUCTS
+# ==========================================================
+
 @app.route("/products")
 def products():
 
@@ -629,9 +693,42 @@ def products():
         ""
     ).strip()
 
+    price_max_raw = request.args.get(
+        "price_max",
+        ""
+    ).strip()
+
+    try:
+        price_max = (
+            float(price_max_raw)
+            if price_max_raw
+            else None
+        )
+    except ValueError:
+        price_max = None
+
     conn = get_db()
 
-    if search:
+    if search and price_max is not None:
+
+        items = conn.execute("""
+            SELECT *
+            FROM products
+            WHERE (
+                name LIKE ?
+                OR category LIKE ?
+                OR description LIKE ?
+            )
+            AND price <= ?
+            ORDER BY id DESC
+        """, (
+            f"%{search}%",
+            f"%{search}%",
+            f"%{search}%",
+            price_max
+        )).fetchall()
+
+    elif search:
 
         items = conn.execute("""
             SELECT *
@@ -646,6 +743,19 @@ def products():
             f"%{search}%"
         )).fetchall()
 
+    elif category and price_max is not None:
+
+        items = conn.execute("""
+            SELECT *
+            FROM products
+            WHERE category = ?
+              AND price <= ?
+            ORDER BY id DESC
+        """, (
+            category,
+            price_max
+        )).fetchall()
+
     elif category:
 
         items = conn.execute("""
@@ -655,6 +765,17 @@ def products():
             ORDER BY id DESC
         """, (
             category,
+        )).fetchall()
+
+    elif price_max is not None:
+
+        items = conn.execute("""
+            SELECT *
+            FROM products
+            WHERE price <= ?
+            ORDER BY id DESC
+        """, (
+            price_max,
         )).fetchall()
 
     else:
@@ -679,7 +800,8 @@ def products():
         products=items,
         categories=categories,
         selected_category=category,
-        search=search
+        search=search,
+        selected_price_max=price_max
     )
 
 
@@ -738,12 +860,15 @@ def search():
     )
 
 
+# ==========================================================
+# CART
+# ==========================================================
+
 @app.route("/cart")
 def cart():
 
     cart = get_cart()
-
-    if not cart:
+        if not cart:
 
         return render_template(
             "cart.html",
@@ -875,7 +1000,9 @@ def clear_cart():
     return redirect(
         url_for("cart")
     )
-    # ==========================================================
+
+
+# ==========================================================
 # WISHLIST
 # ==========================================================
 
@@ -1579,7 +1706,7 @@ def checkout():
         )
 
     # ------------------------------------------------------
-    # CHECKOUT GET PAGE
+    # CHECKOUT GET
     # ------------------------------------------------------
 
     cart = get_cart()
@@ -1749,8 +1876,6 @@ def order_detail(order_id):
         order=order,
         items=items
     )
-
-
 # ==========================================================
 # REVIEWS
 # ==========================================================
@@ -1821,7 +1946,9 @@ def add_review(product_id):
             product_id=product_id
         )
     )
-    # ==========================================================
+
+
+# ==========================================================
 # CONTACT / ABOUT / FAQ
 # ==========================================================
 
@@ -2057,6 +2184,11 @@ def admin_add_product():
         ""
     ).strip()
 
+
+    # ------------------------------------------------------
+    # OLD PRICE
+    # ------------------------------------------------------
+
     try:
 
         old_price = float(
@@ -2069,6 +2201,11 @@ def admin_add_product():
     except ValueError:
 
         old_price = 0
+
+
+    # ------------------------------------------------------
+    # DISCOUNT
+    # ------------------------------------------------------
 
     try:
 
@@ -2088,6 +2225,11 @@ def admin_add_product():
         min(100, discount)
     )
 
+
+    # ------------------------------------------------------
+    # PRICE
+    # ------------------------------------------------------
+
     try:
 
         submitted_price = float(
@@ -2101,16 +2243,23 @@ def admin_add_product():
 
         submitted_price = 0
 
+
     price = calculate_product_price(
         old_price,
         discount,
         submitted_price
     )
 
+
     description = request.form.get(
         "description",
         ""
     ).strip()
+
+
+    # ------------------------------------------------------
+    # STOCK
+    # ------------------------------------------------------
 
     try:
 
@@ -2125,11 +2274,13 @@ def admin_add_product():
 
         stock = 0
 
+
     featured = (
         1
         if request.form.get("featured")
         else 0
     )
+
 
     if not name or not category:
 
@@ -2142,9 +2293,9 @@ def admin_add_product():
         )
 
 
-    # ------------------------------------------------------
+    # ======================================================
     # IMAGE UPLOAD
-    # ------------------------------------------------------
+    # ======================================================
 
     image = ""
 
@@ -2169,9 +2320,9 @@ def admin_add_product():
             )
 
 
-    # ------------------------------------------------------
+    # ======================================================
     # VIDEO UPLOAD
-    # ------------------------------------------------------
+    # ======================================================
 
     video = ""
 
@@ -2201,9 +2352,9 @@ def admin_add_product():
             )
 
 
-    # ------------------------------------------------------
+    # ======================================================
     # SAVE PRODUCT
-    # ------------------------------------------------------
+    # ======================================================
 
     conn = get_db()
 
@@ -2239,7 +2390,6 @@ def admin_add_product():
     )
 
     conn.commit()
-
     conn.close()
 
     flash(
@@ -2275,6 +2425,7 @@ def admin_edit_product(product_id):
         )
     ).fetchone()
 
+
     if product is None:
 
         conn.close()
@@ -2287,6 +2438,10 @@ def admin_edit_product(product_id):
             url_for("admin_products")
         )
 
+
+    # ======================================================
+    # POST
+    # ======================================================
 
     if request.method == "POST":
 
@@ -2301,6 +2456,10 @@ def admin_edit_product(product_id):
         ).strip()
 
 
+        # --------------------------------------------------
+        # OLD PRICE
+        # --------------------------------------------------
+
         try:
 
             old_price = float(
@@ -2314,6 +2473,10 @@ def admin_edit_product(product_id):
 
             old_price = 0
 
+
+        # --------------------------------------------------
+        # DISCOUNT
+        # --------------------------------------------------
 
         try:
 
@@ -2333,6 +2496,10 @@ def admin_edit_product(product_id):
             min(100, discount)
         )
 
+
+        # --------------------------------------------------
+        # PRICE
+        # --------------------------------------------------
 
         try:
 
@@ -2367,6 +2534,10 @@ def admin_edit_product(product_id):
             ""
         ).strip()
 
+
+        # --------------------------------------------------
+        # STOCK
+        # --------------------------------------------------
 
         try:
 
@@ -2406,13 +2577,12 @@ def admin_edit_product(product_id):
 
 
         image = product["image"] or ""
-
         video = product["video"] or ""
 
 
-        # --------------------------------------------------
+        # ==================================================
         # NEW IMAGE
-        # --------------------------------------------------
+        # ==================================================
 
         new_image = request.files.get(
             "image"
@@ -2448,9 +2618,9 @@ def admin_edit_product(product_id):
             )
 
 
-        # --------------------------------------------------
+        # ==================================================
         # NEW VIDEO
-        # --------------------------------------------------
+        # ==================================================
 
         new_video = request.files.get(
             "video"
@@ -2486,6 +2656,10 @@ def admin_edit_product(product_id):
             )
 
 
+        # ==================================================
+        # UPDATE
+        # ==================================================
+
         conn.execute(
             """
             UPDATE products
@@ -2518,7 +2692,6 @@ def admin_edit_product(product_id):
         )
 
         conn.commit()
-
         conn.close()
 
         flash(
@@ -2529,6 +2702,10 @@ def admin_edit_product(product_id):
             url_for("admin_products")
         )
 
+
+    # ======================================================
+    # EDIT PAGE
+    # ======================================================
 
     conn.close()
 
@@ -2556,7 +2733,9 @@ def admin_delete_product(product_id):
 
     product = conn.execute(
         """
-        SELECT image, video
+        SELECT
+            image,
+            video
         FROM products
         WHERE id = ?
         """,
@@ -2564,6 +2743,7 @@ def admin_delete_product(product_id):
             product_id,
         )
     ).fetchone()
+
 
     if product:
 
@@ -2598,7 +2778,6 @@ def admin_delete_product(product_id):
     )
 
     conn.commit()
-
     conn.close()
 
     flash(
@@ -2734,6 +2913,7 @@ def admin_order_detail(order_id):
 
     conn.close()
 
+
     if order is None:
 
         return render_template(
@@ -2748,7 +2928,7 @@ def admin_order_detail(order_id):
         order=order,
         order_items=order_items
     )
-    # ==========================================================
+# ==========================================================
 # ADMIN UPDATE ORDER STATUS
 # ==========================================================
 
@@ -3328,10 +3508,21 @@ def page_not_found(error):
         <head>
             <title>Majisa Jewellers - 404</title>
         </head>
+
         <body>
-            <h1>404 - Page Not Found</h1>
-            <p>The page you are looking for does not exist.</p>
-            <a href="/">Go Home</a>
+
+            <h1>
+                404 - Page Not Found
+            </h1>
+
+            <p>
+                The page you are looking for does not exist.
+            </p>
+
+            <a href="/">
+                Go Home
+            </a>
+
         </body>
         </html>
         """, 404
