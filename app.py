@@ -1885,143 +1885,292 @@ def admin_products():
         categories=categories,
         search=search
     )
-
-
 # ==========================================================
+
 # ADMIN ADD PRODUCT
+
 # ==========================================================
 
 @app.route(
-    "/admin/product/add",
-    methods=["POST"]
+"/admin/product/add",
+methods=["POST"]
 )
 @admin_required
 def admin_add_product():
 
-    name = request.form.get(
-        "name",
-        ""
-    ).strip()
+```
+name = request.form.get(
+    "name",
+    ""
+).strip()
 
-    category = request.form.get(
-        "category",
-        ""
-    ).strip()
+category = request.form.get(
+    "category",
+    ""
+).strip()
 
-    try:
 
-        price = float(
-            request.form.get(
-                "price",
-                0
-            ) or 0
-        )
+# ------------------------------------------------------
+# PRICE
+# ------------------------------------------------------
 
-    except ValueError:
+try:
 
-        price = 0
-
-    try:
-
-        old_price = float(
-            request.form.get(
-                "old_price",
-                0
-            ) or 0
-        )
-
-    except ValueError:
-
-        old_price = 0
-
-    try:
-
-        stock = int(
-            request.form.get(
-                "stock",
-                0
-            ) or 0
-        )
-
-    except ValueError:
-
-        stock = 0
-
-    description = request.form.get(
-        "description",
-        ""
-    ).strip()
-
-    featured = 1 if request.form.get(
-        "featured"
-    ) else 0
-
-    image = ""
-
-    image_file = (
-        request.files.get("image")
-        or
-        request.files.get("product_image")
+    price = float(
+        request.form.get(
+            "price",
+            0
+        ) or 0
     )
 
-    if image_file and image_file.filename:
+except (ValueError, TypeError):
 
-        try:
+    price = 0
 
-            image = save_product_image(
+
+# ------------------------------------------------------
+# OLD PRICE
+# ------------------------------------------------------
+
+try:
+
+    old_price = float(
+        request.form.get(
+            "old_price",
+            0
+        ) or 0
+    )
+
+except (ValueError, TypeError):
+
+    old_price = 0
+
+
+# ------------------------------------------------------
+# STOCK
+# ------------------------------------------------------
+
+try:
+
+    stock = int(
+        request.form.get(
+            "stock",
+            0
+        ) or 0
+    )
+
+except (ValueError, TypeError):
+
+    stock = 0
+
+
+# ------------------------------------------------------
+# DESCRIPTION
+# ------------------------------------------------------
+
+description = request.form.get(
+    "description",
+    ""
+).strip()
+
+
+# ------------------------------------------------------
+# FEATURED
+# ------------------------------------------------------
+
+featured = 1 if request.form.get(
+    "featured"
+) else 0
+
+
+# ------------------------------------------------------
+# MULTIPLE PRODUCT IMAGES
+#
+# image  = main / primary image
+# image2 = second image
+# image3 = third image
+# image4 = fourth image
+# image5 = fifth image
+# ------------------------------------------------------
+
+image = ""
+image2 = ""
+image3 = ""
+image4 = ""
+image5 = ""
+
+
+image_files = [
+
+    request.files.get("image"),
+
+    request.files.get("image2"),
+
+    request.files.get("image3"),
+
+    request.files.get("image4"),
+
+    request.files.get("image5")
+
+]
+
+
+saved_images = []
+
+
+try:
+
+    for image_file in image_files:
+
+        if image_file and image_file.filename:
+
+            saved_image = save_product_image(
                 image_file
             )
 
-        except ValueError as error:
-
-            flash(
-                str(error)
+            saved_images.append(
+                saved_image
             )
 
-            return redirect(
-                url_for("admin_products")
-            )
 
-    conn = get_db()
-
-    conn.execute(
-        """
-        INSERT INTO products
-        (
-            name,
-            category,
-            price,
-            old_price,
-            image,
-            description,
-            stock,
-            featured
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            name,
-            category,
-            price,
-            old_price,
-            image,
-            description,
-            stock,
-            featured
-        )
-    )
-
-    conn.commit()
-    conn.close()
+except ValueError as error:
 
     flash(
-        "Product added successfully."
+        str(error)
     )
 
     return redirect(
         url_for("admin_products")
     )
 
+
+# ------------------------------------------------------
+# ASSIGN SAVED IMAGES
+# ------------------------------------------------------
+
+if len(saved_images) > 0:
+
+    image = saved_images[0]
+
+
+if len(saved_images) > 1:
+
+    image2 = saved_images[1]
+
+
+if len(saved_images) > 2:
+
+    image3 = saved_images[2]
+
+
+if len(saved_images) > 3:
+
+    image4 = saved_images[3]
+
+
+if len(saved_images) > 4:
+
+    image5 = saved_images[4]
+
+
+# ------------------------------------------------------
+# PRODUCT VIDEO
+# ------------------------------------------------------
+
+video = ""
+
+video_file = request.files.get(
+    "video"
+)
+
+
+if video_file and video_file.filename:
+
+    try:
+
+        video = save_product_video(
+            video_file
+        )
+
+    except ValueError as error:
+
+        flash(
+            str(error)
+        )
+
+        return redirect(
+            url_for("admin_products")
+        )
+
+
+# ------------------------------------------------------
+# DATABASE
+# ------------------------------------------------------
+
+conn = get_db()
+
+
+conn.execute(
+    """
+    INSERT INTO products
+    (
+        name,
+        category,
+        price,
+        old_price,
+        image,
+        image2,
+        image3,
+        image4,
+        image5,
+        video,
+        description,
+        stock,
+        featured
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """,
+    (
+        name,
+        category,
+        price,
+        old_price,
+        image,
+        image2,
+        image3,
+        image4,
+        image5,
+        video,
+        description,
+        stock,
+        featured
+    )
+)
+
+
+conn.commit()
+
+conn.close()
+
+
+# ------------------------------------------------------
+# SUCCESS
+# ------------------------------------------------------
+
+flash(
+    "Product added successfully."
+)
+
+
+return redirect(
+    url_for("admin_products")
+)
+```
+
+
+
+
+        
 
 # ==========================================================
 # ADMIN EDIT PRODUCT
