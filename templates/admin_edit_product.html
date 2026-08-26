@@ -1,377 +1,1198 @@
-
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Edit Product - Majisa Jewellers</title>
+```
+<title>Edit Product - Majisa Jewellers</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f6f6f6;
+        color: #222;
+    }
+
+    .header {
+        background: #111;
+        color: white;
+        padding: 18px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 22px;
+    }
+
+    .header a {
+        color: white;
+        text-decoration: none;
+        margin-left: 15px;
+        font-size: 14px;
+    }
+
+    .header a:hover {
+        color: #f4d58d;
+    }
+
+    .container {
+        max-width: 950px;
+        margin: 35px auto;
+        padding: 0 20px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+        margin-top: 0;
+        margin-bottom: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 7px;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 7px;
+        font-size: 15px;
+    }
+
+    textarea {
+        min-height: 130px;
+        resize: vertical;
+    }
+
+    .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+    }
+
+    /* =========================
+       CURRENT PHOTOS
+    ========================= */
+
+    .current-section {
+        margin-top: 10px;
+        padding: 18px;
+        background: #fafafa;
+        border: 1px solid #e5e5e5;
+        border-radius: 10px;
+    }
+
+    .current-section-title {
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    .current-images {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+    }
+
+    .current-image-box {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .current-image-box img {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        display: block;
+    }
+
+    .image-number {
+        padding: 7px;
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+        background: #f5f5f5;
+    }
+
+    .no-current-image {
+        padding: 20px;
+        color: #777;
+        font-size: 14px;
+    }
+
+    /* =========================
+       PHOTO UPLOAD
+    ========================= */
+
+    .upload-section {
+        margin-top: 10px;
+        padding: 18px;
+        background: #fffaf0;
+        border: 1px solid #ead9b8;
+        border-radius: 10px;
+    }
+
+    .upload-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        font-size: 17px;
+    }
+
+    .upload-description {
+        color: #777;
+        font-size: 13px;
+        margin-bottom: 18px;
+    }
+
+    .photo-upload-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .photo-upload-box {
+        border: 2px dashed #d7c39b;
+        border-radius: 9px;
+        padding: 14px;
+        background: white;
+    }
+
+    .photo-upload-box label {
+        font-size: 14px;
+        margin-bottom: 9px;
+    }
+
+    .photo-upload-box input[type="file"] {
+        padding: 8px;
+        background: #fafafa;
+        font-size: 13px;
+    }
+
+    .photo-preview {
+        display: none;
+        margin-top: 12px;
+    }
+
+    .photo-preview img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 7px;
+        border: 1px solid #ddd;
+        display: block;
+    }
+
+    .photo-note {
+        display: block;
+        margin-top: 7px;
+        color: #888;
+        font-size: 11px;
+    }
+
+    /* =========================
+       VIDEO
+    ========================= */
+
+    .video-section {
+        margin-top: 20px;
+        padding: 18px;
+        background: #fafafa;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+    }
+
+    .current-video {
+        margin-top: 12px;
+    }
+
+    .current-video video {
+        width: 100%;
+        max-width: 450px;
+        max-height: 280px;
+        border-radius: 8px;
+        background: #000;
+    }
+
+    .video-preview {
+        display: none;
+        margin-top: 12px;
+    }
+
+    .video-preview video {
+        width: 100%;
+        max-width: 450px;
+        max-height: 280px;
+        border-radius: 8px;
+        background: #000;
+    }
+
+    /* =========================
+       CHECKBOX
+    ========================= */
+
+    .checkbox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 25px 0;
+    }
+
+    .checkbox input {
+        width: auto;
+    }
+
+    .checkbox label {
+        margin: 0;
+    }
+
+    /* =========================
+       BUTTONS
+    ========================= */
+
+    .buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 25px;
+    }
+
+    .btn {
+        border: none;
+        padding: 13px 22px;
+        border-radius: 7px;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 15px;
+        display: inline-block;
+    }
+
+    .save {
+        background: #111;
+        color: white;
+    }
+
+    .save:hover {
+        background: #333;
+    }
+
+    .cancel {
+        background: #ddd;
+        color: #222;
+    }
+
+    .cancel:hover {
+        background: #ccc;
+    }
+
+    /* =========================
+       FLASH
+    ========================= */
+
+    .flash {
+        background: #e5f7e5;
+        color: #176317;
+        padding: 12px;
+        border-radius: 7px;
+        margin-bottom: 20px;
+        border: 1px solid #b8dfb8;
+    }
+
+    .flash.error {
+        background: #ffe5e5;
+        color: #a00000;
+        border-color: #efbcbc;
+    }
+
+    /* =========================
+       MOBILE
+    ========================= */
+
+    @media (max-width: 800px) {
+
+        .current-images {
+            grid-template-columns: repeat(3, 1fr);
         }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f6f6f6;
-            color: #222;
+        .photo-upload-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 650px) {
+
+        .row {
+            grid-template-columns: 1fr;
         }
 
         .header {
-            background: #111;
-            color: white;
-            padding: 18px 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 22px;
-        }
-
-        .header a {
-            color: white;
-            text-decoration: none;
-            margin-left: 15px;
-            font-size: 14px;
-        }
-
-        .container {
-            max-width: 850px;
-            margin: 35px auto;
-            padding: 0 20px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-        }
-
-        h2 {
-            margin-top: 0;
-            margin-bottom: 25px;
-        }
-
-        .form-group {
-            margin-bottom: 18px;
-        }
-
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 7px;
-        }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 7px;
-            font-size: 15px;
-        }
-
-        textarea {
-            min-height: 130px;
-            resize: vertical;
-        }
-
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-        }
-
-        .current-image {
-            margin: 10px 0 18px;
-        }
-
-        .current-image img {
-            width: 180px;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-            display: block;
-        }
-
-        .checkbox {
-            display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
             gap: 10px;
-            margin: 20px 0;
-        }
-
-        .checkbox input {
-            width: auto;
         }
 
         .buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 25px;
+            flex-direction: column;
         }
 
         .btn {
-            border: none;
-            padding: 13px 22px;
-            border-radius: 7px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 15px;
-            display: inline-block;
+            text-align: center;
         }
 
-        .save {
-            background: #111;
-            color: white;
+        .current-images {
+            grid-template-columns: repeat(2, 1fr);
         }
 
-        .cancel {
-            background: #ddd;
-            color: #222;
+        .container {
+            margin: 20px auto;
+            padding: 0 12px;
         }
 
-        .save:hover {
-            background: #333;
+        .card {
+            padding: 18px;
         }
+    }
 
-        .cancel:hover {
-            background: #ccc;
+    @media (max-width: 420px) {
+
+        .current-images {
+            grid-template-columns: 1fr 1fr;
         }
+    }
+</style>
+```
 
-        .flash {
-            background: #ffe5e5;
-            color: #a00000;
-            padding: 12px;
-            border-radius: 7px;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 650px) {
-            .row {
-                grid-template-columns: 1fr;
-            }
-
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            .buttons {
-                flex-direction: column;
-            }
-
-            .btn {
-                text-align: center;
-            }
-        }
-    </style>
 </head>
 
 <body>
 
-    <div class="header">
-        <h1>Majisa Jewellers - Edit Product</h1>
+<div class="header">
 
-        <div>
-            <a href="{{ url_for('admin_products') }}">Products</a>
-            <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('admin_logout') }}">Logout</a>
-        </div>
-    </div>
+```
+<h1>
+    Majisa Jewellers - Edit Product
+</h1>
 
-    <div class="container">
+<div>
+    <a href="{{ url_for('admin_products') }}">
+        Products
+    </a>
 
-        <div class="card">
+    <a href="{{ url_for('admin_dashboard') }}">
+        Dashboard
+    </a>
 
-            <h2>Edit Product</h2>
+    <a href="{{ url_for('admin_logout') }}">
+        Logout
+    </a>
+</div>
+```
 
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="flash">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+</div>
 
-            <form
-                method="POST"
-                action="{{ url_for('admin_edit_product', product_id=product['id']) }}"
-                enctype="multipart/form-data"
+<div class="container">
+
+```
+<div class="card">
+
+    <h2>
+        Edit Product
+    </h2>
+
+
+    <!-- FLASH MESSAGES -->
+
+    {% with messages = get_flashed_messages() %}
+
+        {% if messages %}
+
+            {% for message in messages %}
+
+                <div class="flash">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <!-- MAIN FORM -->
+
+    <form
+        method="POST"
+        action="{{ url_for('admin_edit_product', product_id=product['id']) }}"
+        enctype="multipart/form-data"
+    >
+
+
+        <!-- PRODUCT NAME -->
+
+        <div class="form-group">
+
+            <label for="name">
+                Product Name
+            </label>
+
+            <input
+                type="text"
+                id="name"
+                name="name"
+                value="{{ product['name'] or '' }}"
+                required
             >
 
-                <div class="form-group">
-                    <label for="name">Product Name</label>
+        </div>
 
-                    <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        value="{{ product['name'] }}"
-                        required
-                    >
+
+        <!-- CATEGORY + STOCK -->
+
+        <div class="row">
+
+            <div class="form-group">
+
+                <label for="category">
+                    Category
+                </label>
+
+                <input
+                    type="text"
+                    id="category"
+                    name="category"
+                    value="{{ product['category'] or '' }}"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="stock">
+                    Stock
+                </label>
+
+                <input
+                    type="number"
+                    id="stock"
+                    name="stock"
+                    min="0"
+                    value="{{ product['stock'] or 0 }}"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- PRICE -->
+
+        <div class="row">
+
+            <div class="form-group">
+
+                <label for="price">
+                    Price (₹)
+                </label>
+
+                <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    step="0.01"
+                    min="0"
+                    value="{{ product['price'] or 0 }}"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="old_price">
+                    Old Price (₹)
+                </label>
+
+                <input
+                    type="number"
+                    id="old_price"
+                    name="old_price"
+                    step="0.01"
+                    min="0"
+                    value="{{ product['old_price'] or 0 }}"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- DESCRIPTION -->
+
+        <div class="form-group">
+
+            <label for="description">
+                Description
+            </label>
+
+            <textarea
+                id="description"
+                name="description"
+            >{{ product['description'] or '' }}</textarea>
+
+        </div>
+
+
+        <!-- CURRENT PRODUCT PHOTOS -->
+
+        <div class="form-group">
+
+            <label>
+                Current Product Photos
+            </label>
+
+
+            <div class="current-section">
+
+                <div class="current-section-title">
+                    Existing Photos
                 </div>
 
-                <div class="row">
 
-                    <div class="form-group">
-                        <label for="category">Category</label>
-
-                        <input
-                            type="text"
-                            id="category"
-                            name="category"
-                            value="{{ product['category'] }}"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="stock">Stock</label>
-
-                        <input
-                            type="number"
-                            id="stock"
-                            name="stock"
-                            min="0"
-                            value="{{ product['stock'] or 0 }}"
-                        >
-                    </div>
-
-                </div>
-
-                <div class="row">
-
-                    <div class="form-group">
-                        <label for="price">Price (₹)</label>
-
-                        <input
-                            type="number"
-                            id="price"
-                            name="price"
-                            step="0.01"
-                            min="0"
-                            value="{{ product['price'] or 0 }}"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="old_price">Old Price (₹)</label>
-
-                        <input
-                            type="number"
-                            id="old_price"
-                            name="old_price"
-                            step="0.01"
-                            min="0"
-                            value="{{ product['old_price'] or 0 }}"
-                        >
-                    </div>
-
-                </div>
-
-                <div class="form-group">
-                    <label for="description">Description</label>
-
-                    <textarea
-                        id="description"
-                        name="description"
-                    >{{ product['description'] or '' }}</textarea>
-                </div>
-
-                <div class="form-group">
-
-                    <label>Current Product Image</label>
+                <div class="current-images">
 
                     {% if product['image'] %}
 
-                        <div class="current-image">
+                        <div class="current-image-box">
 
                             <img
                                 src="{{ url_for('static', filename='images/' + product['image']) }}"
                                 alt="{{ product['name'] }}"
                             >
 
+                            <div class="image-number">
+                                Photo 1
+                            </div>
+
                         </div>
 
-                    {% else %}
+                    {% endif %}
 
-                        <p>No image uploaded.</p>
+
+                    {% if product['image2'] %}
+
+                        <div class="current-image-box">
+
+                            <img
+                                src="{{ url_for('static', filename='images/' + product['image2']) }}"
+                                alt="{{ product['name'] }}"
+                            >
+
+                            <div class="image-number">
+                                Photo 2
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if product['image3'] %}
+
+                        <div class="current-image-box">
+
+                            <img
+                                src="{{ url_for('static', filename='images/' + product['image3']) }}"
+                                alt="{{ product['name'] }}"
+                            >
+
+                            <div class="image-number">
+                                Photo 3
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if product['image4'] %}
+
+                        <div class="current-image-box">
+
+                            <img
+                                src="{{ url_for('static', filename='images/' + product['image4']) }}"
+                                alt="{{ product['name'] }}"
+                            >
+
+                            <div class="image-number">
+                                Photo 4
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if product['image5'] %}
+
+                        <div class="current-image-box">
+
+                            <img
+                                src="{{ url_for('static', filename='images/' + product['image5']) }}"
+                                alt="{{ product['name'] }}"
+                            >
+
+                            <div class="image-number">
+                                Photo 5
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if not product['image']
+                          and not product['image2']
+                          and not product['image3']
+                          and not product['image4']
+                          and not product['image5'] %}
+
+                        <div class="no-current-image">
+                            No product photos uploaded.
+                        </div>
 
                     {% endif %}
 
                 </div>
 
-                <div class="form-group">
-
-                    <label for="image">
-                        Replace Product Image
-                    </label>
-
-                    <input
-                        type="file"
-                        id="image"
-                        name="image"
-                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                    >
-
-                    <small>
-                        JPG, JPEG, PNG or WEBP only.
-                        Leave empty to keep the current image.
-                    </small>
-
-                </div>
-
-                <div class="checkbox">
-
-                    <input
-                        type="checkbox"
-                        id="featured"
-                        name="featured"
-                        {% if product['featured'] %}checked{% endif %}
-                    >
-
-                    <label for="featured">
-                        Show this product as Featured
-                    </label>
-
-                </div>
-
-                <div class="buttons">
-
-                    <button
-                        type="submit"
-                        class="btn save"
-                    >
-                        Save Changes
-                    </button>
-
-                    <a
-                        href="{{ url_for('admin_products') }}"
-                        class="btn cancel"
-                    >
-                        Cancel
-                    </a>
-
-                </div>
-
-            </form>
+            </div>
 
         </div>
 
-    </div>
+
+        <!-- MULTIPLE PHOTO UPLOAD -->
+
+        <div class="form-group">
+
+            <div class="upload-section">
+
+                <div class="upload-title">
+                    Product Photos
+                </div>
+
+                <div class="upload-description">
+                    You can upload up to 5 product photos.
+                    Leave a field empty if you do not want to replace that photo.
+                </div>
+
+
+                <div class="photo-upload-grid">
+
+
+                    <!-- PHOTO 1 -->
+
+                    <div class="photo-upload-box">
+
+                        <label for="image">
+                            Photo 1
+                        </label>
+
+                        <input
+                            type="file"
+                            id="image"
+                            name="image"
+                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                            onchange="previewPhoto(this, 'preview1')"
+                        >
+
+                        <small class="photo-note">
+                            JPG, JPEG, PNG or WEBP
+                        </small>
+
+                        <div
+                            class="photo-preview"
+                            id="preview1"
+                        >
+
+                            <img
+                                id="previewImg1"
+                                src=""
+                                alt="Photo 1 Preview"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PHOTO 2 -->
+
+                    <div class="photo-upload-box">
+
+                        <label for="image2">
+                            Photo 2
+                        </label>
+
+                        <input
+                            type="file"
+                            id="image2"
+                            name="image2"
+                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                            onchange="previewPhoto(this, 'preview2')"
+                        >
+
+                        <small class="photo-note">
+                            JPG, JPEG, PNG or WEBP
+                        </small>
+
+                        <div
+                            class="photo-preview"
+                            id="preview2"
+                        >
+
+                            <img
+                                id="previewImg2"
+                                src=""
+                                alt="Photo 2 Preview"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PHOTO 3 -->
+
+                    <div class="photo-upload-box">
+
+                        <label for="image3">
+                            Photo 3
+                        </label>
+
+                        <input
+                            type="file"
+                            id="image3"
+                            name="image3"
+                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                            onchange="previewPhoto(this, 'preview3')"
+                        >
+
+                        <small class="photo-note">
+                            JPG, JPEG, PNG or WEBP
+                        </small>
+
+                        <div
+                            class="photo-preview"
+                            id="preview3"
+                        >
+
+                            <img
+                                id="previewImg3"
+                                src=""
+                                alt="Photo 3 Preview"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PHOTO 4 -->
+
+                    <div class="photo-upload-box">
+
+                        <label for="image4">
+                            Photo 4
+                        </label>
+
+                        <input
+                            type="file"
+                            id="image4"
+                            name="image4"
+                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                            onchange="previewPhoto(this, 'preview4')"
+                        >
+
+                        <small class="photo-note">
+                            JPG, JPEG, PNG or WEBP
+                        </small>
+
+                        <div
+                            class="photo-preview"
+                            id="preview4"
+                        >
+
+                            <img
+                                id="previewImg4"
+                                src=""
+                                alt="Photo 4 Preview"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PHOTO 5 -->
+
+                    <div class="photo-upload-box">
+
+                        <label for="image5">
+                            Photo 5
+                        </label>
+
+                        <input
+                            type="file"
+                            id="image5"
+                            name="image5"
+                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                            onchange="previewPhoto(this, 'preview5')"
+                        >
+
+                        <small class="photo-note">
+                            JPG, JPEG, PNG or WEBP
+                        </small>
+
+                        <div
+                            class="photo-preview"
+                            id="preview5"
+                        >
+
+                            <img
+                                id="previewImg5"
+                                src=""
+                                alt="Photo 5 Preview"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- VIDEO -->
+
+        <div class="form-group">
+
+            <div class="video-section">
+
+                <label for="video">
+                    Product Video
+                </label>
+
+
+                {% if product['video'] %}
+
+                    <div class="current-video">
+
+                        <p style="font-size:13px;color:#666;margin-bottom:8px;">
+                            Current Video
+                        </p>
+
+                        <video
+                            controls
+                            muted
+                            playsinline
+                        >
+
+                            <source
+                                src="{{ url_for('static', filename='videos/' + product['video']) }}"
+                            >
+
+                        </video>
+
+                    </div>
+
+                {% endif %}
+
+
+                <div style="margin-top:15px;">
+
+                    <input
+                        type="file"
+                        id="video"
+                        name="video"
+                        accept=".mp4,.webm,.mov,video/mp4,video/webm,video/quicktime"
+                        onchange="previewVideo(this)"
+                    >
+
+                </div>
+
+
+                <small style="display:block;margin-top:7px;color:#888;font-size:12px;">
+                    Leave empty to keep the current video.
+                </small>
+
+
+                <div
+                    class="video-preview"
+                    id="videoPreview"
+                >
+
+                    <video
+                        id="previewVideo"
+                        controls
+                        muted
+                        playsinline
+                    ></video>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- FEATURED -->
+
+        <div class="checkbox">
+
+            <input
+                type="checkbox"
+                id="featured"
+                name="featured"
+                value="1"
+                {% if product['featured'] %}checked{% endif %}
+            >
+
+            <label for="featured">
+                Show this product as Featured
+            </label>
+
+        </div>
+
+
+        <!-- BUTTONS -->
+
+        <div class="buttons">
+
+            <button
+                type="submit"
+                class="btn save"
+            >
+                Save Changes
+            </button>
+
+
+            <a
+                href="{{ url_for('admin_products') }}"
+                class="btn cancel"
+            >
+                Cancel
+            </a>
+
+        </div>
+
+
+    </form>
+
+</div>
+```
+
+</div>
+
+<script>
+
+/* =========================================
+   PHOTO PREVIEW
+========================================= */
+
+function previewPhoto(input, previewId) {
+
+    const previewBox =
+        document.getElementById(previewId);
+
+    const number =
+        previewId.replace("preview", "");
+
+    const previewImage =
+        document.getElementById("previewImg" + number);
+
+
+    if (
+        !input.files ||
+        !input.files[0]
+    ) {
+
+        previewBox.style.display = "none";
+
+        previewImage.src = "";
+
+        return;
+    }
+
+
+    const file =
+        input.files[0];
+
+
+    if (
+        !file.type.startsWith("image/")
+    ) {
+
+        alert(
+            "Please select a valid image file."
+        );
+
+        input.value = "";
+
+        previewBox.style.display = "none";
+
+        previewImage.src = "";
+
+        return;
+    }
+
+
+    previewImage.src =
+        URL.createObjectURL(file);
+
+    previewBox.style.display =
+        "block";
+}
+
+
+/* =========================================
+   VIDEO PREVIEW
+========================================= */
+
+function previewVideo(input) {
+
+    const previewBox =
+        document.getElementById(
+            "videoPreview"
+        );
+
+    const video =
+        document.getElementById(
+            "previewVideo"
+        );
+
+
+    if (
+        !input.files ||
+        !input.files[0]
+    ) {
+
+        previewBox.style.display =
+            "none";
+
+        video.removeAttribute("src");
+
+        video.load();
+
+        return;
+    }
+
+
+    const file =
+        input.files[0];
+
+
+    if (
+        !file.type.startsWith("video/")
+    ) {
+
+        alert(
+            "Please select a valid video file."
+        );
+
+        input.value = "";
+
+        previewBox.style.display =
+            "none";
+
+        video.removeAttribute("src");
+
+        video.load();
+
+        return;
+    }
+
+
+    video.src =
+        URL.createObjectURL(file);
+
+    previewBox.style.display =
+        "block";
+}
+
+
+/* =========================================
+   FORM SUBMIT PROTECTION
+========================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        const form =
+            document.querySelector("form");
+
+
+        if (!form) {
+            return;
+        }
+
+
+        form.addEventListener(
+            "submit",
+            function() {
+
+                const button =
+                    form.querySelector(
+                        'button[type="submit"]'
+                    );
+
+
+                if (button) {
+
+                    button.disabled = true;
+
+                    button.textContent =
+                        "Saving...";
+
+                }
+
+            }
+        );
+
+    }
+);
+
+</script>
 
 </body>
 </html>
