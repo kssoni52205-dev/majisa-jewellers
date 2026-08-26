@@ -1,9 +1,11 @@
 import os
 import sqlite3
 import secrets
-import hmac
 import hashlib
+import hmac
+import time
 from functools import wraps
+from urllib.parse import urlparse
 
 from flask import (
     Flask,
@@ -18,7 +20,6 @@ from flask import (
 )
 
 from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # ==========================================================
@@ -29,13 +30,8 @@ app = Flask(__name__)
 
 app.secret_key = os.environ.get(
     "SECRET_KEY",
-    "change-this-secret-key"
+    "majisa-development-secret-change-this"
 )
-
-
-# ==========================================================
-# CONFIG
-# ==========================================================
 
 ADMIN_USERNAME = os.environ.get(
     "ADMIN_USERNAME",
@@ -65,6 +61,10 @@ os.makedirs(
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
+app.config["MAX_CONTENT_LENGTH"] = (
+    100 * 1024 * 1024
+)
+
 
 # ==========================================================
 # RAZORPAY CONFIG
@@ -79,6 +79,31 @@ RAZORPAY_KEY_SECRET = os.environ.get(
     "RAZORPAY_KEY_SECRET",
     ""
 )
+
+
+try:
+    import razorpay
+except ImportError:
+    razorpay = None
+
+
+def get_razorpay_client():
+
+    if not RAZORPAY_KEY_ID:
+        return None
+
+    if not RAZORPAY_KEY_SECRET:
+        return None
+
+    if razorpay is None:
+        return None
+
+    return razorpay.Client(
+        auth=(
+            RAZORPAY_KEY_ID,
+            RAZORPAY_KEY_SECRET
+        )
+    )
 
 
 # ==========================================================
@@ -101,39 +126,122 @@ ALLOWED_VIDEO_EXTENSIONS = {
 
 
 # ==========================================================
-# FILE HELPERS
+# IMAGE HELPERS
 # ==========================================================
 
 def allowed_image_file(filename):
 
-    return (
-        bool(filename)
-        and "." in filename
-        and filename.rsplit(
-            ".",
+    if not filename:
+        return False
+
+    if "." not in filename:
+        return False
+
+    extension = filename.rsplit(
+        ".",
+        1
+    )[1].lower()
+
+    return extension in ALLOWED_IMAGE_EXTENSIONS
+
+
+def image_filename_only(filename):
+
+    if not filename:
+        return ""
+
+    value = str(filename).strip()
+
+    value = value.replace(
+        "\\",
+        "/"
+    )
+
+    value = value.split("?")[0]
+
+    if "/static/images/" in value:
+
+        value = value.split(
+            "/static/images/",
             1
-        )[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+        )[1]
+
+    elif value.startswith(
+        "static/images/"
+    ):
+
+        value = value[
+            len("static/images/"):
+        ]
+
+    elif value.startswith(
+        "/images/"
+    ):
+
+        value = value[
+            len("/images/"):
+        ]
+
+    elif value.startswith(
+        "images/"
+    ):
+
+        value = value[
+            len("images/"):
+        ]
+
+    return os.path.basename(
+        value
     )
 
 
-def allowed_video_file(filename):
+def product_image_url(filename):
 
-    return (
-        bool(filename)
-        and "." in filename
-        and filename.rsplit(
-            ".",
-            1
-        )[1].lower() in ALLOWED_VIDEO_EXTENSIONS
+    if not filename:
+        return ""
+
+    clean_name = image_filename_only(
+        filename
+    )
+
+    if not clean_name:
+        return ""
+
+    return url_for(
+        "uploaded_image",
+        filename=clean_name
+    )
+
+
+def product_video_url(filename):
+
+    if not filename:
+        return ""
+
+    clean_name = image_filename_only(
+        filename
+    )
+
+    if not clean_name:
+        return ""
+
+    return url_for(
+        "uploaded_video",
+        filename=clean_name
     )
 
 
 def save_product_image(file):
 
-    if not file or not file.filename:
+    if not file:
         return ""
 
-    if not allowed_image_file(file.filename):
+    if not file.filename:
+        return ""
+
+    if not allowed_image_file(
+        file.filename
+    ):
 
         raise ValueError(
             "Only JPG, JPEG, PNG and WEBP images are allowed."
@@ -149,26 +257,82 @@ def save_product_image(file):
 
     filename = (
         "product_"
-        + secrets.token_hex(12)
+        + secrets.token_hex(10)
         + extension
     )
 
-    path = os.path.join(
+    file_path = os.path.join(
         app.config["UPLOAD_FOLDER"],
         filename
     )
 
-    file.save(path)
+    file.save(
+        file_path
+    )
 
     return filename
 
 
+def delete_product_image(filename):
+
+    clean_name = image_filename_only(
+        filename
+    )
+
+    if not clean_name:
+        return
+
+    file_path = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        clean_name
+    )
+
+    try:
+
+        if os.path.isfile(
+            file_path
+        ):
+
+            os.remove(
+                file_path
+            )
+
+    except OSError:
+
+        pass
+
+
+# ==========================================================
+# VIDEO HELPERS
+# ==========================================================
+
+def allowed_video_file(filename):
+
+    if not filename:
+        return False
+
+    if "." not in filename:
+        return False
+
+    extension = filename.rsplit(
+        ".",
+        1
+    )[1].lower()
+
+    return extension in ALLOWED_VIDEO_EXTENSIONS
+
+
 def save_product_video(file):
 
-    if not file or not file.filename:
+    if not file:
         return ""
 
-    if not allowed_video_file(file.filename):
+    if not file.filename:
+        return ""
+
+    if not allowed_video_file(
+        file.filename
+    ):
 
         raise ValueError(
             "Only MP4, WEBM, MOV and M4V videos are allowed."
@@ -184,87 +348,93 @@ def save_product_video(file):
 
     filename = (
         "video_"
-        + secrets.token_hex(12)
+        + secrets.token_hex(10)
         + extension
     )
 
-    path = os.path.join(
+    file_path = os.path.join(
         app.config["UPLOAD_FOLDER"],
         filename
     )
 
-    file.save(path)
+    file.save(
+        file_path
+    )
 
     return filename
 
 
-def delete_product_image(filename):
-
-    if not filename:
-        return
-
-    filename = os.path.basename(
-        filename
-    )
-
-    path = os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        filename
-    )
-
-    try:
-
-        if os.path.isfile(path):
-            os.remove(path)
-
-    except OSError:
-        pass
-
-
 def delete_product_video(filename):
 
-    if not filename:
-        return
-
-    filename = os.path.basename(
+    clean_name = image_filename_only(
         filename
     )
 
-    path = os.path.join(
+    if not clean_name:
+        return
+
+    file_path = os.path.join(
         app.config["UPLOAD_FOLDER"],
-        filename
+        clean_name
     )
 
     try:
 
-        if os.path.isfile(path):
-            os.remove(path)
+        if os.path.isfile(
+            file_path
+        ):
+
+            os.remove(
+                file_path
+            )
 
     except OSError:
+
         pass
 
 
 # ==========================================================
-# IMAGE URL HELPER
+# FILE SERVING
 # ==========================================================
 
-def image_url(filename):
-
-    if not filename:
-        return ""
+@app.route(
+    "/static/images/<path:filename>"
+)
+def uploaded_static_image(filename):
 
     filename = os.path.basename(
         filename
     )
 
-    return url_for(
-        "uploaded_image",
-        filename=filename
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        filename
     )
 
 
-@app.route("/uploads/<path:filename>")
+@app.route(
+    "/media/image/<path:filename>"
+)
 def uploaded_image(filename):
+
+    filename = os.path.basename(
+        filename
+    )
+
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
+
+
+@app.route(
+    "/media/video/<path:filename>"
+)
+def uploaded_video(filename):
+
+    filename = os.path.basename(
+        filename
+    )
 
     return send_from_directory(
         app.config["UPLOAD_FOLDER"],
@@ -279,7 +449,8 @@ def uploaded_image(filename):
 def get_db():
 
     conn = sqlite3.connect(
-        DATABASE
+        DATABASE,
+        timeout=30
     )
 
     conn.row_factory = sqlite3.Row
@@ -302,12 +473,12 @@ def add_column_if_missing(
         f"PRAGMA table_info({table})"
     ).fetchall()
 
-    existing = {
+    existing_columns = {
         row["name"]
         for row in columns
     }
 
-    if column not in existing:
+    if column not in existing_columns:
 
         conn.execute(
             f"""
@@ -317,17 +488,13 @@ def add_column_if_missing(
         )
 
 
-# ==========================================================
-# DATABASE INIT
-# ==========================================================
-
 def init_db():
 
     conn = get_db()
 
-    # ------------------------------------------------------
+    # ======================================================
     # PRODUCTS
-    # ------------------------------------------------------
+    # ======================================================
 
     conn.execute(
         """
@@ -368,9 +535,9 @@ def init_db():
         """
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # USERS
-    # ------------------------------------------------------
+    # ======================================================
 
     conn.execute(
         """
@@ -397,9 +564,9 @@ def init_db():
         """
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # ORDERS
-    # ------------------------------------------------------
+    # ======================================================
 
     conn.execute(
         """
@@ -442,9 +609,9 @@ def init_db():
         """
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # ORDER ITEMS
-    # ------------------------------------------------------
+    # ======================================================
 
     conn.execute(
         """
@@ -465,9 +632,9 @@ def init_db():
         """
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # REVIEWS
-    # ------------------------------------------------------
+    # ======================================================
 
     conn.execute(
         """
@@ -488,9 +655,9 @@ def init_db():
         """
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # COUPONS
-    # ------------------------------------------------------
+    # ======================================================
 
     conn.execute(
         """
@@ -507,9 +674,9 @@ def init_db():
         """
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # SETTINGS
-    # ------------------------------------------------------
+    # ======================================================
 
     conn.execute(
         """
@@ -571,11 +738,11 @@ def init_db():
         """
     )
 
-    # ------------------------------------------------------
-    # MIGRATIONS
-    # ------------------------------------------------------
+    # ======================================================
+    # SAFE MIGRATIONS
+    # ======================================================
 
-    product_columns = [
+    products_columns = [
         ("image2", "TEXT DEFAULT ''"),
         ("image3", "TEXT DEFAULT ''"),
         ("image4", "TEXT DEFAULT ''"),
@@ -584,7 +751,7 @@ def init_db():
         ("video", "TEXT DEFAULT ''")
     ]
 
-    for column, definition in product_columns:
+    for column, definition in products_columns:
 
         add_column_if_missing(
             conn,
@@ -593,12 +760,12 @@ def init_db():
             definition
         )
 
-    user_columns = [
+    users_columns = [
         ("reset_token", "TEXT DEFAULT ''"),
         ("reset_token_created", "TEXT DEFAULT ''")
     ]
 
-    for column, definition in user_columns:
+    for column, definition in users_columns:
 
         add_column_if_missing(
             conn,
@@ -628,6 +795,7 @@ def init_db():
         )
 
     conn.commit()
+
     conn.close()
 
 
@@ -635,7 +803,89 @@ init_db()
 
 
 # ==========================================================
-# AUTH
+# PASSWORD HELPERS
+# ==========================================================
+
+def hash_password(password):
+
+    salt = secrets.token_bytes(
+        16
+    )
+
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt,
+        310000
+    )
+
+    return (
+        "pbkdf2_sha256$310000$"
+        + salt.hex()
+        + "$"
+        + digest.hex()
+    )
+
+
+def verify_password(
+    stored_password,
+    password
+):
+
+    if not stored_password:
+        return False
+
+    if stored_password.startswith(
+        "pbkdf2_sha256$"
+    ):
+
+        try:
+
+            parts = stored_password.split(
+                "$"
+            )
+
+            if len(parts) != 4:
+                return False
+
+            iterations = int(
+                parts[1]
+            )
+
+            salt = bytes.fromhex(
+                parts[2]
+            )
+
+            expected = bytes.fromhex(
+                parts[3]
+            )
+
+            actual = hashlib.pbkdf2_hmac(
+                "sha256",
+                password.encode("utf-8"),
+                salt,
+                iterations
+            )
+
+            return hmac.compare_digest(
+                actual,
+                expected
+            )
+
+        except Exception:
+
+            return False
+
+    # Backward compatibility for
+    # old plain-text passwords.
+    return hmac.compare_digest(
+        str(stored_password),
+        str(password)
+    )
+
+
+# ==========================================================
+# AUTH HELPERS
 # ==========================================================
 
 def admin_required(view):
@@ -683,30 +933,114 @@ def login_required(view):
     return wrapped
 
 
+def safe_next_url(target):
+
+    if not target:
+        return None
+
+    try:
+
+        parsed = urlparse(
+            target
+        )
+
+        if parsed.scheme:
+            return None
+
+        if parsed.netloc:
+            return None
+
+        if not target.startswith("/"):
+            return None
+
+        if target.startswith("//"):
+            return None
+
+        return target
+
+    except Exception:
+
+        return None
+
+
 # ==========================================================
 # CART
 # ==========================================================
 
 def get_cart():
 
-    return session.get(
+    cart = session.get(
         "cart",
         {}
     )
 
+    if not isinstance(
+        cart,
+        dict
+    ):
+
+        cart = {}
+
+    return cart
+
 
 def save_cart(cart):
 
-    session["cart"] = cart
+    clean_cart = {}
+
+    for product_id, quantity in cart.items():
+
+        try:
+
+            product_id = str(
+                int(product_id)
+            )
+
+            quantity = int(
+                quantity
+            )
+
+            if quantity > 0:
+
+                clean_cart[
+                    product_id
+                ] = quantity
+
+        except (
+            ValueError,
+            TypeError
+        ):
+
+            continue
+
+    session["cart"] = clean_cart
+
     session.modified = True
 
 
 def cart_count():
 
-    return sum(
-        int(quantity)
-        for quantity in get_cart().values()
-    )
+    cart = get_cart()
+
+    total = 0
+
+    for quantity in cart.values():
+
+        try:
+
+            total += max(
+                0,
+                int(quantity)
+            )
+
+        except (
+            ValueError,
+            TypeError
+        ):
+
+            pass
+
+    return total
 
 
 # ==========================================================
@@ -731,7 +1065,7 @@ def get_settings():
 
 
 # ==========================================================
-# TEMPLATE GLOBALS
+# GLOBAL TEMPLATE DATA
 # ==========================================================
 
 @app.context_processor
@@ -762,9 +1096,15 @@ def inject_global_data():
             else "majisa_art_jewellers"
         ),
 
-        "razorpay_key_id": RAZORPAY_KEY_ID,
+        "razorpay_key_id": (
+            RAZORPAY_KEY_ID
+        ),
 
-        "image_url": image_url
+        # These helpers can be used
+        # directly inside Jinja templates.
+        "image_url": product_image_url,
+
+        "video_url": product_video_url
     }
 
 
@@ -888,7 +1228,9 @@ def products():
 # PRODUCT DETAIL
 # ==========================================================
 
-@app.route("/product/<int:product_id>")
+@app.route(
+    "/product/<int:product_id>"
+)
 def product_detail(product_id):
 
     conn = get_db()
@@ -914,7 +1256,7 @@ def product_detail(product_id):
 
     conn.close()
 
-    if not product:
+    if product is None:
 
         return "Product not found", 404
 
@@ -966,6 +1308,14 @@ def cart():
         cart_data.keys()
     )
 
+    if not product_ids:
+
+        return render_template(
+            "cart.html",
+            items=[],
+            total=0
+        )
+
     placeholders = ",".join(
         ["?"] * len(product_ids)
     )
@@ -984,7 +1334,10 @@ def cart():
     conn.close()
 
     items = []
+
     total = 0
+
+    valid_cart = {}
 
     for product in products_list:
 
@@ -995,8 +1348,28 @@ def cart():
             )
         )
 
+        if quantity <= 0:
+            continue
+
+        stock = int(
+            product["stock"] or 0
+        )
+
+        if stock > 0:
+            quantity = min(
+                quantity,
+                stock
+            )
+
+        if quantity <= 0:
+            continue
+
+        valid_cart[
+            str(product["id"])
+        ] = quantity
+
         subtotal = (
-            float(product["price"])
+            float(product["price"] or 0)
             * quantity
         )
 
@@ -1010,6 +1383,10 @@ def cart():
             }
         )
 
+    save_cart(
+        valid_cart
+    )
+
     return render_template(
         "cart.html",
         items=items,
@@ -1019,7 +1396,7 @@ def cart():
 
 @app.route(
     "/cart/add/<int:product_id>",
-    methods=["GET", "POST"]
+    methods=["POST", "GET"]
 )
 def add_to_cart(product_id):
 
@@ -1036,23 +1413,25 @@ def add_to_cart(product_id):
 
     conn.close()
 
-    if not product:
+    if product is None:
 
         return "Product not found", 404
 
-    stock = int(
-        product["stock"] or 0
-    )
-
     cart_data = get_cart()
 
-    key = str(product_id)
+    key = str(
+        product_id
+    )
 
-    current = int(
+    current_quantity = int(
         cart_data.get(
             key,
             0
         )
+    )
+
+    stock = int(
+        product["stock"] or 0
     )
 
     if stock <= 0:
@@ -1063,13 +1442,13 @@ def add_to_cart(product_id):
 
         return redirect(
             request.referrer
-            or url_for("products")
+            or url_for("cart")
         )
 
-    if current >= stock:
+    if current_quantity >= stock:
 
         flash(
-            "Available stock limit reached."
+            "Sorry, available stock limit reached."
         )
 
         return redirect(
@@ -1077,12 +1456,12 @@ def add_to_cart(product_id):
             or url_for("cart")
         )
 
-    cart_data[key] = current + 1
+    cart_data[key] = (
+        current_quantity + 1
+    )
 
-    save_cart(cart_data)
-
-    flash(
-        "Product added to cart."
+    save_cart(
+        cart_data
     )
 
     return redirect(
@@ -1093,20 +1472,23 @@ def add_to_cart(product_id):
 
 @app.route(
     "/cart/remove/<int:product_id>",
-    methods=["GET", "POST"]
+    methods=["POST", "GET"]
 )
 def remove_from_cart(product_id):
 
     cart_data = get_cart()
 
-    key = str(product_id)
-
-    cart_data.pop(
-        key,
-        None
+    key = str(
+        product_id
     )
 
-    save_cart(cart_data)
+    if key in cart_data:
+
+        del cart_data[key]
+
+    save_cart(
+        cart_data
+    )
 
     return redirect(
         url_for("cart")
@@ -1115,11 +1497,12 @@ def remove_from_cart(product_id):
 
 @app.route(
     "/cart/clear",
-    methods=["GET", "POST"]
+    methods=["POST", "GET"]
 )
 def clear_cart():
 
     session["cart"] = {}
+
     session.modified = True
 
     return redirect(
@@ -1138,6 +1521,19 @@ def wishlist():
         "wishlist",
         []
     )
+
+    if not isinstance(
+        wishlist_ids,
+        list
+    ):
+
+        wishlist_ids = []
+
+    wishlist_ids = [
+        int(item)
+        for item in wishlist_ids
+        if str(item).isdigit()
+    ]
 
     if not wishlist_ids:
 
@@ -1171,7 +1567,7 @@ def wishlist():
 
 @app.route(
     "/wishlist/toggle/<int:product_id>",
-    methods=["GET", "POST"]
+    methods=["POST", "GET"]
 )
 def toggle_wishlist(product_id):
 
@@ -1179,6 +1575,13 @@ def toggle_wishlist(product_id):
         "wishlist",
         []
     )
+
+    if not isinstance(
+        wishlist_ids,
+        list
+    ):
+
+        wishlist_ids = []
 
     if product_id in wishlist_ids:
 
@@ -1193,6 +1596,7 @@ def toggle_wishlist(product_id):
         )
 
     session["wishlist"] = wishlist_ids
+
     session.modified = True
 
     return redirect(
@@ -1233,7 +1637,11 @@ def register():
             ""
         ).strip()
 
-        if not name or not email or not password:
+        if (
+            not name
+            or not email
+            or not password
+        ):
 
             flash(
                 "Please fill all required fields."
@@ -1243,7 +1651,17 @@ def register():
                 url_for("register")
             )
 
-        hashed_password = generate_password_hash(
+        if len(password) < 6:
+
+            flash(
+                "Password must be at least 6 characters."
+            )
+
+            return redirect(
+                url_for("register")
+            )
+
+        hashed_password = hash_password(
             password
         )
 
@@ -1332,38 +1750,48 @@ def login():
             (email,)
         ).fetchone()
 
-        conn.close()
+        if user and verify_password(
+            user["password"],
+            password
+        ):
 
-        valid = False
+            # Upgrade old plain password
+            # to secure hashed password.
+            if not str(
+                user["password"]
+            ).startswith(
+                "pbkdf2_sha256$"
+            ):
 
-        if user:
-
-            try:
-
-                valid = check_password_hash(
-                    user["password"],
-                    password
+                conn.execute(
+                    """
+                    UPDATE users
+                    SET password = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        hash_password(password),
+                        user["id"]
+                    )
                 )
 
-            except ValueError:
+                conn.commit()
 
-                # Supports old plaintext accounts.
-                valid = (
-                    user["password"]
-                    == password
-                )
+            conn.close()
 
-        if valid:
+            session.clear()
 
             session["user_id"] = user["id"]
 
             session["user_name"] = user["name"]
 
-            next_page = request.args.get(
-                "next"
+            next_page = safe_next_url(
+                request.args.get(
+                    "next"
+                )
             )
 
-            if next_page and next_page.startswith("/"):
+            if next_page:
 
                 return redirect(
                     next_page
@@ -1372,6 +1800,8 @@ def login():
             return redirect(
                 url_for("home")
             )
+
+        conn.close()
 
         flash(
             "Invalid email or password."
@@ -1441,8 +1871,7 @@ def forgot_password():
             conn.execute(
                 """
                 UPDATE users
-                SET
-                    reset_token = ?,
+                SET reset_token = ?,
                     reset_token_created = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """,
@@ -1500,7 +1929,7 @@ def reset_password(token):
         (token,)
     ).fetchone()
 
-    if not user:
+    if user is None:
 
         conn.close()
 
@@ -1512,6 +1941,53 @@ def reset_password(token):
             url_for("forgot_password")
         )
 
+    token_created = user[
+        "reset_token_created"
+    ]
+
+    if token_created:
+
+        try:
+
+            created_timestamp = time.mktime(
+                time.strptime(
+                    token_created[:19],
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            )
+
+            if (
+                time.time()
+                - created_timestamp
+                > 3600
+            ):
+
+                conn.execute(
+                    """
+                    UPDATE users
+                    SET reset_token = '',
+                        reset_token_created = ''
+                    WHERE id = ?
+                    """,
+                    (user["id"],)
+                )
+
+                conn.commit()
+
+                conn.close()
+
+                flash(
+                    "Reset link expired. Please request a new one."
+                )
+
+                return redirect(
+                    url_for("forgot_password")
+                )
+
+        except Exception:
+
+            pass
+
     if request.method == "POST":
 
         password = request.form.get(
@@ -1519,7 +1995,7 @@ def reset_password(token):
             ""
         )
 
-        confirm = request.form.get(
+        confirm_password = request.form.get(
             "confirm_password",
             request.form.get(
                 "password_confirmation",
@@ -1527,12 +2003,12 @@ def reset_password(token):
             )
         )
 
-        if not password:
+        if len(password) < 6:
 
             conn.close()
 
             flash(
-                "Password cannot be empty."
+                "Password must be at least 6 characters."
             )
 
             return redirect(
@@ -1542,7 +2018,10 @@ def reset_password(token):
                 )
             )
 
-        if confirm and password != confirm:
+        if (
+            password
+            != confirm_password
+        ):
 
             conn.close()
 
@@ -1557,26 +2036,22 @@ def reset_password(token):
                 )
             )
 
-        hashed_password = generate_password_hash(
-            password
-        )
-
         conn.execute(
             """
             UPDATE users
-            SET
-                password = ?,
+            SET password = ?,
                 reset_token = '',
                 reset_token_created = ''
             WHERE id = ?
             """,
             (
-                hashed_password,
+                hash_password(password),
                 user["id"]
             )
         )
 
         conn.commit()
+
         conn.close()
 
         flash(
@@ -1596,7 +2071,7 @@ def reset_password(token):
 
 
 # ==========================================================
-# CHECKOUT HELPERS
+# CHECKOUT CALCULATION
 # ==========================================================
 
 def get_checkout_data():
@@ -1637,6 +2112,8 @@ def get_checkout_data():
 
     subtotal = 0
 
+    checkout_items = []
+
     for product in products_list:
 
         quantity = int(
@@ -1650,22 +2127,35 @@ def get_checkout_data():
             product["stock"] or 0
         )
 
-        if stock <= 0 or quantity > stock:
+        if stock <= 0:
 
-            return {
-                "error": (
-                    f"Stock unavailable for "
-                    f"{product['name']}"
-                )
-            }
+            continue
 
-        subtotal += (
-            float(product["price"])
+        quantity = min(
+            quantity,
+            stock
+        )
+
+        if quantity <= 0:
+            continue
+
+        item_subtotal = (
+            float(product["price"] or 0)
             * quantity
         )
 
+        subtotal += item_subtotal
+
+        checkout_items.append(
+            (
+                product,
+                quantity
+            )
+        )
+
     shipping_charge = float(
-        settings["shipping_charge"] or 0
+        settings["shipping_charge"]
+        or 0
     )
 
     free_shipping = float(
@@ -1679,10 +2169,14 @@ def get_checkout_data():
         else shipping_charge
     )
 
-    total = subtotal + shipping
+    total = (
+        subtotal
+        + shipping
+    )
 
     return {
         "products": products_list,
+        "items": checkout_items,
         "settings": settings,
         "subtotal": subtotal,
         "shipping": shipping,
@@ -1700,18 +2194,46 @@ def get_checkout_data():
 )
 def checkout():
 
-    data = get_checkout_data()
+    checkout_data = get_checkout_data()
 
-    if not data:
+    if not checkout_data:
 
         return redirect(
             url_for("cart")
         )
 
-    if data.get("error"):
+    products_list = checkout_data[
+        "products"
+    ]
+
+    checkout_items = checkout_data[
+        "items"
+    ]
+
+    settings = checkout_data[
+        "settings"
+    ]
+
+    subtotal = checkout_data[
+        "subtotal"
+    ]
+
+    shipping = checkout_data[
+        "shipping"
+    ]
+
+    total = checkout_data[
+        "total"
+    ]
+
+    if not checkout_items:
+
+        session["cart"] = {}
+
+        session.modified = True
 
         flash(
-            data["error"]
+            "Products in your cart are out of stock."
         )
 
         return redirect(
@@ -1728,7 +2250,7 @@ def checkout():
         email = request.form.get(
             "email",
             ""
-        ).strip()
+        ).strip().lower()
 
         phone = request.form.get(
             "phone",
@@ -1759,12 +2281,13 @@ def checkout():
                 url_for("checkout")
             )
 
-        settings = data["settings"]
-
-        if payment_method not in {
+        allowed_payment_methods = {
             "COD",
-            "ONLINE"
-        }:
+            "UPI",
+            "RAZORPAY"
+        }
+
+        if payment_method not in allowed_payment_methods:
 
             payment_method = "COD"
 
@@ -1782,19 +2305,112 @@ def checkout():
             )
 
         if (
-            payment_method == "ONLINE"
-            and not RAZORPAY_KEY_ID
+            payment_method == "UPI"
+            and settings["upi"] != "enabled"
         ):
 
             flash(
-                "Online payment is not configured yet."
+                "UPI payment is currently unavailable."
             )
 
             return redirect(
                 url_for("checkout")
             )
 
-        cart_data = get_cart()
+        # Razorpay payment starts from
+        # the /api/payment/create-order endpoint.
+        if payment_method == "RAZORPAY":
+
+            if not get_razorpay_client():
+
+                flash(
+                    "Online payment is not configured. Please contact the store."
+                )
+
+                return redirect(
+                    url_for("checkout")
+                )
+
+            conn = get_db()
+
+            cursor = conn.execute(
+                """
+                INSERT INTO orders
+                (
+                    user_id,
+                    customer_name,
+                    phone,
+                    address,
+                    total,
+                    status,
+                    payment_method,
+                    email,
+                    subtotal,
+                    shipping,
+                    discount,
+                    payment_status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    session.get("user_id"),
+                    customer_name,
+                    phone,
+                    address,
+                    total,
+                    "Pending",
+                    "RAZORPAY",
+                    email,
+                    subtotal,
+                    shipping,
+                    0,
+                    "Pending"
+                )
+            )
+
+            order_id = cursor.lastrowid
+
+            for product, quantity in checkout_items:
+
+                conn.execute(
+                    """
+                    INSERT INTO order_items
+                    (
+                        order_id,
+                        product_id,
+                        product_name,
+                        price,
+                        quantity
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        order_id,
+                        product["id"],
+                        product["name"],
+                        product["price"],
+                        quantity
+                    )
+                )
+
+            conn.commit()
+
+            conn.close()
+
+            return render_template(
+                "checkout.html",
+                products=products_list,
+                subtotal=subtotal,
+                shipping=shipping,
+                total=total,
+                razorpay_order_required=True,
+                pending_order_id=order_id,
+                razorpay_key_id=RAZORPAY_KEY_ID
+            )
+
+        # --------------------------------------------------
+        # COD / UPI
+        # --------------------------------------------------
 
         conn = get_db()
 
@@ -1824,31 +2440,20 @@ def checkout():
                     customer_name,
                     phone,
                     address,
-                    data["total"],
+                    total,
                     "Pending",
                     payment_method,
                     email,
-                    data["subtotal"],
-                    data["shipping"],
+                    subtotal,
+                    shipping,
                     0,
-                    (
-                        "Pending"
-                        if payment_method == "ONLINE"
-                        else "Pending"
-                    )
+                    "Pending"
                 )
             )
 
             order_id = cursor.lastrowid
 
-            for product in data["products"]:
-
-                quantity = int(
-                    cart_data.get(
-                        str(product["id"]),
-                        0
-                    )
-                )
+            for product, quantity in checkout_items:
 
                 conn.execute(
                     """
@@ -1871,15 +2476,32 @@ def checkout():
                     )
                 )
 
+                # Reduce stock.
+                conn.execute(
+                    """
+                    UPDATE products
+                    SET stock = MAX(
+                        stock - ?,
+                        0
+                    )
+                    WHERE id = ?
+                    """,
+                    (
+                        quantity,
+                        product["id"]
+                    )
+                )
+
             conn.commit()
 
         except Exception:
 
             conn.rollback()
+
             conn.close()
 
             flash(
-                "Unable to create order."
+                "Unable to create your order."
             )
 
             return redirect(
@@ -1888,183 +2510,73 @@ def checkout():
 
         conn.close()
 
-        # --------------------------------------------------
-        # COD
-        # --------------------------------------------------
+        session["cart"] = {}
 
-        if payment_method == "COD":
+        session.modified = True
 
-            session["cart"] = {}
-            session.modified = True
-
-            return redirect(
-                url_for(
-                    "order_success",
-                    order_id=order_id
-                )
+        return redirect(
+            url_for(
+                "order_success",
+                order_id=order_id
             )
-
-        # --------------------------------------------------
-        # ONLINE PAYMENT
-        # --------------------------------------------------
-
-        try:
-
-            import razorpay
-
-            client = razorpay.Client(
-                auth=(
-                    RAZORPAY_KEY_ID,
-                    RAZORPAY_KEY_SECRET
-                )
-            )
-
-            razorpay_order = client.order.create(
-                {
-                    "amount": int(
-                        round(
-                            data["total"] * 100
-                        )
-                    ),
-                    "currency": "INR",
-                    "receipt": f"order_{order_id}",
-                    "notes": {
-                        "order_id": str(order_id)
-                    }
-                }
-            )
-
-        except Exception as error:
-
-            conn = get_db()
-
-            conn.execute(
-                """
-                UPDATE orders
-                SET
-                    status = 'Cancelled',
-                    payment_status = 'Failed'
-                WHERE id = ?
-                """,
-                (order_id,)
-            )
-
-            conn.commit()
-            conn.close()
-
-            print(
-                "RAZORPAY ERROR:",
-                error
-            )
-
-            flash(
-                "Unable to start online payment."
-            )
-
-            return redirect(
-                url_for("checkout")
-            )
-
-        conn = get_db()
-
-        conn.execute(
-            """
-            UPDATE orders
-            SET razorpay_order_id = ?
-            WHERE id = ?
-            """,
-            (
-                razorpay_order["id"],
-                order_id
-            )
-        )
-
-        conn.commit()
-        conn.close()
-
-        return render_template(
-            "payment.html",
-            order_id=order_id,
-            razorpay_order_id=razorpay_order["id"],
-            razorpay_key_id=RAZORPAY_KEY_ID,
-            amount=int(
-                round(
-                    data["total"] * 100
-                )
-            ),
-            amount_rupees=data["total"],
-            customer_name=customer_name,
-            email=email,
-            phone=phone
         )
 
     return render_template(
         "checkout.html",
-        products=data["products"],
-        subtotal=data["subtotal"],
-        shipping=data["shipping"],
-        total=data["total"]
+        products=products_list,
+        subtotal=subtotal,
+        shipping=shipping,
+        total=total,
+        razorpay_key_id=RAZORPAY_KEY_ID,
+        razorpay_order_required=False,
+        pending_order_id=None
     )
 
 
 # ==========================================================
-# RAZORPAY PAYMENT VERIFY
+# RAZORPAY CREATE ORDER
 # ==========================================================
 
 @app.route(
-    "/payment/verify",
+    "/api/payment/create-order",
     methods=["POST"]
 )
-def verify_payment():
+def create_razorpay_order():
 
-    payload = request.get_json(
+    client = get_razorpay_client()
+
+    if not client:
+
+        return jsonify(
+            {
+                "success": False,
+                "message": (
+                    "Razorpay is not configured."
+                )
+            }
+        ), 503
+
+    data = request.get_json(
         silent=True
-    ) or request.form
+    ) or {}
 
-    razorpay_order_id = payload.get(
-        "razorpay_order_id",
-        ""
-    )
+    try:
 
-    razorpay_payment_id = payload.get(
-        "razorpay_payment_id",
-        ""
-    )
+        order_id = int(
+            data.get(
+                "order_id"
+            )
+        )
 
-    razorpay_signature = payload.get(
-        "razorpay_signature",
-        ""
-    )
-
-    order_id = payload.get(
-        "order_id",
-        ""
-    )
-
-    if not (
-        razorpay_order_id
-        and razorpay_payment_id
-        and razorpay_signature
-        and order_id
+    except (
+        ValueError,
+        TypeError
     ):
 
         return jsonify(
             {
                 "success": False,
-                "message": "Missing payment details."
-            }
-        ), 400
-
-    try:
-
-        order_id = int(order_id)
-
-    except (TypeError, ValueError):
-
-        return jsonify(
-            {
-                "success": False,
-                "message": "Invalid order."
+                "message": "Invalid order ID."
             }
         ), 400
 
@@ -2075,17 +2587,13 @@ def verify_payment():
         SELECT *
         FROM orders
         WHERE id = ?
-        AND razorpay_order_id = ?
         """,
-        (
-            order_id,
-            razorpay_order_id
-        )
+        (order_id,)
     ).fetchone()
 
     conn.close()
 
-    if not order:
+    if order is None:
 
         return jsonify(
             {
@@ -2094,6 +2602,106 @@ def verify_payment():
             }
         ), 404
 
+    if (
+        session.get("user_id")
+        and order["user_id"] is not None
+        and int(order["user_id"])
+        != int(session["user_id"])
+    ):
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Unauthorized."
+            }
+        ), 403
+
+    amount_paise = int(
+        round(
+            float(order["total"])
+            * 100
+        )
+    )
+
+    if amount_paise <= 0:
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Invalid payment amount."
+            }
+        ), 400
+
+    try:
+
+        razorpay_order = client.order.create(
+            {
+                "amount": amount_paise,
+                "currency": "INR",
+                "receipt": f"order_{order_id}",
+                "notes": {
+                    "website_order_id": str(
+                        order_id
+                    )
+                }
+            }
+        )
+
+    except Exception as error:
+
+        app.logger.exception(
+            "Razorpay order creation failed"
+        )
+
+        return jsonify(
+            {
+                "success": False,
+                "message": (
+                    "Unable to create payment order."
+                )
+            }
+        ), 500
+
+    conn = get_db()
+
+    conn.execute(
+        """
+        UPDATE orders
+        SET razorpay_order_id = ?
+        WHERE id = ?
+        """,
+        (
+            razorpay_order["id"],
+            order_id
+        )
+    )
+
+    conn.commit()
+
+    conn.close()
+
+    return jsonify(
+        {
+            "success": True,
+            "order_id": razorpay_order["id"],
+            "website_order_id": order_id,
+            "amount": amount_paise,
+            "currency": "INR",
+            "key_id": RAZORPAY_KEY_ID
+        }
+    )
+
+
+# ==========================================================
+# RAZORPAY VERIFY PAYMENT
+# ==========================================================
+
+@app.route(
+    "/api/payment/verify",
+    methods=["POST"]
+)
+def verify_razorpay_payment():
+
     if not RAZORPAY_KEY_SECRET:
 
         return jsonify(
@@ -2101,45 +2709,128 @@ def verify_payment():
                 "success": False,
                 "message": "Payment gateway not configured."
             }
-        ), 500
+        ), 503
 
-    generated_signature = hmac.new(
-        RAZORPAY_KEY_SECRET.encode(),
-        (
-            razorpay_order_id
-            + "|"
-            + razorpay_payment_id
-        ).encode(),
-        hashlib.sha256
-    ).hexdigest()
+    data = request.get_json(
+        silent=True
+    ) or {}
 
-    if not hmac.compare_digest(
-        generated_signature,
-        razorpay_signature
+    website_order_id = data.get(
+        "website_order_id"
+    )
+
+    razorpay_order_id = data.get(
+        "razorpay_order_id"
+    )
+
+    razorpay_payment_id = data.get(
+        "razorpay_payment_id"
+    )
+
+    razorpay_signature = data.get(
+        "razorpay_signature"
+    )
+
+    if not all(
+        [
+            website_order_id,
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature
+        ]
     ):
 
-        conn = get_db()
+        return jsonify(
+            {
+                "success": False,
+                "message": "Incomplete payment data."
+            }
+        ), 400
 
-        conn.execute(
-            """
-            UPDATE orders
-            SET payment_status = 'Failed'
-            WHERE id = ?
-            """,
-            (order_id,)
+    try:
+
+        website_order_id = int(
+            website_order_id
         )
 
-        conn.commit()
+    except (
+        ValueError,
+        TypeError
+    ):
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Invalid order ID."
+            }
+        ), 400
+
+    conn = get_db()
+
+    order = conn.execute(
+        """
+        SELECT *
+        FROM orders
+        WHERE id = ?
+        """,
+        (website_order_id,)
+    ).fetchone()
+
+    if order is None:
+
         conn.close()
 
         return jsonify(
             {
                 "success": False,
-                "message": "Payment verification failed."
+                "message": "Order not found."
+            }
+        ), 404
+
+    if (
+        order["razorpay_order_id"]
+        and order["razorpay_order_id"]
+        != razorpay_order_id
+    ):
+
+        conn.close()
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Payment order mismatch."
             }
         ), 400
 
-    conn = get_db()
+    message = (
+        str(razorpay_order_id)
+        + "|"
+        + str(razorpay_payment_id)
+    )
+
+    expected_signature = hmac.new(
+        RAZORPAY_KEY_SECRET.encode(
+            "utf-8"
+        ),
+        message.encode(
+            "utf-8"
+        ),
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(
+        expected_signature,
+        str(razorpay_signature)
+    ):
+
+        conn.close()
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Invalid payment signature."
+            }
+        ), 400
 
     conn.execute(
         """
@@ -2148,78 +2839,118 @@ def verify_payment():
             payment_status = 'Paid',
             status = 'Confirmed',
             razorpay_payment_id = ?,
-            razorpay_signature = ?
+            razorpay_signature = ?,
+            razorpay_order_id = ?
         WHERE id = ?
         """,
         (
             razorpay_payment_id,
             razorpay_signature,
-            order_id
+            razorpay_order_id,
+            website_order_id
         )
     )
 
+    # Reduce stock only after successful payment.
+    items = conn.execute(
+        """
+        SELECT product_id, quantity
+        FROM order_items
+        WHERE order_id = ?
+        """,
+        (website_order_id,)
+    ).fetchall()
+
+    for item in items:
+
+        conn.execute(
+            """
+            UPDATE products
+            SET stock = MAX(
+                stock - ?,
+                0
+            )
+            WHERE id = ?
+            """,
+            (
+                item["quantity"],
+                item["product_id"]
+            )
+        )
+
     conn.commit()
+
     conn.close()
 
     session["cart"] = {}
+
     session.modified = True
 
     return jsonify(
         {
             "success": True,
-            "redirect": url_for(
+            "message": "Payment verified successfully.",
+            "order_id": website_order_id,
+            "redirect_url": url_for(
                 "order_success",
-                order_id=order_id
+                order_id=website_order_id
             )
         }
     )
 
 
 # ==========================================================
-# PAYMENT FAILED
+# RAZORPAY PAYMENT FAILURE
 # ==========================================================
 
 @app.route(
-    "/payment/failed",
-    methods=["GET", "POST"]
+    "/api/payment/failed",
+    methods=["POST"]
 )
-def payment_failed():
+def razorpay_payment_failed():
 
-    order_id = request.values.get(
-        "order_id",
-        ""
-    )
+    data = request.get_json(
+        silent=True
+    ) or {}
 
     try:
 
-        order_id = int(order_id)
-
-    except (ValueError, TypeError):
-
-        order_id = 0
-
-    if order_id:
-
-        conn = get_db()
-
-        conn.execute(
-            """
-            UPDATE orders
-            SET payment_status = 'Failed'
-            WHERE id = ?
-            """,
-            (order_id,)
+        order_id = int(
+            data.get(
+                "website_order_id"
+            )
         )
 
-        conn.commit()
-        conn.close()
+    except (
+        ValueError,
+        TypeError
+    ):
 
-    flash(
-        "Payment was not completed."
+        return jsonify(
+            {
+                "success": False
+            }
+        ), 400
+
+    conn = get_db()
+
+    conn.execute(
+        """
+        UPDATE orders
+        SET payment_status = 'Failed'
+        WHERE id = ?
+        """,
+        (order_id,)
     )
 
-    return redirect(
-        url_for("checkout")
+    conn.commit()
+
+    conn.close()
+
+    return jsonify(
+        {
+            "success": True
+        }
     )
 
 
@@ -2245,7 +2976,7 @@ def order_success(order_id):
 
     conn.close()
 
-    if not order:
+    if order is None:
 
         return "Order not found", 404
 
@@ -2324,7 +3055,7 @@ def order_detail(order_id):
 
     conn.close()
 
-    if not order:
+    if order is None:
 
         return "Order not found", 404
 
@@ -2373,7 +3104,10 @@ def add_review(product_id):
 
     rating = max(
         1,
-        min(5, rating)
+        min(
+            5,
+            rating
+        )
     )
 
     if name and message:
@@ -2423,22 +3157,31 @@ def add_review(product_id):
 
 
 # ==========================================================
-# STATIC PAGES
+# CONTACT / ABOUT / FAQ
 # ==========================================================
 
 @app.route("/contact")
 def contact():
-    return render_template("contact.html")
+
+    return render_template(
+        "contact.html"
+    )
 
 
 @app.route("/about")
 def about():
-    return render_template("about.html")
+
+    return render_template(
+        "about.html"
+    )
 
 
 @app.route("/faq")
 def faq():
-    return render_template("faq.html")
+
+    return render_template(
+        "faq.html"
+    )
 
 
 # ==========================================================
@@ -2476,8 +3219,14 @@ def admin_login():
         )
 
         if (
-            username == ADMIN_USERNAME
-            and password == ADMIN_PASSWORD
+            hmac.compare_digest(
+                username,
+                ADMIN_USERNAME
+            )
+            and hmac.compare_digest(
+                password,
+                ADMIN_PASSWORD
+            )
         ):
 
             session.clear()
@@ -2518,19 +3267,31 @@ def admin_dashboard():
     conn = get_db()
 
     products_count = conn.execute(
-        "SELECT COUNT(*) FROM products"
+        """
+        SELECT COUNT(*)
+        FROM products
+        """
     ).fetchone()[0]
 
     orders_count = conn.execute(
-        "SELECT COUNT(*) FROM orders"
+        """
+        SELECT COUNT(*)
+        FROM orders
+        """
     ).fetchone()[0]
 
     users_count = conn.execute(
-        "SELECT COUNT(*) FROM users"
+        """
+        SELECT COUNT(*)
+        FROM users
+        """
     ).fetchone()[0]
 
     reviews_count = conn.execute(
-        "SELECT COUNT(*) FROM reviews"
+        """
+        SELECT COUNT(*)
+        FROM reviews
+        """
     ).fetchone()[0]
 
     products_list = conn.execute(
@@ -2718,6 +3479,21 @@ def admin_add_product():
 
         stock = 0
 
+    price = max(
+        0,
+        price
+    )
+
+    old_price = max(
+        0,
+        old_price
+    )
+
+    stock = max(
+        0,
+        stock
+    )
+
     description = request.form.get(
         "description",
         ""
@@ -2725,7 +3501,9 @@ def admin_add_product():
 
     featured = (
         1
-        if request.form.get("featured")
+        if request.form.get(
+            "featured"
+        )
         else 0
     )
 
@@ -2748,36 +3526,64 @@ def admin_add_product():
                 and image_file.filename
             ):
 
-                saved_images.append(
-                    save_product_image(
-                        image_file
-                    )
+                saved_image = save_product_image(
+                    image_file
                 )
+
+                if saved_image:
+
+                    saved_images.append(
+                        saved_image
+                    )
 
     except ValueError as error:
 
-        for filename in saved_images:
-            delete_product_image(filename)
+        for saved_image in saved_images:
 
-        flash(str(error))
+            delete_product_image(
+                saved_image
+            )
+
+        flash(
+            str(error)
+        )
 
         return redirect(
             url_for("admin_products")
         )
 
-    while len(saved_images) < 5:
-        saved_images.append("")
+    image = (
+        saved_images[0]
+        if len(saved_images) > 0
+        else ""
+    )
 
-    image = saved_images[0]
-    image2 = saved_images[1]
-    image3 = saved_images[2]
-    image4 = saved_images[3]
-    image5 = saved_images[4]
+    image2 = (
+        saved_images[1]
+        if len(saved_images) > 1
+        else ""
+    )
+
+    image3 = (
+        saved_images[2]
+        if len(saved_images) > 2
+        else ""
+    )
+
+    image4 = (
+        saved_images[3]
+        if len(saved_images) > 3
+        else ""
+    )
+
+    image5 = (
+        saved_images[4]
+        if len(saved_images) > 4
+        else ""
+    )
 
     images = "|".join(
-        img
-        for img in saved_images
-        if img
+        saved_images
     )
 
     video = ""
@@ -2799,10 +3605,15 @@ def admin_add_product():
 
         except ValueError as error:
 
-            for filename in saved_images:
-                delete_product_image(filename)
+            for saved_image in saved_images:
 
-            flash(str(error))
+                delete_product_image(
+                    saved_image
+                )
+
+            flash(
+                str(error)
+            )
 
             return redirect(
                 url_for("admin_products")
@@ -2832,7 +3643,22 @@ def admin_add_product():
                 featured
             )
             VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?
+            )
             """,
             (
                 name,
@@ -2854,21 +3680,23 @@ def admin_add_product():
 
         conn.commit()
 
-    except Exception as error:
+    except Exception:
 
         conn.rollback()
 
-        print(
-            "PRODUCT INSERT ERROR:",
-            error
-        )
-
-        for filename in saved_images:
-            delete_product_image(filename)
-
-        delete_product_video(video)
-
         conn.close()
+
+        for saved_image in saved_images:
+
+            delete_product_image(
+                saved_image
+            )
+
+        if video:
+
+            delete_product_video(
+                video
+            )
 
         flash(
             "Unable to add product."
@@ -2913,7 +3741,7 @@ def admin_edit_product(product_id):
 
     conn.close()
 
-    if not product:
+    if product is None:
 
         return "Product not found", 404
 
@@ -2928,6 +3756,19 @@ def admin_edit_product(product_id):
             "category",
             ""
         ).strip()
+
+        if not name or not category:
+
+            flash(
+                "Product name and category are required."
+            )
+
+            return redirect(
+                url_for(
+                    "admin_edit_product",
+                    product_id=product_id
+                )
+            )
 
         try:
 
@@ -2977,6 +3818,21 @@ def admin_edit_product(product_id):
 
             stock = 0
 
+        price = max(
+            0,
+            price
+        )
+
+        old_price = max(
+            0,
+            old_price
+        )
+
+        stock = max(
+            0,
+            stock
+        )
+
         description = request.form.get(
             "description",
             ""
@@ -2984,7 +3840,9 @@ def admin_edit_product(product_id):
 
         featured = (
             1
-            if request.form.get("featured")
+            if request.form.get(
+                "featured"
+            )
             else 0
         )
 
@@ -2996,46 +3854,60 @@ def admin_edit_product(product_id):
             product["image5"] or ""
         ]
 
-        all_images = old_images[:]
+        all_images = list(
+            old_images
+        )
 
-        uploaded_images = []
-
-        image_fields = [
-            "image",
-            "image2",
-            "image3",
-            "image4",
-            "image5"
+        new_image_files = [
+            request.files.get("image"),
+            request.files.get("image2"),
+            request.files.get("image3"),
+            request.files.get("image4"),
+            request.files.get("image5")
         ]
+
+        new_images = []
 
         try:
 
-            for index, field in enumerate(
-                image_fields
+            for index, image_file in enumerate(
+                new_image_files
             ):
 
-                file = request.files.get(
-                    field
-                )
+                if (
+                    image_file
+                    and image_file.filename
+                ):
 
-                if file and file.filename:
-
-                    filename = save_product_image(
-                        file
+                    saved_image = save_product_image(
+                        image_file
                     )
 
-                    uploaded_images.append(
-                        filename
+                    new_images.append(
+                        saved_image
                     )
 
-                    all_images[index] = filename
+                    all_images[index] = (
+                        saved_image
+                    )
+
+                else:
+
+                    new_images.append("")
 
         except ValueError as error:
 
-            for filename in uploaded_images:
-                delete_product_image(filename)
+            for new_image in new_images:
 
-            flash(str(error))
+                if new_image:
+
+                    delete_product_image(
+                        new_image
+                    )
+
+            flash(
+                str(error)
+            )
 
             return redirect(
                 url_for(
@@ -3044,10 +3916,16 @@ def admin_edit_product(product_id):
                 )
             )
 
+        image = all_images[0]
+        image2 = all_images[1]
+        image3 = all_images[2]
+        image4 = all_images[3]
+        image5 = all_images[4]
+
         images = "|".join(
-            image
-            for image in all_images
-            if image
+            image_name
+            for image_name in all_images
+            if image_name
         )
 
         video = product["video"] or ""
@@ -3055,8 +3933,6 @@ def admin_edit_product(product_id):
         video_file = request.files.get(
             "video"
         )
-
-        new_video = ""
 
         if (
             video_file
@@ -3069,14 +3945,27 @@ def admin_edit_product(product_id):
                     video_file
                 )
 
-                video = new_video
+                if new_video:
+
+                    delete_product_video(
+                        video
+                    )
+
+                    video = new_video
 
             except ValueError as error:
 
-                for filename in uploaded_images:
-                    delete_product_image(filename)
+                for new_image in new_images:
 
-                flash(str(error))
+                    if new_image:
+
+                        delete_product_image(
+                            new_image
+                        )
+
+                flash(
+                    str(error)
+                )
 
                 return redirect(
                     url_for(
@@ -3114,11 +4003,11 @@ def admin_edit_product(product_id):
                     category,
                     price,
                     old_price,
-                    all_images[0],
-                    all_images[1],
-                    all_images[2],
-                    all_images[3],
-                    all_images[4],
+                    image,
+                    image2,
+                    image3,
+                    image4,
+                    image5,
                     images,
                     video,
                     description,
@@ -3130,22 +4019,19 @@ def admin_edit_product(product_id):
 
             conn.commit()
 
-        except Exception as error:
+        except Exception:
 
             conn.rollback()
 
-            print(
-                "PRODUCT UPDATE ERROR:",
-                error
-            )
-
             conn.close()
 
-            for filename in uploaded_images:
-                delete_product_image(filename)
+            for new_image in new_images:
 
-            if new_video:
-                delete_product_video(new_video)
+                if new_image:
+
+                    delete_product_image(
+                        new_image
+                    )
 
             flash(
                 "Unable to update product."
@@ -3160,11 +4046,14 @@ def admin_edit_product(product_id):
 
         conn.close()
 
+        # Delete replaced files.
         for index, old_image in enumerate(
             old_images
         ):
 
-            new_image = all_images[index]
+            new_image = all_images[
+                index
+            ]
 
             if (
                 old_image
@@ -3174,12 +4063,6 @@ def admin_edit_product(product_id):
                 delete_product_image(
                     old_image
                 )
-
-        if new_video and product["video"]:
-
-            delete_product_video(
-                product["video"]
-            )
 
         flash(
             "Product updated successfully."
@@ -3201,7 +4084,7 @@ def admin_edit_product(product_id):
 
 @app.route(
     "/admin/product/delete/<int:product_id>",
-    methods=["GET", "POST"]
+    methods=["POST", "GET"]
 )
 @admin_required
 def admin_delete_product(product_id):
@@ -3217,7 +4100,7 @@ def admin_delete_product(product_id):
         (product_id,)
     ).fetchone()
 
-    if not product:
+    if product is None:
 
         conn.close()
 
@@ -3229,7 +4112,7 @@ def admin_delete_product(product_id):
             url_for("admin_products")
         )
 
-    images = [
+    image_names = [
         product["image"],
         product["image2"],
         product["image3"],
@@ -3239,15 +4122,19 @@ def admin_delete_product(product_id):
 
     if product["images"]:
 
-        images.extend(
-            product["images"].split("|")
-        )
+        for img in product[
+            "images"
+        ].split("|"):
 
-    images = list(
+            if img:
+
+                image_names.append(
+                    img
+                )
+
+    image_names = list(
         dict.fromkeys(
-            image
-            for image in images
-            if image
+            image_names
         )
     )
 
@@ -3270,12 +4157,18 @@ def admin_delete_product(product_id):
     )
 
     conn.commit()
+
     conn.close()
 
-    for image in images:
-        delete_product_image(image)
+    for image_name in image_names:
 
-    delete_product_video(video)
+        delete_product_image(
+            image_name
+        )
+
+    delete_product_video(
+        video
+    )
 
     flash(
         "Product deleted successfully."
@@ -3364,7 +4257,7 @@ def admin_order_detail(order_id):
 
     conn.close()
 
-    if not order:
+    if order is None:
 
         return "Order not found", 404
 
@@ -3413,9 +4306,14 @@ def admin_update_order(order_id):
     }
 
     if status not in allowed_statuses:
+
         status = "Pending"
 
-    if payment_status not in allowed_payment_statuses:
+    if (
+        payment_status
+        not in allowed_payment_statuses
+    ):
+
         payment_status = "Pending"
 
     conn = get_db()
@@ -3436,6 +4334,7 @@ def admin_update_order(order_id):
     )
 
     conn.commit()
+
     conn.close()
 
     flash(
@@ -3462,7 +4361,13 @@ def admin_users():
 
     users_list = conn.execute(
         """
-        SELECT *
+        SELECT
+            id,
+            name,
+            email,
+            phone,
+            address,
+            created_at
         FROM users
         ORDER BY id DESC
         """
@@ -3508,7 +4413,7 @@ def admin_reviews():
 
 @app.route(
     "/admin/review/delete/<int:review_id>",
-    methods=["GET", "POST"]
+    methods=["POST", "GET"]
 )
 @admin_required
 def admin_delete_review(review_id):
@@ -3524,6 +4429,7 @@ def admin_delete_review(review_id):
     )
 
     conn.commit()
+
     conn.close()
 
     flash(
@@ -3647,6 +4553,16 @@ def admin_settings():
 
             free_shipping = 999
 
+        shipping_charge = max(
+            0,
+            shipping_charge
+        )
+
+        free_shipping = max(
+            0,
+            free_shipping
+        )
+
         delivery_time = request.form.get(
             "delivery_time",
             "5-7 business days"
@@ -3727,10 +4643,12 @@ def admin_settings():
 
 
 # ==========================================================
-# API CART COUNT
+# API - CART COUNT
 # ==========================================================
 
-@app.route("/api/cart-count")
+@app.route(
+    "/api/cart-count"
+)
 def api_cart_count():
 
     return jsonify(
@@ -3741,7 +4659,7 @@ def api_cart_count():
 
 
 # ==========================================================
-# API PRODUCT
+# API - PRODUCT
 # ==========================================================
 
 @app.route(
@@ -3762,7 +4680,7 @@ def api_product(product_id):
 
     conn.close()
 
-    if not product:
+    if product is None:
 
         return jsonify(
             {
@@ -3771,32 +4689,75 @@ def api_product(product_id):
             }
         ), 404
 
-    product_data = dict(product)
+    product_data = dict(
+        product
+    )
 
-    product_data["image_url"] = image_url(
+    # Add ready-to-use image URLs.
+    product_data[
+        "image_url"
+    ] = product_image_url(
         product["image"]
     )
 
-    product_data["image2_url"] = image_url(
+    product_data[
+        "image2_url"
+    ] = product_image_url(
         product["image2"]
     )
 
-    product_data["image3_url"] = image_url(
+    product_data[
+        "image3_url"
+    ] = product_image_url(
         product["image3"]
     )
 
-    product_data["image4_url"] = image_url(
+    product_data[
+        "image4_url"
+    ] = product_image_url(
         product["image4"]
     )
 
-    product_data["image5_url"] = image_url(
+    product_data[
+        "image5_url"
+    ] = product_image_url(
         product["image5"]
+    )
+
+    product_data[
+        "video_url"
+    ] = product_video_url(
+        product["video"]
     )
 
     return jsonify(
         {
             "success": True,
             "product": product_data
+        }
+    )
+
+
+# ==========================================================
+# API - IMAGE URL
+# ==========================================================
+
+@app.route(
+    "/api/image-url"
+)
+def api_image_url():
+
+    filename = request.args.get(
+        "filename",
+        ""
+    )
+
+    return jsonify(
+        {
+            "success": True,
+            "url": product_image_url(
+                filename
+            )
         }
     )
 
@@ -3822,12 +4783,14 @@ def health():
 @app.route("/favicon.ico")
 def favicon():
 
-    path = os.path.join(
+    favicon_path = os.path.join(
         app.config["UPLOAD_FOLDER"],
         "favicon.ico"
     )
 
-    if os.path.isfile(path):
+    if os.path.isfile(
+        favicon_path
+    ):
 
         return send_from_directory(
             app.config["UPLOAD_FOLDER"],
@@ -3849,6 +4812,19 @@ def page_not_found(error):
     ), 404
 
 
+@app.errorhandler(413)
+def file_too_large(error):
+
+    flash(
+        "Uploaded file is too large."
+    )
+
+    return redirect(
+        request.referrer
+        or url_for("admin_products")
+    )
+
+
 @app.errorhandler(500)
 def internal_server_error(error):
 
@@ -3858,7 +4834,7 @@ def internal_server_error(error):
 
 
 # ==========================================================
-# START
+# APPLICATION START
 # ==========================================================
 
 if __name__ == "__main__":
