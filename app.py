@@ -1918,30 +1918,25 @@ def admin_add_product():
 
         price = 0
 
-    try:
-
-        old_price = float(
-            request.form.get(
-                "old_price",
-                0
-            ) or 0
-        )
-
-    except ValueError:
-
-        old_price = 0
             try:
+            old_price = float(
+                request.form.get(
+                    "old_price",
+                    0
+                ) or 0
+            )
+        except ValueError:
+            old_price = 0
 
-        stock = int(
-            request.form.get(
-                "stock",
-                0
-            ) or 0
-        )
-
-    except ValueError:
-
-        stock = 0
+        try:
+            stock = int(
+                request.form.get(
+                    "stock",
+                    0
+                ) or 0
+            )
+        except ValueError:
+            stock = 0
 
     description = request.form.get(
         "description",
