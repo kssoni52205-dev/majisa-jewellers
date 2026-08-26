@@ -1,516 +1,679 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Checkout | Majisa Jewellers</title>
+```
+<title>Checkout | Majisa Jewellers</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
 
-        body {
-            background: #faf7f0;
-            color: #211d18;
-            font-family: Georgia, "Times New Roman", serif;
-        }
+    body {
+        background: #faf7f0;
+        color: #211d18;
+        font-family: Georgia, "Times New Roman", serif;
+    }
 
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
+    a {
+        text-decoration: none;
+        color: inherit;
+    }
 
-        header {
-            background: #211d18;
-            color: #f4d58d;
-            padding: 18px 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-        }
+    header {
+        background: #211d18;
+        color: #f4d58d;
+        padding: 18px 5%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
 
-        .brand {
-            font-size: 25px;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
+    .brand {
+        font-size: 25px;
+        font-weight: bold;
+        letter-spacing: 2px;
+    }
 
+    nav {
+        display: flex;
+        gap: 22px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 14px;
+        font-family: Arial, sans-serif;
+    }
+
+    .page {
+        max-width: 1100px;
+        margin: auto;
+        padding: 60px 5%;
+    }
+
+    .heading {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .heading small {
+        color: #9b7127;
+        font-family: Arial, sans-serif;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+    }
+
+    .heading h1 {
+        font-size: 45px;
+        margin-top: 8px;
+    }
+
+    .checkout-grid {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 30px;
+        align-items: start;
+    }
+
+    .box {
+        background: white;
+        border: 1px solid #e1d8cb;
+        padding: 30px;
+    }
+
+    .box h2 {
+        font-size: 25px;
+        margin-bottom: 25px;
+    }
+
+    .field {
+        margin-bottom: 18px;
+    }
+
+    .field label {
+        display: block;
+        margin-bottom: 7px;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+        width: 100%;
+        padding: 13px;
+        border: 1px solid #d6ccbe;
+        background: #fff;
+        outline: none;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        border-radius: 2px;
+    }
+
+    .field textarea {
+        min-height: 110px;
+        resize: vertical;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+        border-color: #9b7127;
+    }
+
+    .payment {
+        margin-top: 28px;
+        padding-top: 25px;
+        border-top: 1px solid #e2d9cd;
+    }
+
+    .payment h3 {
+        margin-bottom: 15px;
+    }
+
+    .payment-option {
+        display: block;
+        border: 1px solid #ddd3c5;
+        padding: 15px;
+        margin-bottom: 10px;
+        font-family: Arial, sans-serif;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .payment-option:hover {
+        border-color: #9b7127;
+        background: #fffaf1;
+    }
+
+    .payment-option input {
+        margin-right: 8px;
+    }
+
+    .gateway-box {
+        display: none;
+        margin-top: 15px;
+        padding: 18px;
+        border: 1px solid #ddd3c5;
+        background: #fffaf1;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .gateway-box strong {
+        display: block;
+        margin-bottom: 7px;
+        color: #9b7127;
+    }
+
+    .note {
+        margin-top: 15px;
+        padding: 13px;
+        background: #f5efe5;
+        color: #655d53;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .summary {
+        background: #211d18;
+        color: white;
+        padding: 28px;
+        position: sticky;
+        top: 25px;
+    }
+
+    .summary h2 {
+        color: #f4d58d;
+        margin-bottom: 22px;
+        font-size: 25px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 13px 0;
+        border-bottom: 1px solid #403a33;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+    }
+
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        padding-top: 20px;
+        color: #f4d58d;
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .place-order {
+        width: 100%;
+        margin-top: 25px;
+        padding: 16px;
+        border: 0;
+        background: #f4d58d;
+        color: #211d18;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .place-order:hover {
+        background: #e8c76f;
+    }
+
+    .back {
+        display: block;
+        text-align: center;
+        margin-top: 15px;
+        color: #ccc;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+    }
+
+    .secure {
+        text-align: center;
+        margin-top: 20px;
+        color: #aaa;
+        font-family: Arial, sans-serif;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    footer {
+        background: #15120f;
+        color: #ccc;
+        padding: 30px;
+        text-align: center;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        margin-top: 50px;
+    }
+
+    footer a {
+        color: #f4d58d;
+    }
+
+    @media (max-width: 800px) {
         nav {
-            display: flex;
-            gap: 22px;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-        }
-
-        .actions {
-            display: flex;
-            gap: 14px;
-            font-family: Arial, sans-serif;
-        }
-
-        .page {
-            max-width: 1100px;
-            margin: auto;
-            padding: 60px 5%;
-        }
-
-        .heading {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .heading small {
-            color: #9b7127;
-            font-family: Arial, sans-serif;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-
-        .heading h1 {
-            font-size: 45px;
-            margin-top: 8px;
+            display: none;
         }
 
         .checkout-grid {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 30px;
-            align-items: start;
-        }
-
-        .box {
-            background: white;
-            border: 1px solid #e1d8cb;
-            padding: 30px;
-        }
-
-        .box h2 {
-            font-size: 25px;
-            margin-bottom: 25px;
-        }
-
-        .field {
-            margin-bottom: 18px;
-        }
-
-        .field label {
-            display: block;
-            margin-bottom: 7px;
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-            font-weight: bold;
-        }
-
-        .field input,
-        .field textarea,
-        .field select {
-            width: 100%;
-            padding: 13px;
-            border: 1px solid #d6ccbe;
-            background: #fff;
-            outline: none;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-        }
-
-        .field textarea {
-            min-height: 110px;
-            resize: vertical;
-        }
-
-        .field input:focus,
-        .field textarea:focus,
-        .field select:focus {
-            border-color: #9b7127;
-        }
-
-        .payment {
-            margin-top: 28px;
-            padding-top: 25px;
-            border-top: 1px solid #e2d9cd;
-        }
-
-        .payment h3 {
-            margin-bottom: 15px;
-        }
-
-        .payment-option {
-            border: 1px solid #ddd3c5;
-            padding: 15px;
-            margin-bottom: 10px;
-            font-family: Arial, sans-serif;
-            cursor: pointer;
-        }
-
-        .payment-option input {
-            margin-right: 8px;
-        }
-
-        .note {
-            margin-top: 15px;
-            padding: 13px;
-            background: #f5efe5;
-            color: #655d53;
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.6;
+            grid-template-columns: 1fr;
         }
 
         .summary {
-            background: #211d18;
-            color: white;
-            padding: 28px;
-            position: sticky;
-            top: 25px;
+            position: static;
         }
 
-        .summary h2 {
-            color: #f4d58d;
-            margin-bottom: 22px;
-            font-size: 25px;
+        .heading h1 {
+            font-size: 36px;
         }
 
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            padding: 13px 0;
-            border-bottom: 1px solid #403a33;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
+        .box {
+            padding: 22px;
         }
+    }
+</style>
+```
 
-        .summary-total {
-            display: flex;
-            justify-content: space-between;
-            padding-top: 20px;
-            color: #f4d58d;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .place-order {
-            width: 100%;
-            margin-top: 25px;
-            padding: 16px;
-            border: 0;
-            background: #f4d58d;
-            color: #211d18;
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            cursor: pointer;
-        }
-
-        .back {
-            display: block;
-            text-align: center;
-            margin-top: 15px;
-            color: #ccc;
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-        }
-
-        .secure {
-            text-align: center;
-            margin-top: 20px;
-            color: #aaa;
-            font-family: Arial, sans-serif;
-            font-size: 11px;
-            line-height: 1.6;
-        }
-
-        footer {
-            background: #15120f;
-            color: #ccc;
-            padding: 30px;
-            text-align: center;
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-            margin-top: 50px;
-        }
-
-        footer a {
-            color: #f4d58d;
-        }
-
-        @media (max-width: 800px) {
-            nav {
-                display: none;
-            }
-
-            .checkout-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .summary {
-                position: static;
-            }
-
-            .heading h1 {
-                font-size: 36px;
-            }
-        }
-    </style>
 </head>
 
 <body>
 
 <header>
 
-    <a href="/" class="brand">
-        Majisa Jewellers
-    </a>
+```
+<a href="/" class="brand">
+    Majisa Jewellers
+</a>
 
-    <nav>
-        <a href="/">Home</a>
-        <a href="/products">Shop</a>
-        <a href="/contact">Contact</a>
-    </nav>
+<nav>
+    <a href="/">Home</a>
+    <a href="/products">Shop</a>
+    <a href="/contact">Contact</a>
+</nav>
 
-    <div class="actions">
-        <a href="/wishlist">♡</a>
-        <a href="/cart">🛒 {{ cart_count }}</a>
-        <a href="/login">Account</a>
-    </div>
+<div class="actions">
+    <a href="/wishlist">♡</a>
+    <a href="/cart">🛒 {{ cart_count }}</a>
+    <a href="/login">Account</a>
+</div>
+```
 
 </header>
 
-
 <main class="page">
 
-    <div class="heading">
-        <small>Almost There</small>
-        <h1>Checkout</h1>
-    </div>
+```
+<div class="heading">
+    <small>Almost There</small>
+    <h1>Checkout</h1>
+</div>
 
 
-    <form method="POST" action="/checkout">
+<form method="POST" action="{{ url_for('checkout') }}" id="checkoutForm">
 
-        <div class="checkout-grid">
+    <div class="checkout-grid">
 
-            <!-- CUSTOMER DETAILS -->
+        <!-- CUSTOMER DETAILS -->
 
-            <div class="box">
+        <div class="box">
 
-                <h2>
-                    Delivery Details
-                </h2>
+            <h2>
+                Delivery Details
+            </h2>
 
-                <div class="field">
 
-                    <label for="name">
-                        Full Name *
-                    </label>
+            <div class="field">
+
+                <label for="name">
+                    Full Name *
+                </label>
+
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Enter your full name"
+                    autocomplete="name"
+                    required
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label for="email">
+                    Email Address
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email address"
+                    autocomplete="email"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label for="phone">
+                    Mobile Number *
+                </label>
+
+                <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    placeholder="10-digit mobile number"
+                    pattern="[0-9]{10}"
+                    maxlength="10"
+                    minlength="10"
+                    inputmode="numeric"
+                    autocomplete="tel"
+                    required
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label for="address">
+                    Complete Delivery Address *
+                </label>
+
+                <textarea
+                    id="address"
+                    name="address"
+                    placeholder="House/Flat, Street, Area, City, State, PIN"
+                    autocomplete="street-address"
+                    required
+                ></textarea>
+
+            </div>
+
+
+            <!-- PAYMENT -->
+
+            <div class="payment">
+
+                <h3>
+                    Payment Method
+                </h3>
+
+
+                {% if store_settings and store_settings["cod"] == "enabled" %}
+
+                <label class="payment-option">
 
                     <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        placeholder="Enter your full name"
-                        required
+                        type="radio"
+                        name="payment_method"
+                        value="COD"
+                        checked
+                        onchange="updatePaymentMethod()"
                     >
 
-                </div>
+                    <strong>Cash on Delivery</strong>
+
+                    <br>
+
+                    <small>
+                        Pay when your order is delivered.
+                    </small>
+
+                </label>
+
+                {% endif %}
 
 
-                <div class="field">
+                {% if store_settings and store_settings["upi"] == "enabled" %}
 
-                    <label for="phone">
-                        Mobile Number *
-                    </label>
+                <label class="payment-option">
 
                     <input
-                        type="tel"
-                        id="phone"
-                        name="phone"
-                        placeholder="10-digit mobile number"
-                        pattern="[0-9]{10}"
-                        maxlength="10"
-                        required
+                        type="radio"
+                        name="payment_method"
+                        value="UPI"
+                        {% if not store_settings or store_settings["cod"] != "enabled" %}checked{% endif %}
+                        onchange="updatePaymentMethod()"
                     >
 
+                    <strong>UPI / Online Payment</strong>
+
+                    <br>
+
+                    <small>
+                        Online payment option.
+                    </small>
+
+                </label>
+
+                <div
+                    class="gateway-box"
+                    id="upiGatewayBox"
+                >
+                    <strong>
+                        Online Payment
+                    </strong>
+
+                    Your UPI / payment gateway can be connected here.
+
+                    <br><br>
+
+                    <span>
+                        Payment gateway integration is required before
+                        real online payments can be collected.
+                    </span>
                 </div>
 
+                {% endif %}
 
-                <div class="field">
 
-                    <label for="address">
-                        Complete Delivery Address *
-                    </label>
+                {% if (not store_settings) or
+                      (store_settings["cod"] != "enabled" and
+                       store_settings["upi"] != "enabled") %}
 
-                    <textarea
-                        id="address"
-                        name="address"
-                        placeholder="House/Flat, Street, Area, City, State, PIN"
-                        required
-                    ></textarea>
+                <div class="note">
+
+                    Online payment methods are currently unavailable.
+                    Please contact Majisa Jewellers for payment options.
 
                 </div>
 
-
-                <!-- PAYMENT -->
-
-                <div class="payment">
-
-                    <h3>
-                        Payment Method
-                    </h3>
+                {% endif %}
 
 
-                    <label class="payment-option">
+                <div class="note">
 
-                        <input
-                            type="radio"
-                            name="payment_method"
-                            value="COD"
-                            checked
-                        >
-
-                        Cash on Delivery
-
-                    </label>
-
-
-                    <label class="payment-option">
-
-                        <input
-                            type="radio"
-                            name="payment_method"
-                            value="UPI"
-                        >
-
-                        UPI / Online Payment
-
-                    </label>
-
-
-                    <div class="note">
-
-                        Online payment integration can be connected
-                        later with a payment gateway. For now,
-                        Cash on Delivery is available.
-
-                    </div>
+                    Your order will be created only after you submit
+                    the checkout form.
 
                 </div>
 
             </div>
 
-
-            <!-- ORDER SUMMARY -->
-
-            <aside class="summary">
-
-                <h2>
-                    Your Order
-                </h2>
-
-
-                <div class="summary-row">
-
-                    <span>
-                        Items
-                    </span>
-
-                    <span>
-                        {{ cart_count }}
-                    </span>
-
-                </div>
-
-
-                <div class="summary-row">
-
-                    <span>
-                        Subtotal
-                    </span>
-
-                    <span>
-                        ₹{{ "%.0f"|format(total) }}
-                    </span>
-
-                </div>
-
-
-                <div class="summary-row">
-
-                    <span>
-                        Delivery
-                    </span>
-
-                    <span>
-                        To be confirmed
-                    </span>
-
-                </div>
-
-
-                <div class="summary-total">
-
-                    <span>
-                        Total
-                    </span>
-
-                    <span>
-                        ₹{{ "%.0f"|format(total) }}
-                    </span>
-
-                </div>
-
-
-                <button
-                    type="submit"
-                    class="place-order"
-                >
-                    PLACE ORDER
-                </button>
-
-
-                <a
-                    href="/cart"
-                    class="back"
-                >
-                    ← Back to Shopping Bag
-                </a>
-
-
-                <div class="secure">
-
-                    Your order details are securely
-                    submitted to Majisa Jewellers.
-
-                </div>
-
-            </aside>
-
         </div>
 
-    </form>
+
+        <!-- ORDER SUMMARY -->
+
+        <aside class="summary">
+
+            <h2>
+                Your Order
+            </h2>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Items
+                </span>
+
+                <span>
+                    {{ cart_count }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Subtotal
+                </span>
+
+                <span>
+                    ₹{{ "%.0f"|format(subtotal) }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Delivery
+                </span>
+
+                <span>
+                    {% if shipping == 0 %}
+                        FREE
+                    {% else %}
+                        ₹{{ "%.0f"|format(shipping) }}
+                    {% endif %}
+                </span>
+
+            </div>
+
+
+            <div class="summary-total">
+
+                <span>
+                    Total
+                </span>
+
+                <span>
+                    ₹{{ "%.0f"|format(total) }}
+                </span>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="place-order"
+            >
+                PLACE ORDER
+            </button>
+
+
+            <a
+                href="{{ url_for('cart') }}"
+                class="back"
+            >
+                ← Back to Shopping Bag
+            </a>
+
+
+            <div class="secure">
+
+                🔒 Your checkout details are securely
+                submitted to Majisa Jewellers.
+
+            </div>
+
+        </aside>
+
+    </div>
+
+</form>
+```
 
 </main>
 
-
 <footer>
 
-    © 2026 Majisa Jewellers ·
+```
+© 2026 Majisa Jewellers ·
 
-    <a
-        href="https://instagram.com/majisa_art_jewellers"
-        target="_blank"
-    >
-        Instagram
-    </a>
+<a
+    href="https://instagram.com/majisa_art_jewellers"
+    target="_blank"
+    rel="noopener noreferrer"
+>
+    Instagram
+</a>
 
-    · 8949144970
+· 8949144970
+```
 
 </footer>
+
+<script>
+
+function updatePaymentMethod() {
+
+    const selected = document.querySelector(
+        'input[name="payment_method"]:checked'
+    );
+
+    const gatewayBox = document.getElementById(
+        "upiGatewayBox"
+    );
+
+    if (!selected || !gatewayBox) {
+        return;
+    }
+
+    if (selected.value === "UPI") {
+
+        gatewayBox.style.display = "block";
+
+    } else {
+
+        gatewayBox.style.display = "none";
+
+    }
+}
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        updatePaymentMethod();
+
+    }
+);
+
+</script>
 
 </body>
 </html>
