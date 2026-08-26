@@ -342,6 +342,12 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+        add_column_if_missing(
+        conn,
+        "products",
+        "images",
+        "TEXT DEFAULT ''"
+    )
 
     # ------------------------------------------------------
     # USERS
