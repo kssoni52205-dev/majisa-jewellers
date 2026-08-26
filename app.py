@@ -138,6 +138,41 @@ def save_product_image(file):
     return filename
 
 
+def save_multiple_product_images(files):
+
+    saved_images = []
+
+    for file in files:
+
+        if not file:
+            continue
+
+        if not file.filename:
+            continue
+
+        try:
+
+            filename = save_product_image(
+                file
+            )
+
+            if filename:
+                saved_images.append(
+                    filename
+                )
+
+        except Exception:
+
+            for saved in saved_images:
+                delete_product_image(
+                    saved
+                )
+
+            raise
+
+    return saved_images
+
+
 def delete_product_image(filename):
 
     if not filename:
@@ -159,6 +194,135 @@ def delete_product_image(filename):
 
     except OSError:
         pass
+
+
+def delete_multiple_product_images(
+    images
+):
+
+    if not images:
+        return
+
+    if isinstance(images, str):
+
+        images = [
+            image.strip()
+            for image in images.split(",")
+            if image.strip()
+        ]
+
+    for image in images:
+
+        delete_product_image(
+            image
+        )
+
+
+def parse_product_images(product):
+
+    """
+    Returns all product images.
+
+    Old products:
+        image = "old.jpg"
+
+    New products:
+        image = "main.jpg"
+        images = "main.jpg,second.jpg,third.jpg"
+    """
+
+    images = []
+
+    try:
+        image_list = product["images"]
+    except (KeyError, IndexError):
+        image_list = ""
+
+    if image_list:
+
+        for image in str(
+            image_list
+        ).split(","):
+
+            image = image.strip()
+
+            if image and image not in images:
+                images.append(image)
+
+    try:
+        main_image = product["image"]
+    except (KeyError, IndexError):
+        main_image = ""
+
+    if main_image:
+
+        main_image = str(
+            main_image
+        ).strip()
+
+        if (
+            main_image
+            and
+            main_image not in images
+        ):
+            images.insert(
+                0,
+                main_image
+            )
+
+    return images
+
+
+def save_product_images_from_request():
+
+    """
+    Supports both:
+
+    image
+        single old-style upload
+
+    images
+        multiple upload using:
+        <input type="file" name="images" multiple>
+    """
+
+    files = request.files.getlist(
+        "images"
+    )
+
+    valid_files = [
+        file
+        for file in files
+        if file and file.filename
+    ]
+
+    # ------------------------------------------------------
+    # If multiple upload is not present,
+    # support old "image" field.
+    # ------------------------------------------------------
+
+    if not valid_files:
+
+        old_image = request.files.get(
+            "image"
+        )
+
+        if (
+            old_image
+            and
+            old_image.filename
+        ):
+
+            valid_files = [
+                old_image
+            ]
+
+    if not valid_files:
+        return []
+
+    return save_multiple_product_images(
+        valid_files
+    )
 
 
 def allowed_video_file(filename):
@@ -235,15 +399,23 @@ def delete_product_video(filename):
         pass
 
 
-def calculate_product_price(old_price, discount, fallback_price=0):
+def calculate_product_price(
+    old_price,
+    discount,
+    fallback_price=0
+):
 
     try:
-        old_price = float(old_price or 0)
+        old_price = float(
+            old_price or 0
+        )
     except (TypeError, ValueError):
         old_price = 0
 
     try:
-        discount = float(discount or 0)
+        discount = float(
+            discount or 0
+        )
     except (TypeError, ValueError):
         discount = 0
 
@@ -252,7 +424,11 @@ def calculate_product_price(old_price, discount, fallback_price=0):
         min(100, discount)
     )
 
-    if old_price > 0 and discount > 0:
+    if (
+        old_price > 0
+        and
+        discount > 0
+    ):
 
         return round(
             old_price -
@@ -335,6 +511,7 @@ def init_db():
             old_price REAL DEFAULT 0,
             discount REAL DEFAULT 0,
             image TEXT DEFAULT '',
+            images TEXT DEFAULT '',
             video TEXT DEFAULT '',
             description TEXT DEFAULT '',
             stock INTEGER DEFAULT 0,
@@ -526,6 +703,13 @@ def init_db():
     add_column_if_missing(
         conn,
         "products",
+        "images",
+        "TEXT DEFAULT ''"
+    )
+
+    add_column_if_missing(
+        conn,
+        "products",
         "video",
         "TEXT DEFAULT ''"
     )
@@ -639,7 +823,8 @@ def inject_global_data():
         "cart_count": cart_count(),
         "site_name": "Majisa Jewellers",
         "site_phone": "8949144970",
-        "site_instagram": "majisa_art_jewellers"
+        "site_instagram": "majisa_art_jewellers",
+        "parse_product_images": parse_product_images
     }
 
 
@@ -699,12 +884,15 @@ def products():
     ).strip()
 
     try:
+
         price_max = (
             float(price_max_raw)
             if price_max_raw
             else None
         )
+
     except ValueError:
+
         price_max = None
 
     conn = get_db()
@@ -837,10 +1025,15 @@ def product_detail(product_id):
 
         return "Product not found", 404
 
+    product_images = parse_product_images(
+        product
+    )
+
     return render_template(
         "product.html",
         product=product,
-        reviews=reviews
+        reviews=reviews,
+        product_images=product_images
     )
 
 
@@ -864,20 +1057,22 @@ def search():
 # CART
 # ==========================================================
 
-
 @app.route("/cart")
 def cart():
 
     cart = get_cart()
 
     if not cart:
+
         return render_template(
             "cart.html",
             items=[],
             total=0
         )
 
-    product_ids = list(cart.keys())
+    product_ids = list(
+        cart.keys()
+    )
 
     placeholders = ",".join(
         ["?"] * len(product_ids)
@@ -948,6 +1143,7 @@ def add_to_cart(product_id):
     conn.close()
 
     if product is None:
+
         return "Product not found", 404
 
     cart = get_cart()
@@ -977,6 +1173,7 @@ def remove_from_cart(product_id):
     key = str(product_id)
 
     if key in cart:
+
         del cart[key]
 
     save_cart(cart)
@@ -1054,9 +1251,16 @@ def toggle_wishlist(product_id):
     )
 
     if product_id in wishlist:
-        wishlist.remove(product_id)
+
+        wishlist.remove(
+            product_id
+        )
+
     else:
-        wishlist.append(product_id)
+
+        wishlist.append(
+            product_id
+        )
 
     session["wishlist"] = wishlist
     session.modified = True
@@ -1099,7 +1303,11 @@ def register():
             ""
         ).strip()
 
-        if not name or not email or not password:
+        if (
+            not name
+            or not email
+            or not password
+        ):
 
             flash(
                 "Please fill all required fields."
@@ -1171,6 +1379,16 @@ def register():
 )
 def login():
 
+    # ------------------------------------------------------
+    # IMPORTANT:
+    # next parameter is preserved during login.
+    # ------------------------------------------------------
+
+    next_url = request.args.get(
+        "next",
+        ""
+    )
+
     if request.method == "POST":
 
         email = request.form.get(
@@ -1203,14 +1421,14 @@ def login():
         if user:
 
             session["user_id"] = user["id"]
-            session["user_name"] = user["name"]
 
-            next_url = request.args.get(
-                "next"
+            session["user_name"] = (
+                user["name"]
             )
 
             return redirect(
-                next_url or
+                next_url
+                or
                 url_for("home")
             )
 
@@ -1219,7 +1437,8 @@ def login():
         )
 
     return render_template(
-        "login.html"
+        "login.html",
+        next=next_url
     )
 
 
@@ -1608,7 +1827,8 @@ def checkout():
         ).fetchone()
 
         shipping_charge = float(
-            settings["shipping_charge"] or 0
+            settings["shipping_charge"]
+            or 0
         )
 
         free_shipping = float(
@@ -1622,7 +1842,10 @@ def checkout():
             else shipping_charge
         )
 
-        total = subtotal + shipping
+        total = (
+            subtotal +
+            shipping
+        )
 
         cursor = conn.execute(
             """
@@ -1753,7 +1976,8 @@ def checkout():
     ).fetchone()
 
     shipping_charge = float(
-        settings["shipping_charge"] or 0
+        settings["shipping_charge"]
+        or 0
     )
 
     free_shipping = float(
@@ -1767,7 +1991,10 @@ def checkout():
         else shipping_charge
     )
 
-    total = subtotal + shipping
+    total = (
+        subtotal +
+        shipping
+    )
 
     conn.close()
 
@@ -1874,6 +2101,8 @@ def order_detail(order_id):
         order=order,
         items=items
     )
+
+
 # ==========================================================
 # REVIEWS
 # ==========================================================
@@ -1972,9 +2201,1475 @@ def faq():
     return render_template(
         "faq.html"
     )
+    # ==========================================================
+# HELPERS
+# ==========================================================
+
+def admin_required(view):
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+
+        if not session.get("admin_logged_in"):
+            return redirect(url_for("admin_login"))
+
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def login_required(view):
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+
+        if not session.get("user_id"):
+            return redirect(
+                url_for(
+                    "login",
+                    next=request.path
+                )
+            )
+
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def get_cart():
+
+    return session.get("cart", {})
+
+
+def save_cart(cart):
+
+    session["cart"] = cart
+    session.modified = True
+
+
+def cart_count():
+
+    cart = get_cart()
+
+    return sum(
+        int(quantity)
+        for quantity in cart.values()
+    )
+
+
+def get_settings():
+
+    conn = get_db()
+
+    settings = conn.execute(
+        """
+        SELECT *
+        FROM settings
+        WHERE id = 1
+        """
+    ).fetchone()
+
+    conn.close()
+
+    return settings
 
 
 # ==========================================================
+# GLOBAL TEMPLATE DATA
+# ==========================================================
+
+@app.context_processor
+def inject_global_data():
+
+    return {
+        "store_settings": get_settings(),
+        "cart_count": cart_count(),
+        "site_name": "Majisa Jewellers",
+        "site_phone": "8949144970",
+        "site_instagram": "majisa_art_jewellers"
+    }
+
+
+# ==========================================================
+# HOME
+# ==========================================================
+
+@app.route("/")
+def home():
+
+    conn = get_db()
+
+    featured = conn.execute(
+        """
+        SELECT *
+        FROM products
+        WHERE featured = 1
+        ORDER BY id DESC
+        LIMIT 8
+        """
+    ).fetchall()
+
+    latest = conn.execute(
+        """
+        SELECT *
+        FROM products
+        ORDER BY id DESC
+        LIMIT 12
+        """
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "index.html",
+        featured=featured,
+        latest=latest
+    )
+
+
+# ==========================================================
+# PRODUCTS
+# ==========================================================
+
+@app.route("/products")
+def products():
+
+    category = request.args.get(
+        "category",
+        ""
+    ).strip()
+
+    search = request.args.get(
+        "search",
+        ""
+    ).strip()
+
+    price_max_raw = request.args.get(
+        "price_max",
+        ""
+    ).strip()
+
+    try:
+
+        price_max = (
+            float(price_max_raw)
+            if price_max_raw
+            else None
+        )
+
+    except ValueError:
+
+        price_max = None
+
+    conn = get_db()
+
+    if search and price_max is not None:
+
+        items = conn.execute(
+            """
+            SELECT *
+            FROM products
+            WHERE
+            (
+                name LIKE ?
+                OR category LIKE ?
+                OR description LIKE ?
+            )
+            AND price <= ?
+            ORDER BY id DESC
+            """,
+            (
+                f"%{search}%",
+                f"%{search}%",
+                f"%{search}%",
+                price_max
+            )
+        ).fetchall()
+
+    elif search:
+
+        items = conn.execute(
+            """
+            SELECT *
+            FROM products
+            WHERE
+                name LIKE ?
+                OR category LIKE ?
+                OR description LIKE ?
+            ORDER BY id DESC
+            """,
+            (
+                f"%{search}%",
+                f"%{search}%",
+                f"%{search}%"
+            )
+        ).fetchall()
+
+    elif category and price_max is not None:
+
+        items = conn.execute(
+            """
+            SELECT *
+            FROM products
+            WHERE category = ?
+            AND price <= ?
+            ORDER BY id DESC
+            """,
+            (
+                category,
+                price_max
+            )
+        ).fetchall()
+
+    elif category:
+
+        items = conn.execute(
+            """
+            SELECT *
+            FROM products
+            WHERE category = ?
+            ORDER BY id DESC
+            """,
+            (category,)
+        ).fetchall()
+
+    elif price_max is not None:
+
+        items = conn.execute(
+            """
+            SELECT *
+            FROM products
+            WHERE price <= ?
+            ORDER BY id DESC
+            """,
+            (price_max,)
+        ).fetchall()
+
+    else:
+
+        items = conn.execute(
+            """
+            SELECT *
+            FROM products
+            ORDER BY id DESC
+            """
+        ).fetchall()
+
+    categories = conn.execute(
+        """
+        SELECT DISTINCT category
+        FROM products
+        WHERE category != ''
+        ORDER BY category
+        """
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "products.html",
+        products=items,
+        categories=categories,
+        selected_category=category,
+        search=search,
+        selected_price_max=price_max
+    )
+
+
+# ==========================================================
+# PRODUCT DETAIL
+# ==========================================================
+
+@app.route("/product/<int:product_id>")
+def product_detail(product_id):
+
+    conn = get_db()
+
+    product = conn.execute(
+        """
+        SELECT *
+        FROM products
+        WHERE id = ?
+        """,
+        (product_id,)
+    ).fetchone()
+
+    reviews = conn.execute(
+        """
+        SELECT *
+        FROM reviews
+        WHERE product_id = ?
+        ORDER BY id DESC
+        """,
+        (product_id,)
+    ).fetchall()
+
+    conn.close()
+
+    if product is None:
+        return "Product not found", 404
+
+    return render_template(
+        "product.html",
+        product=product,
+        reviews=reviews
+    )
+
+
+# ==========================================================
+# SEARCH
+# ==========================================================
+
+@app.route("/search")
+def search():
+
+    query = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    return redirect(
+        url_for(
+            "products",
+            search=query
+        )
+    )
+
+
+# ==========================================================
+# CART
+# ==========================================================
+
+@app.route("/cart")
+def cart():
+
+    cart = get_cart()
+
+    if not cart:
+
+        return render_template(
+            "cart.html",
+            items=[],
+            total=0
+        )
+
+    product_ids = list(cart.keys())
+
+    placeholders = ",".join(
+        ["?"] * len(product_ids)
+    )
+
+    conn = get_db()
+
+    products_list = conn.execute(
+        f"""
+        SELECT *
+        FROM products
+        WHERE id IN ({placeholders})
+        """,
+        product_ids
+    ).fetchall()
+
+    conn.close()
+
+    items = []
+    total = 0
+
+    for product in products_list:
+
+        quantity = int(
+            cart.get(
+                str(product["id"]),
+                0
+            )
+        )
+
+        subtotal = (
+            float(product["price"] or 0)
+            * quantity
+        )
+
+        total += subtotal
+
+        items.append({
+            "product": product,
+            "quantity": quantity,
+            "subtotal": subtotal
+        })
+
+    return render_template(
+        "cart.html",
+        items=items,
+        total=total
+    )
+
+
+@app.route(
+    "/cart/add/<int:product_id>",
+    methods=["POST", "GET"]
+)
+def add_to_cart(product_id):
+
+    conn = get_db()
+
+    product = conn.execute(
+        """
+        SELECT id
+        FROM products
+        WHERE id = ?
+        """,
+        (product_id,)
+    ).fetchone()
+
+    conn.close()
+
+    if product is None:
+        return "Product not found", 404
+
+    cart = get_cart()
+
+    key = str(product_id)
+
+    cart[key] = (
+        int(cart.get(key, 0)) + 1
+    )
+
+    save_cart(cart)
+
+    return redirect(
+        request.referrer or
+        url_for("cart")
+    )
+
+
+@app.route(
+    "/cart/remove/<int:product_id>",
+    methods=["POST", "GET"]
+)
+def remove_from_cart(product_id):
+
+    cart = get_cart()
+
+    key = str(product_id)
+
+    if key in cart:
+        del cart[key]
+
+    save_cart(cart)
+
+    return redirect(
+        url_for("cart")
+    )
+
+
+@app.route(
+    "/cart/clear",
+    methods=["POST", "GET"]
+)
+def clear_cart():
+
+    session["cart"] = {}
+    session.modified = True
+
+    return redirect(
+        url_for("cart")
+    )
+
+
+# ==========================================================
+# WISHLIST
+# ==========================================================
+
+@app.route("/wishlist")
+def wishlist():
+
+    wishlist_ids = session.get(
+        "wishlist",
+        []
+    )
+
+    if not wishlist_ids:
+
+        return render_template(
+            "wishlist.html",
+            products=[]
+        )
+
+    placeholders = ",".join(
+        ["?"] * len(wishlist_ids)
+    )
+
+    conn = get_db()
+
+    products_list = conn.execute(
+        f"""
+        SELECT *
+        FROM products
+        WHERE id IN ({placeholders})
+        """,
+        wishlist_ids
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "wishlist.html",
+        products=products_list
+    )
+
+
+@app.route(
+    "/wishlist/toggle/<int:product_id>",
+    methods=["POST", "GET"]
+)
+def toggle_wishlist(product_id):
+
+    wishlist = session.get(
+        "wishlist",
+        []
+    )
+
+    if product_id in wishlist:
+
+        wishlist.remove(product_id)
+
+    else:
+
+        wishlist.append(product_id)
+
+    session["wishlist"] = wishlist
+    session.modified = True
+
+    return redirect(
+        request.referrer or
+        url_for("wishlist")
+    )
+
+
+# ==========================================================
+# REGISTER
+# ==========================================================
+
+@app.route(
+    "/register",
+    methods=["GET", "POST"]
+)
+def register():
+
+    if request.method == "POST":
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        email = request.form.get(
+            "email",
+            ""
+        ).strip().lower()
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        phone = request.form.get(
+            "phone",
+            ""
+        ).strip()
+
+        if not name or not email or not password:
+
+            flash(
+                "Please fill all required fields."
+            )
+
+            return redirect(
+                url_for("register")
+            )
+
+        conn = get_db()
+
+        try:
+
+            conn.execute(
+                """
+                INSERT INTO users
+                (
+                    name,
+                    email,
+                    password,
+                    phone
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    name,
+                    email,
+                    password,
+                    phone
+                )
+            )
+
+            conn.commit()
+
+        except sqlite3.IntegrityError:
+
+            conn.close()
+
+            flash(
+                "Email already registered."
+            )
+
+            return redirect(
+                url_for("register")
+            )
+
+        conn.close()
+
+        flash(
+            "Registration successful. Please login."
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    return render_template(
+        "register.html"
+    )
+
+
+# ==========================================================
+# LOGIN
+# ==========================================================
+
+@app.route(
+    "/login",
+    methods=["GET", "POST"]
+)
+def login():
+
+    if request.method == "POST":
+
+        email = request.form.get(
+            "email",
+            ""
+        ).strip().lower()
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        conn = get_db()
+
+        user = conn.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE email = ?
+            AND password = ?
+            """,
+            (
+                email,
+                password
+            )
+        ).fetchone()
+
+        conn.close()
+
+        if user:
+
+            session["user_id"] = user["id"]
+            session["user_name"] = user["name"]
+
+            next_url = request.form.get(
+                "next"
+            ) or request.args.get(
+                "next"
+            )
+
+            return redirect(
+                next_url or
+                url_for("home")
+            )
+
+        flash(
+            "Invalid email or password."
+        )
+
+    return render_template(
+        "login.html"
+    )
+
+
+# ==========================================================
+# LOGOUT
+# ==========================================================
+
+@app.route("/logout")
+def logout():
+
+    session.pop(
+        "user_id",
+        None
+    )
+
+    session.pop(
+        "user_name",
+        None
+    )
+
+    return redirect(
+        url_for("home")
+    )
+
+
+# ==========================================================
+# PROFILE
+# ==========================================================
+
+@app.route(
+    "/profile",
+    methods=["GET", "POST"]
+)
+@login_required
+def profile():
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    conn = get_db()
+
+    user = conn.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE id = ?
+        """,
+        (user_id,)
+    ).fetchone()
+
+    if user is None:
+
+        conn.close()
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    if request.method == "POST":
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        phone = request.form.get(
+            "phone",
+            ""
+        ).strip()
+
+        address = request.form.get(
+            "address",
+            ""
+        ).strip()
+
+        if name:
+
+            conn.execute(
+                """
+                UPDATE users
+                SET
+                    name = ?,
+                    phone = ?,
+                    address = ?
+                WHERE id = ?
+                """,
+                (
+                    name,
+                    phone,
+                    address,
+                    user_id
+                )
+            )
+
+            conn.commit()
+
+            session["user_name"] = name
+
+            flash(
+                "Profile updated successfully."
+            )
+
+        conn.close()
+
+        return redirect(
+            url_for("profile")
+        )
+
+    conn.close()
+
+    return render_template(
+        "profile.html",
+        user=user
+    )
+
+
+# ==========================================================
+# FORGOT PASSWORD
+# ==========================================================
+
+@app.route(
+    "/forgot-password",
+    methods=["GET", "POST"]
+)
+def forgot_password():
+
+    if request.method == "POST":
+
+        email = request.form.get(
+            "email",
+            ""
+        ).strip().lower()
+
+        conn = get_db()
+
+        user = conn.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE email = ?
+            """,
+            (email,)
+        ).fetchone()
+
+        if user:
+
+            token = secrets.token_urlsafe(
+                32
+            )
+
+            conn.execute(
+                """
+                UPDATE users
+                SET
+                    reset_token = ?,
+                    reset_token_created = datetime('now')
+                WHERE id = ?
+                """,
+                (
+                    token,
+                    user["id"]
+                )
+            )
+
+            conn.commit()
+            conn.close()
+
+            return redirect(
+                url_for(
+                    "reset_password",
+                    token=token
+                )
+            )
+
+        conn.close()
+
+        flash(
+            "If this email is registered, you can reset your password."
+        )
+
+    return render_template(
+        "forgot_password.html"
+    )
+
+
+# ==========================================================
+# RESET PASSWORD
+# ==========================================================
+
+@app.route(
+    "/reset-password/<token>",
+    methods=["GET", "POST"]
+)
+def reset_password(token):
+
+    conn = get_db()
+
+    user = conn.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE reset_token = ?
+        """,
+        (token,)
+    ).fetchone()
+
+    if user is None:
+
+        conn.close()
+
+        flash(
+            "Invalid or expired reset link."
+        )
+
+        return redirect(
+            url_for("forgot_password")
+        )
+
+    if request.method == "POST":
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        confirm_password = request.form.get(
+            "confirm_password",
+            request.form.get(
+                "password_confirmation",
+                ""
+            )
+        )
+
+        if not password:
+
+            conn.close()
+
+            flash(
+                "Password cannot be empty."
+            )
+
+            return redirect(
+                url_for(
+                    "reset_password",
+                    token=token
+                )
+            )
+
+        if (
+            confirm_password
+            and
+            password != confirm_password
+        ):
+
+            conn.close()
+
+            flash(
+                "Passwords do not match."
+            )
+
+            return redirect(
+                url_for(
+                    "reset_password",
+                    token=token
+                )
+            )
+
+        conn.execute(
+            """
+            UPDATE users
+            SET
+                password = ?,
+                reset_token = '',
+                reset_token_created = ''
+            WHERE id = ?
+            """,
+            (
+                password,
+                user["id"]
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+        flash(
+            "Password reset successfully. Please login."
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    conn.close()
+
+    return render_template(
+        "reset_password.html",
+        token=token
+    )
+
+
+# ==========================================================
+# CHECKOUT
+# ==========================================================
+
+@app.route(
+    "/checkout",
+    methods=["GET", "POST"]
+)
+def checkout():
+
+    if not get_cart():
+
+        return redirect(
+            url_for("cart")
+        )
+
+    cart = get_cart()
+
+    product_ids = list(
+        cart.keys()
+    )
+
+    placeholders = ",".join(
+        ["?"] * len(product_ids)
+    )
+
+    conn = get_db()
+
+    products_list = conn.execute(
+        f"""
+        SELECT *
+        FROM products
+        WHERE id IN ({placeholders})
+        """,
+        product_ids
+    ).fetchall()
+
+    if request.method == "POST":
+
+        customer_name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        email = request.form.get(
+            "email",
+            ""
+        ).strip()
+
+        phone = request.form.get(
+            "phone",
+            ""
+        ).strip()
+
+        address = request.form.get(
+            "address",
+            ""
+        ).strip()
+
+        payment_method = request.form.get(
+            "payment_method",
+            "COD"
+        )
+
+        if (
+            not customer_name
+            or not phone
+            or not address
+        ):
+
+            conn.close()
+
+            flash(
+                "Please fill all checkout details."
+            )
+
+            return redirect(
+                url_for("checkout")
+            )
+
+        subtotal = 0
+
+        for product in products_list:
+
+            quantity = int(
+                cart.get(
+                    str(product["id"]),
+                    0
+                )
+            )
+
+            subtotal += (
+                float(product["price"] or 0)
+                * quantity
+            )
+
+        settings = conn.execute(
+            """
+            SELECT *
+            FROM settings
+            WHERE id = 1
+            """
+        ).fetchone()
+
+        shipping_charge = float(
+            settings["shipping_charge"] or 0
+        )
+
+        free_shipping = float(
+            settings["free_shipping"]
+            or 999999999
+        )
+
+        shipping = (
+            0
+            if subtotal >= free_shipping
+            else shipping_charge
+        )
+
+        total = subtotal + shipping
+
+        cursor = conn.execute(
+            """
+            INSERT INTO orders
+            (
+                user_id,
+                customer_name,
+                phone,
+                address,
+                total,
+                status,
+                payment_method,
+                email,
+                subtotal,
+                shipping,
+                discount,
+                payment_status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                session.get("user_id"),
+                customer_name,
+                phone,
+                address,
+                total,
+                "Pending",
+                payment_method,
+                email,
+                subtotal,
+                shipping,
+                0,
+                "Pending"
+            )
+        )
+
+        order_id = cursor.lastrowid
+
+        for product in products_list:
+
+            quantity = int(
+                cart.get(
+                    str(product["id"]),
+                    0
+                )
+            )
+
+            if quantity <= 0:
+                continue
+
+            conn.execute(
+                """
+                INSERT INTO order_items
+                (
+                    order_id,
+                    product_id,
+                    product_name,
+                    price,
+                    quantity
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    order_id,
+                    product["id"],
+                    product["name"],
+                    product["price"],
+                    quantity
+                )
+            )
+
+        conn.commit()
+        conn.close()
+
+        session["cart"] = {}
+        session.modified = True
+
+        return redirect(
+            url_for(
+                "order_success",
+                order_id=order_id
+            )
+        )
+
+    # ======================================================
+    # CHECKOUT GET
+    # ======================================================
+
+    subtotal = 0
+
+    for product in products_list:
+
+        quantity = int(
+            cart.get(
+                str(product["id"]),
+                0
+            )
+        )
+
+        subtotal += (
+            float(product["price"] or 0)
+            * quantity
+        )
+
+    settings = conn.execute(
+        """
+        SELECT *
+        FROM settings
+        WHERE id = 1
+        """
+    ).fetchone()
+
+    shipping_charge = float(
+        settings["shipping_charge"] or 0
+    )
+
+    free_shipping = float(
+        settings["free_shipping"]
+        or 999999999
+    )
+
+    shipping = (
+        0
+        if subtotal >= free_shipping
+        else shipping_charge
+    )
+
+    total = subtotal + shipping
+
+    conn.close()
+
+    return render_template(
+        "checkout.html",
+        products=products_list,
+        subtotal=subtotal,
+        shipping=shipping,
+        total=total
+    )
+
+
+# ==========================================================
+# ORDER SUCCESS
+# ==========================================================
+
+@app.route(
+    "/order-success/<int:order_id>"
+)
+def order_success(order_id):
+
+    return render_template(
+        "order_success.html",
+        order_id=order_id
+    )
+
+
+# ==========================================================
+# CUSTOMER ORDERS
+# ==========================================================
+
+@app.route("/orders")
+@login_required
+def orders():
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    conn = get_db()
+
+    orders_list = conn.execute(
+        """
+        SELECT *
+        FROM orders
+        WHERE user_id = ?
+        ORDER BY id DESC
+        """,
+        (user_id,)
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "orders.html",
+        orders=orders_list
+    )
+
+
+@app.route(
+    "/order/<int:order_id>"
+)
+@login_required
+def order_detail(order_id):
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    conn = get_db()
+
+    order = conn.execute(
+        """
+        SELECT *
+        FROM orders
+        WHERE id = ?
+        AND user_id = ?
+        """,
+        (
+            order_id,
+            user_id
+        )
+    ).fetchone()
+
+    items = conn.execute(
+        """
+        SELECT *
+        FROM order_items
+        WHERE order_id = ?
+        """,
+        (order_id,)
+    ).fetchall()
+
+    conn.close()
+
+    if order is None:
+
+        return "Order not found", 404
+
+    return render_template(
+        "order_detail.html",
+        order=order,
+        items=items
+    )
+
+
+# ==========================================================
+# REVIEWS
+# ==========================================================
+
+@app.route(
+    "/product/<int:product_id>/review",
+    methods=["POST"]
+)
+def add_review(product_id):
+
+    name = request.form.get(
+        "name",
+        "Customer"
+    ).strip()
+
+    message = request.form.get(
+        "message",
+        ""
+    ).strip()
+
+    try:
+
+        rating = int(
+            request.form.get(
+                "rating",
+                5
+            )
+        )
+
+    except (ValueError, TypeError):
+
+        rating = 5
+
+    rating = max(
+        1,
+        min(5, rating)
+    )
+
+    if name and message:
+
+        conn = get_db()
+
+        product = conn.execute(
+            """
+            SELECT id
+            FROM products
+            WHERE id = ?
+            """,
+            (product_id,)
+        ).fetchone()
+
+        if product:
+
+            conn.execute(
+                """
+                INSERT INTO reviews
+                (
+                    product_id,
+                    name,
+                    rating,
+                    message
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    product_id,
+                    name,
+                    rating,
+                    message
+                )
+            )
+
+            conn.commit()
+
+        conn.close()
+
+    return redirect(
+        url_for(
+            "product_detail",
+            product_id=product_id
+        )
+    )
+
+
+# ==========================================================
+# CONTACT / ABOUT / FAQ
+# ==========================================================
+
+@app.route("/contact")
+def contact():
+
+    return render_template(
+        "contact.html"
+    )
+
+
+@app.route("/about")
+def about():
+
+    return render_template(
+        "about.html"
+    )
+
+
+@app.route("/faq")
+def faq():
+
+    return render_template(
+        "faq.html"
+    )
+    # ==========================================================
 # ADMIN LOGIN
 # ==========================================================
 
@@ -1988,9 +3683,7 @@ def faq():
 )
 def admin_login():
 
-    if session.get(
-        "admin_logged_in"
-    ):
+    if session.get("admin_logged_in"):
 
         return redirect(
             url_for("admin_dashboard")
@@ -2030,6 +3723,10 @@ def admin_login():
         "admin_login.html"
     )
 
+
+# ==========================================================
+# ADMIN LOGOUT
+# ==========================================================
 
 @app.route("/admin/logout")
 def admin_logout():
@@ -2122,8 +3819,9 @@ def admin_products():
             """
             SELECT *
             FROM products
-            WHERE name LIKE ?
-               OR category LIKE ?
+            WHERE
+                name LIKE ?
+                OR category LIKE ?
             ORDER BY id DESC
             """,
             (
@@ -2163,6 +3861,7 @@ def admin_products():
 
 # ==========================================================
 # ADMIN ADD PRODUCT
+# MULTIPLE PHOTOS + VIDEO
 # ==========================================================
 
 @app.route(
@@ -2182,6 +3881,10 @@ def admin_add_product():
         ""
     ).strip()
 
+    description = request.form.get(
+        "description",
+        ""
+    ).strip()
 
     # ------------------------------------------------------
     # OLD PRICE
@@ -2196,10 +3899,9 @@ def admin_add_product():
             ) or 0
         )
 
-    except ValueError:
+    except (ValueError, TypeError):
 
         old_price = 0
-
 
     # ------------------------------------------------------
     # DISCOUNT
@@ -2214,7 +3916,7 @@ def admin_add_product():
             ) or 0
         )
 
-    except ValueError:
+    except (ValueError, TypeError):
 
         discount = 0
 
@@ -2222,7 +3924,6 @@ def admin_add_product():
         0,
         min(100, discount)
     )
-
 
     # ------------------------------------------------------
     # PRICE
@@ -2237,23 +3938,15 @@ def admin_add_product():
             ) or 0
         )
 
-    except ValueError:
+    except (ValueError, TypeError):
 
         submitted_price = 0
-
 
     price = calculate_product_price(
         old_price,
         discount,
         submitted_price
     )
-
-
-    description = request.form.get(
-        "description",
-        ""
-    ).strip()
-
 
     # ------------------------------------------------------
     # STOCK
@@ -2268,17 +3961,15 @@ def admin_add_product():
             ) or 0
         )
 
-    except ValueError:
+    except (ValueError, TypeError):
 
         stock = 0
-
 
     featured = (
         1
         if request.form.get("featured")
         else 0
     )
-
 
     if not name or not category:
 
@@ -2290,36 +3981,64 @@ def admin_add_product():
             url_for("admin_products")
         )
 
-
     # ======================================================
-    # IMAGE UPLOAD
+    # MULTIPLE IMAGES
     # ======================================================
 
-    image = ""
+    uploaded_images = []
 
-    image_file = request.files.get(
-        "image"
+    image_files = request.files.getlist(
+        "images"
     )
 
-    if image_file and image_file.filename:
+    # Backward compatibility:
+    # agar old form sirf "image" bhej raha hai
+    if not image_files:
 
-        try:
+        old_image = request.files.get(
+            "image"
+        )
 
-            image = save_product_image(
+        if old_image and old_image.filename:
+
+            image_files = [old_image]
+
+    try:
+
+        for image_file in image_files:
+
+            if (
                 image_file
+                and
+                image_file.filename
+            ):
+
+                filename = save_product_image(
+                    image_file
+                )
+
+                if filename:
+
+                    uploaded_images.append(
+                        filename
+                    )
+
+    except ValueError as error:
+
+        for filename in uploaded_images:
+
+            delete_product_image(
+                filename
             )
 
-        except ValueError as error:
+        flash(str(error))
 
-            flash(str(error))
-
-            return redirect(
-                url_for("admin_products")
-            )
-
+        return redirect(
+            url_for("admin_products")
+        )
 
     # ======================================================
-    # VIDEO UPLOAD
+    # VIDEO
     # ======================================================
 
     video = ""
@@ -2338,9 +4057,10 @@ def admin_add_product():
 
         except ValueError as error:
 
-            if image:
+            for filename in uploaded_images:
+
                 delete_product_image(
-                    image
+                    filename
                 )
 
             flash(str(error))
@@ -2349,6 +4069,18 @@ def admin_add_product():
                 url_for("admin_products")
             )
 
+    # ======================================================
+    # PRIMARY IMAGE
+    # ======================================================
+
+    # Existing products table ka "image" column
+    # first image ko primary image ke roop me rakhega.
+
+    primary_image = ""
+
+    if uploaded_images:
+
+        primary_image = uploaded_images[0]
 
     # ======================================================
     # SAVE PRODUCT
@@ -2356,42 +4088,92 @@ def admin_add_product():
 
     conn = get_db()
 
-    conn.execute(
-        """
-        INSERT INTO products
-        (
-            name,
-            category,
-            price,
-            old_price,
-            discount,
-            image,
-            video,
-            description,
-            stock,
-            featured
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            name,
-            category,
-            price,
-            old_price,
-            discount,
-            image,
-            video,
-            description,
-            stock,
-            featured
-        )
-    )
+    try:
 
-    conn.commit()
+        cursor = conn.execute(
+            """
+            INSERT INTO products
+            (
+                name,
+                category,
+                price,
+                old_price,
+                discount,
+                image,
+                video,
+                description,
+                stock,
+                featured
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                name,
+                category,
+                price,
+                old_price,
+                discount,
+                primary_image,
+                video,
+                description,
+                stock,
+                featured
+            )
+        )
+
+        product_id = cursor.lastrowid
+
+        # ==================================================
+        # MULTIPLE IMAGE TABLE
+        # ==================================================
+
+        for position, filename in enumerate(
+            uploaded_images
+        ):
+
+            conn.execute(
+                """
+                INSERT INTO product_images
+                (
+                    product_id,
+                    filename,
+                    sort_order
+                )
+                VALUES (?, ?, ?)
+                """,
+                (
+                    product_id,
+                    filename,
+                    position
+                )
+            )
+
+        conn.commit()
+
+    except Exception:
+
+        conn.rollback()
+
+        for filename in uploaded_images:
+
+            delete_product_image(
+                filename
+            )
+
+        if video:
+
+            delete_product_video(
+                video
+            )
+
+        conn.close()
+
+        raise
+
     conn.close()
 
     flash(
-        "Product added successfully."
+        f"Product added successfully with {len(uploaded_images)} image(s)."
     )
 
     return redirect(
@@ -2418,11 +4200,8 @@ def admin_edit_product(product_id):
         FROM products
         WHERE id = ?
         """,
-        (
-            product_id,
-        )
+        (product_id,)
     ).fetchone()
-
 
     if product is None:
 
@@ -2435,7 +4214,6 @@ def admin_edit_product(product_id):
         return redirect(
             url_for("admin_products")
         )
-
 
     # ======================================================
     # POST
@@ -2453,9 +4231,13 @@ def admin_edit_product(product_id):
             ""
         ).strip()
 
+        description = request.form.get(
+            "description",
+            ""
+        ).strip()
 
         # --------------------------------------------------
-        # OLD PRICE
+        # PRICE
         # --------------------------------------------------
 
         try:
@@ -2467,14 +4249,9 @@ def admin_edit_product(product_id):
                 ) or 0
             )
 
-        except ValueError:
+        except (ValueError, TypeError):
 
             old_price = 0
-
-
-        # --------------------------------------------------
-        # DISCOUNT
-        # --------------------------------------------------
 
         try:
 
@@ -2485,7 +4262,7 @@ def admin_edit_product(product_id):
                 ) or 0
             )
 
-        except ValueError:
+        except (ValueError, TypeError):
 
             discount = 0
 
@@ -2493,11 +4270,6 @@ def admin_edit_product(product_id):
             0,
             min(100, discount)
         )
-
-
-        # --------------------------------------------------
-        # PRICE
-        # --------------------------------------------------
 
         try:
 
@@ -2508,30 +4280,21 @@ def admin_edit_product(product_id):
                 ) or 0
             )
 
-        except ValueError:
+        except (ValueError, TypeError):
 
             submitted_price = 0
 
-
         if submitted_price <= 0:
 
-            submitted_price = (
+            submitted_price = float(
                 product["price"] or 0
             )
-
 
         price = calculate_product_price(
             old_price,
             discount,
             submitted_price
         )
-
-
-        description = request.form.get(
-            "description",
-            ""
-        ).strip()
-
 
         # --------------------------------------------------
         # STOCK
@@ -2546,17 +4309,15 @@ def admin_edit_product(product_id):
                 ) or 0
             )
 
-        except ValueError:
+        except (ValueError, TypeError):
 
             stock = 0
-
 
         featured = (
             1
             if request.form.get("featured")
             else 0
         )
-
 
         if not name or not category:
 
@@ -2573,52 +4334,125 @@ def admin_edit_product(product_id):
                 )
             )
 
-
-        image = product["image"] or ""
-        video = product["video"] or ""
-
-
         # ==================================================
-        # NEW IMAGE
+        # EXISTING IMAGES
         # ==================================================
 
-        new_image = request.files.get(
-            "image"
+        current_images = conn.execute(
+            """
+            SELECT *
+            FROM product_images
+            WHERE product_id = ?
+            ORDER BY sort_order ASC, id ASC
+            """,
+            (product_id,)
+        ).fetchall()
+
+        existing_image_names = [
+            row["filename"]
+            for row in current_images
+        ]
+
+        # ==================================================
+        # NEW MULTIPLE IMAGES
+        # ==================================================
+
+        new_images = []
+
+        image_files = request.files.getlist(
+            "images"
         )
 
-        if new_image and new_image.filename:
+        if not image_files:
 
-            try:
+            old_image = request.files.get(
+                "image"
+            )
 
-                uploaded_image = save_product_image(
-                    new_image
+            if old_image and old_image.filename:
+
+                image_files = [old_image]
+
+        try:
+
+            for image_file in image_files:
+
+                if (
+                    image_file
+                    and
+                    image_file.filename
+                ):
+
+                    filename = save_product_image(
+                        image_file
+                    )
+
+                    if filename:
+
+                        new_images.append(
+                            filename
+                        )
+
+        except ValueError as error:
+
+            for filename in new_images:
+
+                delete_product_image(
+                    filename
                 )
 
-            except ValueError as error:
+            conn.close()
 
-                conn.close()
+            flash(str(error))
 
-                flash(str(error))
+            return redirect(
+                url_for(
+                    "admin_edit_product",
+                    product_id=product_id
+                )
+            )
 
-                return redirect(
-                    url_for(
-                        "admin_edit_product",
-                        product_id=product_id
+        # ==================================================
+        # REMOVE SELECTED IMAGES
+        # ==================================================
+
+        remove_images = request.form.getlist(
+            "remove_images"
+        )
+
+        remove_images = [
+            os.path.basename(
+                filename
+            )
+            for filename in remove_images
+            if filename
+        ]
+
+        for filename in remove_images:
+
+            if filename in existing_image_names:
+
+                conn.execute(
+                    """
+                    DELETE FROM product_images
+                    WHERE product_id = ?
+                    AND filename = ?
+                    """,
+                    (
+                        product_id,
+                        filename
                     )
                 )
 
-            old_image = image
-
-            image = uploaded_image
-
-            delete_product_image(
-                old_image
-            )
-
+                delete_product_image(
+                    filename
+                )
 
         # ==================================================
-        # NEW VIDEO
+        # VIDEO
         # ==================================================
+
+        video = product["video"] or ""
 
         new_video = request.files.get(
             "video"
@@ -2633,6 +4467,12 @@ def admin_edit_product(product_id):
                 )
 
             except ValueError as error:
+
+                for filename in new_images:
+
+                    delete_product_image(
+                        filename
+                    )
 
                 conn.close()
 
@@ -2653,9 +4493,80 @@ def admin_edit_product(product_id):
                 old_video
             )
 
+        # ==================================================
+        # ADD NEW IMAGES
+        # ==================================================
+
+        max_order_row = conn.execute(
+            """
+            SELECT
+                COALESCE(
+                    MAX(sort_order),
+                    -1
+                )
+            FROM product_images
+            WHERE product_id = ?
+            """,
+            (product_id,)
+        ).fetchone()
+
+        max_order = (
+            max_order_row[0]
+            if max_order_row
+            else -1
+        )
+
+        for index, filename in enumerate(
+            new_images,
+            start=1
+        ):
+
+            conn.execute(
+                """
+                INSERT INTO product_images
+                (
+                    product_id,
+                    filename,
+                    sort_order
+                )
+                VALUES (?, ?, ?)
+                """,
+                (
+                    product_id,
+                    filename,
+                    max_order + index
+                )
+            )
 
         # ==================================================
-        # UPDATE
+        # GET FINAL IMAGE LIST
+        # ==================================================
+
+        final_images = conn.execute(
+            """
+            SELECT *
+            FROM product_images
+            WHERE product_id = ?
+            ORDER BY sort_order ASC, id ASC
+            """,
+            (product_id,)
+        ).fetchall()
+
+        final_image_names = [
+            row["filename"]
+            for row in final_images
+        ]
+
+        primary_image = ""
+
+        if final_image_names:
+
+            primary_image = (
+                final_image_names[0]
+            )
+
+        # ==================================================
+        # UPDATE PRODUCT
         # ==================================================
 
         conn.execute(
@@ -2680,7 +4591,7 @@ def admin_edit_product(product_id):
                 price,
                 old_price,
                 discount,
-                image,
+                primary_image,
                 video,
                 description,
                 stock,
@@ -2700,10 +4611,28 @@ def admin_edit_product(product_id):
             url_for("admin_products")
         )
 
-
     # ======================================================
     # EDIT PAGE
     # ======================================================
+
+    images = conn.execute(
+        """
+        SELECT *
+        FROM product_images
+        WHERE product_id = ?
+        ORDER BY sort_order ASC, id ASC
+        """,
+        (product_id,)
+    ).fetchall()
+
+    categories = conn.execute(
+        """
+        SELECT DISTINCT category
+        FROM products
+        WHERE category != ''
+        ORDER BY category
+        """
+    ).fetchall()
 
     conn.close()
 
@@ -2711,13 +4640,14 @@ def admin_edit_product(product_id):
         "admin_products.html",
         products=[product],
         edit_product=product,
-        categories=[],
+        product_images=images,
+        categories=categories,
         search=""
     )
 
 
 # ==========================================================
-# ADMIN DELETE PRODUCT
+# DELETE PRODUCT
 # ==========================================================
 
 @app.route(
@@ -2731,48 +4661,98 @@ def admin_delete_product(product_id):
 
     product = conn.execute(
         """
-        SELECT
-            image,
-            video
+        SELECT *
         FROM products
         WHERE id = ?
         """,
-        (
-            product_id,
-        )
+        (product_id,)
     ).fetchone()
 
+    if product is None:
 
-    if product:
+        conn.close()
+
+        flash(
+            "Product not found."
+        )
+
+        return redirect(
+            url_for("admin_products")
+        )
+
+    # ------------------------------------------------------
+    # DELETE ALL PRODUCT IMAGES
+    # ------------------------------------------------------
+
+    images = conn.execute(
+        """
+        SELECT filename
+        FROM product_images
+        WHERE product_id = ?
+        """,
+        (product_id,)
+    ).fetchall()
+
+    for image in images:
+
+        delete_product_image(
+            image["filename"]
+        )
+
+    # ------------------------------------------------------
+    # OLD PRIMARY IMAGE
+    # ------------------------------------------------------
+
+    if product["image"]:
 
         delete_product_image(
             product["image"]
         )
 
+    # ------------------------------------------------------
+    # VIDEO
+    # ------------------------------------------------------
+
+    if product["video"]:
+
         delete_product_video(
             product["video"]
         )
 
+    # ------------------------------------------------------
+    # REVIEWS
+    # ------------------------------------------------------
 
     conn.execute(
         """
         DELETE FROM reviews
         WHERE product_id = ?
         """,
-        (
-            product_id,
-        )
+        (product_id,)
     )
 
+    # ------------------------------------------------------
+    # PRODUCT IMAGES
+    # ------------------------------------------------------
+
+    conn.execute(
+        """
+        DELETE FROM product_images
+        WHERE product_id = ?
+        """,
+        (product_id,)
+    )
+
+    # ------------------------------------------------------
+    # PRODUCT
+    # ------------------------------------------------------
 
     conn.execute(
         """
         DELETE FROM products
         WHERE id = ?
         """,
-        (
-            product_id,
-        )
+        (product_id,)
     )
 
     conn.commit()
@@ -2784,6 +4764,117 @@ def admin_delete_product(product_id):
 
     return redirect(
         url_for("admin_products")
+    )
+
+
+# ==========================================================
+# DELETE SINGLE PRODUCT IMAGE
+# ==========================================================
+
+@app.route(
+    "/admin/product/<int:product_id>/image/delete",
+    methods=["POST"]
+)
+@admin_required
+def admin_delete_product_image(
+    product_id
+):
+
+    filename = request.form.get(
+        "filename",
+        ""
+    ).strip()
+
+    if not filename:
+
+        return redirect(
+            url_for(
+                "admin_edit_product",
+                product_id=product_id
+            )
+        )
+
+    filename = os.path.basename(
+        filename
+    )
+
+    conn = get_db()
+
+    image = conn.execute(
+        """
+        SELECT *
+        FROM product_images
+        WHERE product_id = ?
+        AND filename = ?
+        """,
+        (
+            product_id,
+            filename
+        )
+    ).fetchone()
+
+    if image:
+
+        conn.execute(
+            """
+            DELETE FROM product_images
+            WHERE product_id = ?
+            AND filename = ?
+            """,
+            (
+                product_id,
+                filename
+            )
+        )
+
+        # Check remaining images
+        remaining = conn.execute(
+            """
+            SELECT filename
+            FROM product_images
+            WHERE product_id = ?
+            ORDER BY sort_order ASC, id ASC
+            """,
+            (product_id,)
+        ).fetchall()
+
+        primary_image = ""
+
+        if remaining:
+
+            primary_image = (
+                remaining[0]["filename"]
+            )
+
+        conn.execute(
+            """
+            UPDATE products
+            SET image = ?
+            WHERE id = ?
+            """,
+            (
+                primary_image,
+                product_id
+            )
+        )
+
+        conn.commit()
+
+        delete_product_image(
+            filename
+        )
+
+    conn.close()
+
+    flash(
+        "Product image deleted."
+    )
+
+    return redirect(
+        url_for(
+            "admin_edit_product",
+            product_id=product_id
+        )
     )
 
 
@@ -2815,7 +4906,6 @@ def admin_orders():
 
     params = []
 
-
     if search:
 
         query += """
@@ -2838,7 +4928,6 @@ def admin_orders():
             search_value
         ])
 
-
     if status:
 
         query += """
@@ -2849,11 +4938,9 @@ def admin_orders():
             status
         )
 
-
     query += """
         ORDER BY id DESC
     """
-
 
     orders_list = conn.execute(
         query,
@@ -2888,9 +4975,7 @@ def admin_order_detail(order_id):
         FROM orders
         WHERE id = ?
         """,
-        (
-            order_id,
-        )
+        (order_id,)
     ).fetchone()
 
     order_items = conn.execute(
@@ -2904,13 +4989,10 @@ def admin_order_detail(order_id):
         WHERE oi.order_id = ?
         ORDER BY oi.id ASC
         """,
-        (
-            order_id,
-        )
+        (order_id,)
     ).fetchall()
 
     conn.close()
-
 
     if order is None:
 
@@ -2920,12 +5002,13 @@ def admin_order_detail(order_id):
             order_items=[]
         ), 404
 
-
     return render_template(
         "admin_order_detail.html",
         order=order,
         order_items=order_items
     )
+
+
 # ==========================================================
 # ADMIN UPDATE ORDER STATUS
 # ==========================================================
@@ -2985,9 +5068,7 @@ def admin_update_order_status(
             WHERE id = ?
             AND payment_method != 'COD'
             """,
-            (
-                order_id,
-            )
+            (order_id,)
         )
 
     conn.commit()
@@ -3042,9 +5123,7 @@ def admin_cancel_order(order_id):
         SET status = 'Cancelled'
         WHERE id = ?
         """,
-        (
-            order_id,
-        )
+        (order_id,)
     )
 
     conn.commit()
@@ -3179,9 +5258,7 @@ def admin_customer_detail(user_id):
         FROM users
         WHERE id = ?
         """,
-        (
-            user_id,
-        )
+        (user_id,)
     ).fetchone()
 
     customer_orders = conn.execute(
@@ -3191,9 +5268,7 @@ def admin_customer_detail(user_id):
         WHERE user_id = ?
         ORDER BY id DESC
         """,
-        (
-            user_id,
-        )
+        (user_id,)
     ).fetchall()
 
     conn.close()
@@ -3288,7 +5363,7 @@ def admin_settings():
                 ) or 0
             )
 
-        except ValueError:
+        except (ValueError, TypeError):
 
             shipping_charge = 0
 
@@ -3301,7 +5376,7 @@ def admin_settings():
                 ) or 999
             )
 
-        except ValueError:
+        except (ValueError, TypeError):
 
             free_shipping = 999
 
@@ -3406,7 +5481,7 @@ def api_price_preview():
             ) or 0
         )
 
-    except ValueError:
+    except (ValueError, TypeError):
 
         old_price = 0
 
@@ -3419,7 +5494,7 @@ def api_price_preview():
             ) or 0
         )
 
-    except ValueError:
+    except (ValueError, TypeError):
 
         discount = 0
 
@@ -3464,12 +5539,34 @@ def api_products():
         """
     ).fetchall()
 
+    result = []
+
+    for product in products_list:
+
+        product_data = dict(product)
+
+        images = conn.execute(
+            """
+            SELECT filename
+            FROM product_images
+            WHERE product_id = ?
+            ORDER BY sort_order ASC, id ASC
+            """,
+            (product["id"],)
+        ).fetchall()
+
+        product_data["images"] = [
+            row["filename"]
+            for row in images
+        ]
+
+        result.append(
+            product_data
+        )
+
     conn.close()
 
-    return jsonify([
-        dict(product)
-        for product in products_list
-    ])
+    return jsonify(result)
 
 
 # ==========================================================
@@ -3504,14 +5601,13 @@ def page_not_found(error):
         <!DOCTYPE html>
         <html>
         <head>
+            <meta charset="UTF-8">
             <title>Majisa Jewellers - 404</title>
         </head>
 
         <body>
 
-            <h1>
-                404 - Page Not Found
-            </h1>
+            <h1>404 - Page Not Found</h1>
 
             <p>
                 The page you are looking for does not exist.
@@ -3544,3 +5640,4 @@ if __name__ == "__main__":
         port=port,
         debug=False
     )
+    
