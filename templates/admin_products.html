@@ -217,7 +217,9 @@
         line-height: 1.5;
     }
 
-    /* MULTIPLE PHOTO PREVIEW */
+    /* ==================================================
+       NEW PHOTO PREVIEW
+    ================================================== */
 
     .photo-preview-grid {
         display: grid;
@@ -252,6 +254,10 @@
         font-size: 10px;
         font-weight: bold;
     }
+
+    /* ==================================================
+       EXISTING PHOTOS
+    ================================================== */
 
     .existing-media {
         margin-top: 14px;
@@ -300,6 +306,10 @@
         font-size: 10px;
         border-radius: 3px;
     }
+
+    /* ==================================================
+       VIDEO
+    ================================================== */
 
     .video-preview {
         margin-top: 12px;
@@ -1229,9 +1239,7 @@
                                 {% if product["discount"] and product["discount"] > 0 %}
 
                                     <div class="sale-badge">
-
                                         {{ "%.0f"|format(product["discount"]) }}% OFF
-
                                     </div>
 
                                 {% endif %}
@@ -1349,60 +1357,47 @@
 
 function calculatePrice() {
 
-    const oldPriceElement =
-        document.getElementById("old_price");
+    const oldPriceElement = document.getElementById("old_price");
+    const discountElement = document.getElementById("discount");
+    const priceInput = document.getElementById("price");
+    const calculatedPrice = document.getElementById("calculatedPrice");
+    const previewOld = document.getElementById("previewOld");
+    const previewDiscount = document.getElementById("previewDiscount");
 
-    const discountElement =
-        document.getElementById("discount");
+    if (
+        !oldPriceElement ||
+        !discountElement ||
+        !priceInput ||
+        !calculatedPrice ||
+        !previewOld ||
+        !previewDiscount
+    ) {
+        return;
+    }
 
-    const priceInput =
-        document.getElementById("price");
+    const oldPrice = parseFloat(oldPriceElement.value) || 0;
 
-    const calculatedPrice =
-        document.getElementById("calculatedPrice");
+    const discount = Math.max(
+        0,
+        Math.min(
+            100,
+            parseFloat(discountElement.value) || 0
+        )
+    );
 
-    const previewOld =
-        document.getElementById("previewOld");
-
-    const previewDiscount =
-        document.getElementById("previewDiscount");
-
-
-    const oldPrice =
-        parseFloat(oldPriceElement.value) || 0;
-
-
-    const discount =
-        Math.max(
-            0,
-            Math.min(
-                100,
-                parseFloat(discountElement.value) || 0
-            )
-        );
-
-
-    let price =
-        parseFloat(priceInput.value) || 0;
-
+    let price = parseFloat(priceInput.value) || 0;
 
     if (oldPrice > 0 && discount > 0) {
 
-        price =
-            oldPrice -
-            (oldPrice * discount / 100);
+        price = oldPrice - (oldPrice * discount / 100);
 
-        price =
-            Math.round(price * 100) / 100;
+        price = Math.round(price * 100) / 100;
 
-        priceInput.value =
-            price.toFixed(2);
+        priceInput.value = price.toFixed(2);
     }
-
 
     calculatedPrice.textContent =
         "₹" + Math.round(price);
-
 
     if (
         oldPrice > 0 &&
@@ -1435,145 +1430,226 @@ function calculatePrice() {
    MULTIPLE IMAGE PREVIEW
 ========================================================== */
 
-document
-    .getElementById("images")
-    .addEventListener("change", function(event) {
+document.addEventListener("DOMContentLoaded", function () {
 
-        const files =
-            Array.from(event.target.files);
+    const imageInput =
+        document.getElementById("images");
 
-        const previewGrid =
-            document.getElementById(
-                "photoPreviewGrid"
-            );
+    const previewGrid =
+        document.getElementById("photoPreviewGrid");
 
 
-        previewGrid.innerHTML = "";
+    if (!imageInput || !previewGrid) {
 
-
-        if (files.length === 0) {
-            return;
-        }
-
-
-        const maxFiles = 5;
-
-        const selectedFiles =
-            files.slice(0, maxFiles);
-
-
-        if (files.length > maxFiles) {
-
-            alert(
-                "Maximum 5 photos allowed. Only the first 5 photos will be used."
-            );
-
-        }
-
-
-        selectedFiles.forEach(
-            function(file, index) {
-
-                if (
-                    !file.type.startsWith("image/")
-                ) {
-                    return;
-                }
-
-
-                const item =
-                    document.createElement("div");
-
-                item.className =
-                    "photo-preview-item";
-
-
-                const image =
-                    document.createElement("img");
-
-                image.src =
-                    URL.createObjectURL(file);
-
-                image.alt =
-                    "Photo " + (index + 1);
-
-
-                const number =
-                    document.createElement("div");
-
-                number.className =
-                    "photo-number";
-
-                number.textContent =
-                    "PHOTO " + (index + 1);
-
-
-                item.appendChild(image);
-
-                item.appendChild(number);
-
-                previewGrid.appendChild(item);
-            }
+        console.error(
+            "Image input ya preview grid nahi mila."
         );
-    });
+
+        return;
+    }
+
+
+    imageInput.addEventListener(
+        "change",
+        function () {
+
+            previewGrid.innerHTML = "";
+
+
+            const files =
+                Array.from(this.files);
+
+
+            console.log(
+                "Selected files:",
+                files
+            );
+
+
+            if (files.length === 0) {
+                return;
+            }
+
+
+            const maxFiles = 5;
+
+
+            if (files.length > maxFiles) {
+
+                alert(
+                    "Maximum 5 photos allowed. Only the first 5 photos will be used."
+                );
+            }
+
+
+            const selectedFiles =
+                files.slice(0, maxFiles);
+
+
+            selectedFiles.forEach(
+                function (file, index) {
+
+                    if (
+                        !file.type.startsWith("image/")
+                    ) {
+                        return;
+                    }
+
+
+                    const item =
+                        document.createElement("div");
+
+                    item.className =
+                        "photo-preview-item";
+
+
+                    const image =
+                        document.createElement("img");
+
+                    const objectUrl =
+                        URL.createObjectURL(file);
+
+                    image.src =
+                        objectUrl;
+
+                    image.alt =
+                        "Photo " + (index + 1);
+
+
+                    image.onload =
+                        function () {
+
+                            URL.revokeObjectURL(
+                                objectUrl
+                            );
+                        };
+
+
+                    image.onerror =
+                        function () {
+
+                            console.error(
+                                "Image preview load failed:",
+                                file.name
+                            );
+
+                            image.remove();
+
+                        };
+
+
+                    const number =
+                        document.createElement("div");
+
+                    number.className =
+                        "photo-number";
+
+                    number.textContent =
+                        "PHOTO " + (index + 1);
+
+
+                    item.appendChild(image);
+
+                    item.appendChild(number);
+
+                    previewGrid.appendChild(item);
+
+                }
+            );
+
+        }
+    );
+
+});
 
 
 /* ==========================================================
    VIDEO PREVIEW
 ========================================================== */
 
-document
-    .getElementById("video")
-    .addEventListener("change", function(event) {
+document.addEventListener("DOMContentLoaded", function () {
 
-        const file =
-            event.target.files[0];
+    const videoInput =
+        document.getElementById("video");
 
-        const box =
-            document.getElementById(
-                "videoPreviewBox"
-            );
+    const videoPreviewBox =
+        document.getElementById("videoPreviewBox");
 
-        const video =
-            document.getElementById(
-                "previewVideo"
-            );
+    const previewVideo =
+        document.getElementById("previewVideo");
 
 
-        if (!file) {
+    if (
+        !videoInput ||
+        !videoPreviewBox ||
+        !previewVideo
+    ) {
+        return;
+    }
 
-            box.style.display =
-                "none";
 
-            video.removeAttribute("src");
+    videoInput.addEventListener(
+        "change",
+        function () {
 
-            video.load();
+            const file =
+                this.files[0];
 
-            return;
+
+            if (!file) {
+
+                videoPreviewBox.style.display =
+                    "none";
+
+                previewVideo.removeAttribute(
+                    "src"
+                );
+
+                previewVideo.load();
+
+                return;
+            }
+
+
+            if (
+                !file.type.startsWith("video/")
+            ) {
+
+                videoPreviewBox.style.display =
+                    "none";
+
+                previewVideo.removeAttribute(
+                    "src"
+                );
+
+                previewVideo.load();
+
+                alert(
+                    "Please select a valid video file."
+                );
+
+                return;
+            }
+
+
+            const videoUrl =
+                URL.createObjectURL(file);
+
+
+            previewVideo.src =
+                videoUrl;
+
+
+            videoPreviewBox.style.display =
+                "block";
+
+
+            previewVideo.load();
+
         }
+    );
 
-
-        if (
-            !file.type.startsWith("video/")
-        ) {
-
-            box.style.display =
-                "none";
-
-            video.removeAttribute("src");
-
-            video.load();
-
-            return;
-        }
-
-
-        video.src =
-            URL.createObjectURL(file);
-
-        box.style.display =
-            "block";
-    });
+});
 
 
 /* ==========================================================
@@ -1582,41 +1658,47 @@ document
 
 document.addEventListener(
     "DOMContentLoaded",
-    function() {
+    function () {
 
         const oldPrice =
-            document.getElementById(
-                "old_price"
-            );
+            document.getElementById("old_price");
 
         const discount =
-            document.getElementById(
-                "discount"
-            );
+            document.getElementById("discount");
 
         const price =
-            document.getElementById(
-                "price"
+            document.getElementById("price");
+
+
+        if (oldPrice) {
+
+            oldPrice.addEventListener(
+                "input",
+                calculatePrice
             );
+        }
 
 
-        oldPrice.addEventListener(
-            "input",
-            calculatePrice
-        );
+        if (discount) {
 
-        discount.addEventListener(
-            "input",
-            calculatePrice
-        );
+            discount.addEventListener(
+                "input",
+                calculatePrice
+            );
+        }
 
-        price.addEventListener(
-            "input",
-            calculatePrice
-        );
+
+        if (price) {
+
+            price.addEventListener(
+                "input",
+                calculatePrice
+            );
+        }
 
 
         calculatePrice();
+
     }
 );
 
