@@ -1906,37 +1906,34 @@ def admin_add_product():
     ).strip()
 
     try:
-
         price = float(
             request.form.get(
                 "price",
                 0
             ) or 0
         )
-
     except ValueError:
-
         price = 0
 
-            try:
-            old_price = float(
-                request.form.get(
-                    "old_price",
-                    0
-                ) or 0
-            )
-        except ValueError:
-            old_price = 0
+    try:
+        old_price = float(
+            request.form.get(
+                "old_price",
+                0
+            ) or 0
+        )
+    except ValueError:
+        old_price = 0
 
-        try:
-            stock = int(
-                request.form.get(
-                    "stock",
-                    0
-                ) or 0
-            )
-        except ValueError:
-            stock = 0
+    try:
+        stock = int(
+            request.form.get(
+                "stock",
+                0
+            ) or 0
+        )
+    except ValueError:
+        stock = 0
 
     description = request.form.get(
         "description",
@@ -1959,7 +1956,6 @@ def admin_add_product():
     if image_file and image_file.filename:
 
         try:
-
             image = save_product_image(
                 image_file
             )
