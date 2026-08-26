@@ -70,6 +70,7 @@ ALLOWED_EXTENSIONS = {
 # ==========================================================
 
 def allowed_file(filename):
+
     return (
         "." in filename
         and filename.rsplit(
@@ -88,6 +89,7 @@ def save_product_image(file):
         return ""
 
     if not allowed_file(file.filename):
+
         raise ValueError(
             "Only JPG, JPEG, PNG and WEBP images are allowed."
         )
@@ -131,8 +133,10 @@ def delete_product_image(filename):
     )
 
     try:
+
         if os.path.isfile(file_path):
             os.remove(file_path)
+
     except OSError:
         pass
 
@@ -986,28 +990,23 @@ def login():
         if user:
 
             session["user_id"] = user["id"]
+
             session["user_name"] = user["name"]
-            # ==========================================================
-# LOGIN CONTINUED
-# ==========================================================
 
-        session["user_id"] = user["id"]
-        session["user_name"] = user["name"]
+            next_page = request.args.get(
+                "next"
+            )
 
-        next_page = request.args.get(
-            "next"
+            if next_page:
+                return redirect(next_page)
+
+            return redirect(
+                url_for("home")
+            )
+
+        flash(
+            "Invalid email or password."
         )
-
-        if next_page:
-            return redirect(next_page)
-
-        return redirect(
-            url_for("home")
-        )
-
-    flash(
-        "Invalid email or password."
-    )
 
     return render_template(
         "login.html"
@@ -1095,9 +1094,7 @@ def forgot_password():
 
             return render_template(
                 "forgot_password.html",
-                message=(
-                    "Password reset link generated."
-                ),
+                message="Password reset link generated.",
                 reset_url=reset_url
             )
 
@@ -1423,10 +1420,6 @@ def checkout():
                 order_id=order_id
             )
         )
-
-    # ------------------------------------------------------
-    # CHECKOUT GET PAGE
-    # ------------------------------------------------------
 
     cart = get_cart()
 
@@ -1906,33 +1899,42 @@ def admin_add_product():
     ).strip()
 
     try:
+
         price = float(
             request.form.get(
                 "price",
                 0
             ) or 0
         )
+
     except ValueError:
+
         price = 0
 
     try:
+
         old_price = float(
             request.form.get(
                 "old_price",
                 0
             ) or 0
         )
+
     except ValueError:
+
         old_price = 0
 
     try:
+
         stock = int(
             request.form.get(
                 "stock",
                 0
             ) or 0
         )
+
     except ValueError:
+
         stock = 0
 
     description = request.form.get(
@@ -1946,7 +1948,6 @@ def admin_add_product():
 
     image = ""
 
-    # Multiple possible image field names
     image_file = (
         request.files.get("image")
         or
@@ -1956,13 +1957,16 @@ def admin_add_product():
     if image_file and image_file.filename:
 
         try:
+
             image = save_product_image(
                 image_file
             )
 
         except ValueError as error:
 
-            flash(str(error))
+            flash(
+                str(error)
+            )
 
             return redirect(
                 url_for("admin_products")
@@ -2123,7 +2127,9 @@ def admin_edit_product(product_id):
 
             except ValueError as error:
 
-                flash(str(error))
+                flash(
+                    str(error)
+                )
 
                 return redirect(
                     url_for(
