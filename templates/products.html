@@ -210,9 +210,16 @@
         }
 
         /*
-         * IMPORTANT:
-         * Product image is loaded from Flask:
-         * /static/images/<filename>
+         * IMPORTANT IMAGE FIX
+         *
+         * Flask static folder:
+         * static/images/
+         *
+         * Database image value:
+         * example.jpg
+         *
+         * Final URL:
+         * /static/images/example.jpg
          */
 
         .product-image {
@@ -220,8 +227,8 @@
             height: 100%;
             object-fit: cover;
             display: block;
-            transition: transform .55s ease;
             background: #eee7da;
+            transition: transform .55s ease;
         }
 
         .product:hover .product-image {
@@ -229,6 +236,8 @@
         }
 
         .image-placeholder {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             display: flex;
@@ -237,13 +246,15 @@
             background: #eee7da;
             color: #8c806d;
             font: 13px Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
         }
 
         .sale-badge {
             position: absolute;
             top: 12px;
             left: 12px;
-            z-index: 2;
+            z-index: 3;
             background: #b3342f;
             color: #fff;
             padding: 7px 9px;
@@ -254,7 +265,7 @@
             position: absolute;
             right: 12px;
             top: 12px;
-            z-index: 2;
+            z-index: 3;
             background: rgba(33, 29, 24, .9);
             color: #f4d58d;
             padding: 7px 9px;
@@ -664,13 +675,10 @@
                                 src="{{ url_for('static', filename='images/' ~ product['image']) }}"
                                 alt="{{ product['name'] }}"
                                 loading="lazy"
-                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                onerror="imageLoadError(this)"
                             >
 
-                            <div
-                                class="image-placeholder"
-                                style="display:none;"
-                            >
+                            <div class="image-placeholder" style="display:none;">
                                 Image Not Available
                             </div>
 
@@ -965,6 +973,21 @@
     </div>
 
 </footer>
+
+
+<script>
+    function imageLoadError(image) {
+        image.style.display = "none";
+
+        const placeholder = image.parentElement.querySelector(
+            ".image-placeholder"
+        );
+
+        if (placeholder) {
+            placeholder.style.display = "flex";
+        }
+    }
+</script>
 
 </body>
 </html>
