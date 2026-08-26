@@ -1897,6 +1897,7 @@ methods=["POST"]
 )
 @admin_required
 def admin_add_product():
+    
 name = request.form.get(
     "name",
     ""
