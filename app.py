@@ -329,6 +329,15 @@ def init_db():
     # SAFE MIGRATIONS
     # ------------------------------------------------------
 
+    # PRODUCTS - multiple images support
+    add_column_if_missing(
+        conn,
+        "products",
+        "images",
+        "TEXT DEFAULT ''"
+    )
+
+    # USERS
     add_column_if_missing(
         conn,
         "users",
@@ -343,6 +352,7 @@ def init_db():
         "TEXT DEFAULT ''"
     )
 
+    # ORDERS
     add_column_if_missing(
         conn,
         "orders",
