@@ -1,677 +1,1068 @@
 <!DOCTYPE html>
-
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-```
-<title>Checkout | Majisa Jewellers</title>
+    <title>
+        Checkout | Majisa Jewellers
+    </title>
 
-<style>
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
+    <style>
 
-    body {
-        background: #faf7f0;
-        color: #211d18;
-        font-family: Georgia, "Times New Roman", serif;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    a {
-        text-decoration: none;
-        color: inherit;
-    }
+        body {
+            background: #faf7f0;
+            color: #211d18;
+            font-family:
+                Georgia,
+                "Times New Roman",
+                serif;
+        }
 
-    header {
-        background: #211d18;
-        color: #f4d58d;
-        padding: 18px 5%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 20px;
-    }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
 
-    .brand {
-        font-size: 25px;
-        font-weight: bold;
-        letter-spacing: 2px;
-    }
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
 
-    nav {
-        display: flex;
-        gap: 22px;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-    }
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
 
-    .actions {
-        display: flex;
-        gap: 14px;
-        font-family: Arial, sans-serif;
-    }
-
-    .page {
-        max-width: 1100px;
-        margin: auto;
-        padding: 60px 5%;
-    }
-
-    .heading {
-        text-align: center;
-        margin-bottom: 40px;
-    }
-
-    .heading small {
-        color: #9b7127;
-        font-family: Arial, sans-serif;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-    }
-
-    .heading h1 {
-        font-size: 45px;
-        margin-top: 8px;
-    }
-
-    .checkout-grid {
-        display: grid;
-        grid-template-columns: 1fr 350px;
-        gap: 30px;
-        align-items: start;
-    }
-
-    .box {
-        background: white;
-        border: 1px solid #e1d8cb;
-        padding: 30px;
-    }
-
-    .box h2 {
-        font-size: 25px;
-        margin-bottom: 25px;
-    }
-
-    .field {
-        margin-bottom: 18px;
-    }
-
-    .field label {
-        display: block;
-        margin-bottom: 7px;
-        font-family: Arial, sans-serif;
-        font-size: 13px;
-        font-weight: bold;
-    }
-
-    .field input,
-    .field textarea,
-    .field select {
-        width: 100%;
-        padding: 13px;
-        border: 1px solid #d6ccbe;
-        background: #fff;
-        outline: none;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        border-radius: 2px;
-    }
-
-    .field textarea {
-        min-height: 110px;
-        resize: vertical;
-    }
-
-    .field input:focus,
-    .field textarea:focus,
-    .field select:focus {
-        border-color: #9b7127;
-    }
-
-    .payment {
-        margin-top: 28px;
-        padding-top: 25px;
-        border-top: 1px solid #e2d9cd;
-    }
-
-    .payment h3 {
-        margin-bottom: 15px;
-    }
-
-    .payment-option {
-        display: block;
-        border: 1px solid #ddd3c5;
-        padding: 15px;
-        margin-bottom: 10px;
-        font-family: Arial, sans-serif;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-
-    .payment-option:hover {
-        border-color: #9b7127;
-        background: #fffaf1;
-    }
-
-    .payment-option input {
-        margin-right: 8px;
-    }
-
-    .gateway-box {
-        display: none;
-        margin-top: 15px;
-        padding: 18px;
-        border: 1px solid #ddd3c5;
-        background: #fffaf1;
-        font-family: Arial, sans-serif;
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    .gateway-box strong {
-        display: block;
-        margin-bottom: 7px;
-        color: #9b7127;
-    }
-
-    .note {
-        margin-top: 15px;
-        padding: 13px;
-        background: #f5efe5;
-        color: #655d53;
-        font-family: Arial, sans-serif;
-        font-size: 12px;
-        line-height: 1.6;
-    }
-
-    .summary {
-        background: #211d18;
-        color: white;
-        padding: 28px;
-        position: sticky;
-        top: 25px;
-    }
-
-    .summary h2 {
-        color: #f4d58d;
-        margin-bottom: 22px;
-        font-size: 25px;
-    }
-
-    .summary-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 13px 0;
-        border-bottom: 1px solid #403a33;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-    }
-
-    .summary-total {
-        display: flex;
-        justify-content: space-between;
-        padding-top: 20px;
-        color: #f4d58d;
-        font-size: 20px;
-        font-weight: bold;
-    }
-
-    .place-order {
-        width: 100%;
-        margin-top: 25px;
-        padding: 16px;
-        border: 0;
-        background: #f4d58d;
-        color: #211d18;
-        font-family: Arial, sans-serif;
-        font-size: 13px;
-        font-weight: bold;
-        letter-spacing: 1px;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-
-    .place-order:hover {
-        background: #e8c76f;
-    }
-
-    .back {
-        display: block;
-        text-align: center;
-        margin-top: 15px;
-        color: #ccc;
-        font-family: Arial, sans-serif;
-        font-size: 13px;
-    }
-
-    .secure {
-        text-align: center;
-        margin-top: 20px;
-        color: #aaa;
-        font-family: Arial, sans-serif;
-        font-size: 11px;
-        line-height: 1.6;
-    }
-
-    footer {
-        background: #15120f;
-        color: #ccc;
-        padding: 30px;
-        text-align: center;
-        font-family: Arial, sans-serif;
-        font-size: 13px;
-        margin-top: 50px;
-    }
-
-    footer a {
-        color: #f4d58d;
-    }
-
-    @media (max-width: 800px) {
         nav {
-            display: none;
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
         }
 
-        .checkout-grid {
-            grid-template-columns: 1fr;
+        nav a:hover,
+        .actions a:hover {
+            color: #fff;
         }
 
-        .summary {
-            position: static;
+        .actions {
+            display: flex;
+            gap: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: auto;
+            padding: 60px 5%;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .heading small {
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            letter-spacing: 3px;
+            text-transform: uppercase;
         }
 
         .heading h1 {
-            font-size: 36px;
+            font-size: 45px;
+            margin-top: 8px;
+        }
+
+        .checkout-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            align-items: start;
         }
 
         .box {
-            padding: 22px;
+            background: white;
+            border: 1px solid #e1d8cb;
+            padding: 30px;
         }
-    }
-</style>
-```
+
+        .box h2 {
+            font-size: 25px;
+            margin-bottom: 25px;
+        }
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 7px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .field input,
+        .field textarea,
+        .field select {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #d6ccbe;
+            background: #fff;
+            outline: none;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .field textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .field input:focus,
+        .field textarea:focus,
+        .field select:focus {
+            border-color: #9b7127;
+        }
+
+        /* PAYMENT */
+
+        .payment {
+            margin-top: 28px;
+            padding-top: 25px;
+            border-top: 1px solid #e2d9cd;
+        }
+
+        .payment h3 {
+            margin-bottom: 15px;
+        }
+
+        .payment-option {
+            display: block;
+            border: 1px solid #ddd3c5;
+            padding: 15px;
+            margin-bottom: 10px;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .payment-option:hover {
+            border-color: #9b7127;
+            background: #faf7f0;
+        }
+
+        .payment-option input {
+            margin-right: 8px;
+        }
+
+        .payment-option input:checked + span {
+            font-weight: bold;
+        }
+
+        /* UPI BOX */
+
+        .upi-box {
+            display: none;
+            margin-top: 18px;
+            padding: 20px;
+            background: #faf7f0;
+            border: 1px solid #ddd3c5;
+            text-align: center;
+        }
+
+        .upi-box.active {
+            display: block;
+        }
+
+        .upi-box h4 {
+            font-size: 19px;
+            margin-bottom: 8px;
+        }
+
+        .upi-amount {
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: #211d18;
+            margin: 8px 0;
+        }
+
+        .upi-id {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .qr-wrap {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #ddd;
+            margin: 8px 0 14px;
+            min-width: 244px;
+            min-height: 244px;
+        }
+
+        #upiQrCode {
+            width: 220px;
+            height: 220px;
+            display: block;
+        }
+
+        .upi-instruction {
+            color: #655d53;
+            font: 12px/1.6 Arial, sans-serif;
+            margin-top: 8px;
+        }
+
+        .upi-link {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 11px 15px;
+            background: #211d18;
+            color: #f4d58d;
+            font: bold 12px Arial, sans-serif;
+        }
+
+        .upi-link:hover {
+            background: #9b7127;
+            color: #fff;
+        }
+
+        .note {
+            margin-top: 15px;
+            padding: 13px;
+            background: #f5efe5;
+            color: #655d53;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* SUMMARY */
+
+        .summary {
+            background: #211d18;
+            color: white;
+            padding: 28px;
+            position: sticky;
+            top: 25px;
+        }
+
+        .summary h2 {
+            color: #f4d58d;
+            margin-bottom: 22px;
+            font-size: 25px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 13px 0;
+            border-bottom: 1px solid #403a33;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 20px;
+            color: #f4d58d;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .place-order {
+            width: 100%;
+            margin-top: 25px;
+            padding: 16px;
+            border: 0;
+            background: #f4d58d;
+            color: #211d18;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+
+        .place-order:hover {
+            background: #9b7127;
+            color: white;
+        }
+
+        .back {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #ccc;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .secure {
+            text-align: center;
+            margin-top: 20px;
+            color: #aaa;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 30px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            margin-top: 50px;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        .error-message {
+            display: none;
+            margin-bottom: 20px;
+            padding: 12px 15px;
+            background: #fce8e8;
+            border: 1px solid #e0b5b5;
+            color: #9b3030;
+            font: 13px Arial, sans-serif;
+        }
+
+        @media (max-width: 800px) {
+
+            nav {
+                display: none;
+            }
+
+            .checkout-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary {
+                position: static;
+            }
+
+            .heading h1 {
+                font-size: 36px;
+            }
+
+        }
+
+        @media (max-width: 520px) {
+
+            .box {
+                padding: 20px;
+            }
+
+            .summary {
+                padding: 22px;
+            }
+
+            .qr-wrap {
+                min-width: 224px;
+                min-height: 224px;
+            }
+
+            #upiQrCode {
+                width: 200px;
+                height: 200px;
+            }
+
+        }
+
+    </style>
 
 </head>
+
 
 <body>
 
 <header>
 
-```
-<a href="/" class="brand">
-    Majisa Jewellers
-</a>
+    <a
+        href="/"
+        class="brand"
+    >
+        Majisa Jewellers
+    </a>
 
-<nav>
-    <a href="/">Home</a>
-    <a href="/products">Shop</a>
-    <a href="/contact">Contact</a>
-</nav>
 
-<div class="actions">
-    <a href="/wishlist">♡</a>
-    <a href="/cart">🛒 {{ cart_count }}</a>
-    <a href="/login">Account</a>
-</div>
-```
+    <nav>
 
-</header>
+        <a href="/">
+            Home
+        </a>
 
-<main class="page">
+        <a href="/products">
+            Shop
+        </a>
 
-```
-<div class="heading">
-    <small>Almost There</small>
-    <h1>Checkout</h1>
-</div>
+        <a href="/contact">
+            Contact
+        </a>
 
+    </nav>
 
-<form method="POST" action="{{ url_for('checkout') }}" id="checkoutForm">
 
-    <div class="checkout-grid">
+    <div class="actions">
 
-        <!-- CUSTOMER DETAILS -->
+        <a href="/wishlist">
+            ♡
+        </a>
 
-        <div class="box">
+        <a href="/cart">
+            🛒 {{ cart_count }}
+        </a>
 
-            <h2>
-                Delivery Details
-            </h2>
-
-
-            <div class="field">
-
-                <label for="name">
-                    Full Name *
-                </label>
-
-                <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    placeholder="Enter your full name"
-                    autocomplete="name"
-                    required
-                >
-
-            </div>
-
-
-            <div class="field">
-
-                <label for="email">
-                    Email Address
-                </label>
-
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Enter your email address"
-                    autocomplete="email"
-                >
-
-            </div>
-
-
-            <div class="field">
-
-                <label for="phone">
-                    Mobile Number *
-                </label>
-
-                <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    placeholder="10-digit mobile number"
-                    pattern="[0-9]{10}"
-                    maxlength="10"
-                    minlength="10"
-                    inputmode="numeric"
-                    autocomplete="tel"
-                    required
-                >
-
-            </div>
-
-
-            <div class="field">
-
-                <label for="address">
-                    Complete Delivery Address *
-                </label>
-
-                <textarea
-                    id="address"
-                    name="address"
-                    placeholder="House/Flat, Street, Area, City, State, PIN"
-                    autocomplete="street-address"
-                    required
-                ></textarea>
-
-            </div>
-
-
-            <!-- PAYMENT -->
-
-            <div class="payment">
-
-                <h3>
-                    Payment Method
-                </h3>
-
-
-                {% if store_settings and store_settings["cod"] == "enabled" %}
-
-                <label class="payment-option">
-
-                    <input
-                        type="radio"
-                        name="payment_method"
-                        value="COD"
-                        checked
-                        onchange="updatePaymentMethod()"
-                    >
-
-                    <strong>Cash on Delivery</strong>
-
-                    <br>
-
-                    <small>
-                        Pay when your order is delivered.
-                    </small>
-
-                </label>
-
-                {% endif %}
-
-
-                {% if store_settings and store_settings["upi"] == "enabled" %}
-
-                <label class="payment-option">
-
-                    <input
-                        type="radio"
-                        name="payment_method"
-                        value="UPI"
-                        {% if not store_settings or store_settings["cod"] != "enabled" %}checked{% endif %}
-                        onchange="updatePaymentMethod()"
-                    >
-
-                    <strong>UPI / Online Payment</strong>
-
-                    <br>
-
-                    <small>
-                        Online payment option.
-                    </small>
-
-                </label>
-
-                <div
-                    class="gateway-box"
-                    id="upiGatewayBox"
-                >
-                    <strong>
-                        Online Payment
-                    </strong>
-
-                    Your UPI / payment gateway can be connected here.
-
-                    <br><br>
-
-                    <span>
-                        Payment gateway integration is required before
-                        real online payments can be collected.
-                    </span>
-                </div>
-
-                {% endif %}
-
-
-                {% if (not store_settings) or
-                      (store_settings["cod"] != "enabled" and
-                       store_settings["upi"] != "enabled") %}
-
-                <div class="note">
-
-                    Online payment methods are currently unavailable.
-                    Please contact Majisa Jewellers for payment options.
-
-                </div>
-
-                {% endif %}
-
-
-                <div class="note">
-
-                    Your order will be created only after you submit
-                    the checkout form.
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- ORDER SUMMARY -->
-
-        <aside class="summary">
-
-            <h2>
-                Your Order
-            </h2>
-
-
-            <div class="summary-row">
-
-                <span>
-                    Items
-                </span>
-
-                <span>
-                    {{ cart_count }}
-                </span>
-
-            </div>
-
-
-            <div class="summary-row">
-
-                <span>
-                    Subtotal
-                </span>
-
-                <span>
-                    ₹{{ "%.0f"|format(subtotal) }}
-                </span>
-
-            </div>
-
-
-            <div class="summary-row">
-
-                <span>
-                    Delivery
-                </span>
-
-                <span>
-                    {% if shipping == 0 %}
-                        FREE
-                    {% else %}
-                        ₹{{ "%.0f"|format(shipping) }}
-                    {% endif %}
-                </span>
-
-            </div>
-
-
-            <div class="summary-total">
-
-                <span>
-                    Total
-                </span>
-
-                <span>
-                    ₹{{ "%.0f"|format(total) }}
-                </span>
-
-            </div>
-
-
-            <button
-                type="submit"
-                class="place-order"
-            >
-                PLACE ORDER
-            </button>
-
-
-            <a
-                href="{{ url_for('cart') }}"
-                class="back"
-            >
-                ← Back to Shopping Bag
-            </a>
-
-
-            <div class="secure">
-
-                🔒 Your checkout details are securely
-                submitted to Majisa Jewellers.
-
-            </div>
-
-        </aside>
+        <a href="/login">
+            Account
+        </a>
 
     </div>
 
-</form>
-```
+</header>
+
+
+<main class="page">
+
+    <div class="heading">
+
+        <small>
+            Almost There
+        </small>
+
+        <h1>
+            Checkout
+        </h1>
+
+    </div>
+
+
+    <div
+        id="errorMessage"
+        class="error-message"
+    ></div>
+
+
+    <form
+        method="POST"
+        action="{{ url_for('checkout') }}"
+        id="checkoutForm"
+    >
+
+        <div class="checkout-grid">
+
+            <!-- ==================================================
+                 CUSTOMER DETAILS
+            ================================================== -->
+
+            <div class="box">
+
+                <h2>
+                    Delivery Details
+                </h2>
+
+
+                <div class="field">
+
+                    <label for="name">
+                        Full Name *
+                    </label>
+
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        placeholder="Enter your full name"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="email">
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="phone">
+                        Mobile Number *
+                    </label>
+
+                    <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        placeholder="10-digit mobile number"
+                        pattern="[0-9]{10}"
+                        maxlength="10"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="address">
+                        Complete Delivery Address *
+                    </label>
+
+                    <textarea
+                        id="address"
+                        name="address"
+                        placeholder="House/Flat, Street, Area, City, State, PIN"
+                        required
+                    ></textarea>
+
+                </div>
+
+
+                <!-- ==================================================
+                     PAYMENT
+                ================================================== -->
+
+                <div class="payment">
+
+                    <h3>
+                        Payment Method
+                    </h3>
+
+
+                    <label class="payment-option">
+
+                        <input
+                            type="radio"
+                            name="payment_method"
+                            value="COD"
+                            checked
+                        >
+
+                        <span>
+                            Cash on Delivery
+                        </span>
+
+                    </label>
+
+
+                    <label class="payment-option">
+
+                        <input
+                            type="radio"
+                            name="payment_method"
+                            value="UPI"
+                        >
+
+                        <span>
+                            UPI / Online Payment
+                        </span>
+
+                    </label>
+
+
+                    <!-- ==================================================
+                         DYNAMIC UPI QR
+                    ================================================== -->
+
+                    <div
+                        class="upi-box"
+                        id="upiBox"
+                    >
+
+                        <h4>
+                            Scan & Pay
+                        </h4>
+
+
+                        <div class="upi-amount">
+                            ₹{{ "%.2f"|format(total|float) }}
+                        </div>
+
+
+                        <div class="upi-id">
+                            UPI ID:
+                            <strong>
+                                9602617287@fam
+                            </strong>
+                        </div>
+
+
+                        <div class="qr-wrap">
+
+                            <canvas
+                                id="upiQrCode"
+                                width="220"
+                                height="220"
+                            ></canvas>
+
+                        </div>
+
+
+                        <div class="upi-instruction">
+
+                            Scan this QR code using
+                            Google Pay, PhonePe,
+                            Paytm or another UPI app.
+
+                            The payment amount is already
+                            set to your order total.
+
+                        </div>
+
+
+                        <a
+                            href="#"
+                            id="upiOpenButton"
+                            class="upi-link"
+                        >
+                            OPEN UPI APP
+                        </a>
+
+                    </div>
+
+
+                    <div class="note">
+
+                        For UPI payment, scan the QR code
+                        above and pay the exact order total.
+
+                        After completing payment, click
+                        PLACE ORDER.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ==================================================
+                 ORDER SUMMARY
+            ================================================== -->
+
+            <aside class="summary">
+
+                <h2>
+                    Your Order
+                </h2>
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Items
+                    </span>
+
+                    <span>
+                        {{ cart_count }}
+                    </span>
+
+                </div>
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Subtotal
+                    </span>
+
+                    <span>
+                        ₹{{ "%.2f"|format(subtotal|float) }}
+                    </span>
+
+                </div>
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Delivery
+                    </span>
+
+                    <span>
+
+                        {% if shipping|float > 0 %}
+
+                            ₹{{ "%.2f"|format(shipping|float) }}
+
+                        {% else %}
+
+                            FREE
+
+                        {% endif %}
+
+                    </span>
+
+                </div>
+
+
+                <div class="summary-total">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <span id="orderTotal">
+
+                        ₹{{ "%.2f"|format(total|float) }}
+
+                    </span>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="place-order"
+                    id="placeOrderButton"
+                >
+                    PLACE ORDER
+                </button>
+
+
+                <a
+                    href="{{ url_for('cart') }}"
+                    class="back"
+                >
+                    ← Back to Shopping Bag
+                </a>
+
+
+                <div class="secure">
+
+                    Your order details are securely
+                    submitted to Majisa Jewellers.
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </form>
 
 </main>
 
+
 <footer>
 
-```
-© 2026 Majisa Jewellers ·
+    © 2026 Majisa Jewellers ·
 
-<a
-    href="https://instagram.com/majisa_art_jewellers"
-    target="_blank"
-    rel="noopener noreferrer"
->
-    Instagram
-</a>
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        Instagram
+    </a>
 
-· 8949144970
-```
+    · 8949144970
 
 </footer>
 
+
+<!-- ==========================================================
+     QR CODE LIBRARY
+========================================================== -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+
 <script>
 
-function updatePaymentMethod() {
+    /* ==========================================================
+       PAYMENT DATA
+    ========================================================== */
 
-    const selected = document.querySelector(
-        'input[name="payment_method"]:checked'
+    const UPI_ID =
+        "9602617287@fam";
+
+    const PAYEE_NAME =
+        "Majisa Jewellers";
+
+    const TOTAL_AMOUNT =
+        {{ "%.2f"|format(total|float) }};
+
+
+    /* ==========================================================
+       ELEMENTS
+    ========================================================== */
+
+    const paymentRadios =
+        document.querySelectorAll(
+            'input[name="payment_method"]'
+        );
+
+    const upiBox =
+        document.getElementById(
+            "upiBox"
+        );
+
+    const qrCanvas =
+        document.getElementById(
+            "upiQrCode"
+        );
+
+    const upiOpenButton =
+        document.getElementById(
+            "upiOpenButton"
+        );
+
+
+    /* ==========================================================
+       CREATE UPI PAYMENT LINK
+    ========================================================== */
+
+    function getUpiPaymentUrl() {
+
+        const params = new URLSearchParams();
+
+        params.set(
+            "pa",
+            UPI_ID
+        );
+
+        params.set(
+            "pn",
+            PAYEE_NAME
+        );
+
+        params.set(
+            "am",
+            TOTAL_AMOUNT.toFixed(2)
+        );
+
+        params.set(
+            "cu",
+            "INR"
+        );
+
+        return (
+            "upi://pay?"
+            + params.toString()
+        );
+
+    }
+
+
+    /* ==========================================================
+       GENERATE QR
+    ========================================================== */
+
+    function generateUpiQr() {
+
+        const paymentUrl =
+            getUpiPaymentUrl();
+
+
+        if (
+            typeof QRious ===
+            "undefined"
+        ) {
+
+            const ctx =
+                qrCanvas.getContext(
+                    "2d"
+                );
+
+            ctx.clearRect(
+                0,
+                0,
+                qrCanvas.width,
+                qrCanvas.height
+            );
+
+            return;
+
+        }
+
+
+        new QRious({
+            element: qrCanvas,
+            value: paymentUrl,
+            size: 220,
+            level: "H",
+            padding: 8
+        });
+
+
+        upiOpenButton.href =
+            paymentUrl;
+
+    }
+
+
+    /* ==========================================================
+       SHOW / HIDE UPI
+    ========================================================== */
+
+    function updatePaymentView() {
+
+        const selected =
+            document.querySelector(
+                'input[name="payment_method"]:checked'
+            );
+
+
+        if (!selected) {
+            return;
+        }
+
+
+        if (
+            selected.value ===
+            "UPI"
+        ) {
+
+            upiBox.classList.add(
+                "active"
+            );
+
+            generateUpiQr();
+
+        } else {
+
+            upiBox.classList.remove(
+                "active"
+            );
+
+        }
+
+    }
+
+
+    /* ==========================================================
+       PAYMENT RADIO EVENTS
+    ========================================================== */
+
+    paymentRadios.forEach(
+        function(radio) {
+
+            radio.addEventListener(
+                "change",
+                updatePaymentView
+            );
+
+        }
     );
 
-    const gatewayBox = document.getElementById(
-        "upiGatewayBox"
-    );
 
-    if (!selected || !gatewayBox) {
-        return;
-    }
+    /* ==========================================================
+       INITIAL STATE
+    ========================================================== */
 
-    if (selected.value === "UPI") {
-
-        gatewayBox.style.display = "block";
-
-    } else {
-
-        gatewayBox.style.display = "none";
-
-    }
-}
+    updatePaymentView();
 
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
+    /* ==========================================================
+       CHECK FORM
+    ========================================================== */
 
-        updatePaymentMethod();
+    document
+        .getElementById("checkoutForm")
+        .addEventListener(
+            "submit",
+            function(event) {
 
-    }
-);
+                const name =
+                    document
+                        .getElementById("name")
+                        .value
+                        .trim();
+
+                const phone =
+                    document
+                        .getElementById("phone")
+                        .value
+                        .trim();
+
+                const address =
+                    document
+                        .getElementById("address")
+                        .value
+                        .trim();
+
+
+                if (
+                    !name ||
+                    !phone ||
+                    !address
+                ) {
+
+                    return;
+
+                }
+
+
+                const selected =
+                    document.querySelector(
+                        'input[name="payment_method"]:checked'
+                    );
+
+
+                if (
+                    selected &&
+                    selected.value ===
+                    "UPI"
+                ) {
+
+                    /*
+                     * IMPORTANT:
+                     * This only creates the order as
+                     * your current app.py is designed.
+                     *
+                     * UPI payment itself is NOT automatically
+                     * verified by this QR.
+                     */
+
+                }
+
+            }
+        );
 
 </script>
 
