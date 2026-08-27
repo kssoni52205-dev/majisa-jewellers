@@ -1,46 +1,448 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Majisa Jewellers">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Login | Majisa Jewellers
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #faf7f0;
+            color: #211d18;
+            font-family: Georgia, "Times New Roman", serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        header {
+            background: #211d18;
+            color: #f4d58d;
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 22px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        nav a {
+            transition: .2s ease;
+        }
+
+        nav a:hover {
+            color: #fff;
+        }
+
+        .page {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 50px 20px;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 460px;
+            background: #fff;
+            border: 1px solid #e1d8cb;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(33, 29, 24, .06);
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .heading small {
+            display: block;
+            color: #9b7127;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .heading h1 {
+            font-size: 38px;
+            margin-top: 8px;
+        }
+
+        .heading p {
+            margin-top: 10px;
+            color: #777;
+            font: 13px/1.6 Arial, sans-serif;
+        }
+
+        .flash {
+            background: #fce8e8;
+            border: 1px solid #e0b5b5;
+            color: #8f2f2f;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            font: 13px/1.5 Arial, sans-serif;
+        }
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 7px;
+            font: bold 13px Arial, sans-serif;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #d6ccbe;
+            background: #fff;
+            color: #211d18;
+            outline: none;
+            font: 14px Arial, sans-serif;
+        }
+
+        .field input:focus {
+            border-color: #9b7127;
+            box-shadow: 0 0 0 2px rgba(155, 113, 39, .08);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            border: 0;
+            background: #211d18;
+            color: #f4d58d;
+            cursor: pointer;
+            font: bold 13px Arial, sans-serif;
+            letter-spacing: 1px;
+            transition: .2s ease;
+        }
+
+        .login-button:hover {
+            background: #9b7127;
+            color: #fff;
+        }
+
+        .forgot {
+            text-align: right;
+            margin-top: 10px;
+            font: 12px Arial, sans-serif;
+        }
+
+        .forgot a {
+            color: #9b7127;
+        }
+
+        .forgot a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 25px 0;
+            color: #999;
+            font: 12px Arial, sans-serif;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e0d7ca;
+        }
+
+        .register-box {
+            text-align: center;
+            color: #666;
+            font: 13px Arial, sans-serif;
+        }
+
+        .register-button {
+            display: block;
+            width: 100%;
+            margin-top: 12px;
+            padding: 13px;
+            border: 1px solid #211d18;
+            background: #fff;
+            color: #211d18;
+            font: bold 12px Arial, sans-serif;
+            letter-spacing: .5px;
+            transition: .2s ease;
+        }
+
+        .register-button:hover {
+            background: #211d18;
+            color: #f4d58d;
+        }
+
+        .home-link {
+            display: block;
+            text-align: center;
+            margin-top: 18px;
+            color: #777;
+            font: 12px Arial, sans-serif;
+        }
+
+        .home-link:hover {
+            color: #9b7127;
+        }
+
+        footer {
+            background: #15120f;
+            color: #ccc;
+            padding: 25px;
+            text-align: center;
+            font: 13px Arial, sans-serif;
+        }
+
+        footer a {
+            color: #f4d58d;
+        }
+
+        @media (max-width: 600px) {
+
+            nav {
+                display: none;
+            }
+
+            .brand {
+                font-size: 21px;
+            }
+
+            .login-box {
+                padding: 30px 22px;
+            }
+
+            .heading h1 {
+                font-size: 32px;
+            }
+
+        }
+
+    </style>
+
 </head>
 
-<body style="background:#faf7f0; font-family:Arial; padding:50px;">
 
-    <h1>Majisa Jewellers - Login</h1>
+<body>
 
-    <form method="POST" action="/login">
+<header>
 
-        <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            required
-            style="display:block; width:300px; padding:12px; margin:15px 0;"
+    <a
+        href="{{ url_for('home') }}"
+        class="brand"
+    >
+        Majisa Jewellers
+    </a>
+
+
+    <nav>
+
+        <a href="{{ url_for('home') }}">
+            Home
+        </a>
+
+        <a href="{{ url_for('products') }}">
+            Shop
+        </a>
+
+        <a href="{{ url_for('contact') }}">
+            Contact
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main class="page">
+
+    <div class="login-box">
+
+        <div class="heading">
+
+            <small>
+                Welcome Back
+            </small>
+
+            <h1>
+                Login
+            </h1>
+
+            <p>
+                Sign in to manage your account and orders.
+            </p>
+
+        </div>
+
+
+        {% with messages = get_flashed_messages() %}
+
+            {% if messages %}
+
+                {% for message in messages %}
+
+                    <div class="flash">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <form
+            method="POST"
+            action="{{ url_for('login') }}"
         >
 
-        <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            required
-            style="display:block; width:300px; padding:12px; margin:15px 0;"
+            <div class="field">
+
+                <label for="email">
+                    Email Address
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    autocomplete="email"
+                    required
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    required
+                >
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="login-button"
+            >
+                LOGIN
+            </button>
+
+
+            <div class="forgot">
+
+                <a href="{{ url_for('forgot_password') }}">
+                    Forgot Password?
+                </a>
+
+            </div>
+
+        </form>
+
+
+        <div class="divider">
+            OR
+        </div>
+
+
+        <div class="register-box">
+
+            <div>
+                Don't have an account?
+            </div>
+
+
+            <a
+                href="{{ url_for('register') }}"
+                class="register-button"
+            >
+                CREATE NEW ACCOUNT
+            </a>
+
+        </div>
+
+
+        <a
+            href="{{ url_for('home') }}"
+            class="home-link"
         >
+            ← Back to Home
+        </a>
 
-        <button
-            type="submit"
-            style="padding:12px 30px; cursor:pointer;"
-        >
-            LOGIN
-        </button>
+    </div>
 
-    </form>
+</main>
 
-    <p>
-        Don't have an account?
-        <a href="/register">Create Account</a>
-    </p>
+
+<footer>
+
+    © 2026 Majisa Jewellers ·
+
+    <a
+        href="https://instagram.com/majisa_art_jewellers"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        Instagram
+    </a>
+
+    · 8949144970
+
+</footer>
+
 
 </body>
 </html>
