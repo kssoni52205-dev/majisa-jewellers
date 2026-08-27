@@ -4,12 +4,8 @@ import secrets
 import hashlib
 import hmac
 import time
-import json
-import base64
-from urllib.parse import urlparse, urlencode
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError, URLError
 from functools import wraps
+from urllib.parse import urlparse
 
 from flask import (
     Flask,
@@ -84,75 +80,6 @@ RAZORPAY_KEY_SECRET = os.environ.get(
     ""
 )
 
-
-# ==========================================================
-# WHATSAPP CONFIG
-# ==========================================================
-# Set WHATSAPP_PROVIDER=meta or twilio.
-
-WHATSAPP_PROVIDER = os.environ.get(
-    "WHATSAPP_PROVIDER",
-    "meta"
-).strip().lower()
-
-WHATSAPP_ADMIN_PHONE = os.environ.get(
-    "WHATSAPP_ADMIN_PHONE",
-    ""
-).strip()
-
-# Meta WhatsApp Cloud API
-WHATSAPP_ACCESS_TOKEN = os.environ.get(
-    "WHATSAPP_ACCESS_TOKEN",
-    ""
-).strip()
-
-WHATSAPP_PHONE_NUMBER_ID = os.environ.get(
-    "WHATSAPP_PHONE_NUMBER_ID",
-    ""
-).strip()
-
-WHATSAPP_API_VERSION = os.environ.get(
-    "WHATSAPP_API_VERSION",
-    "v23.0"
-).strip()
-
-WHATSAPP_TEMPLATE_NAME = os.environ.get(
-    "WHATSAPP_TEMPLATE_NAME",
-    ""
-).strip()
-
-WHATSAPP_TEMPLATE_LANGUAGE = os.environ.get(
-    "WHATSAPP_TEMPLATE_LANGUAGE",
-    "en_US"
-).strip()
-
-# Twilio WhatsApp
-TWILIO_ACCOUNT_SID = os.environ.get(
-    "TWILIO_ACCOUNT_SID",
-    ""
-).strip()
-
-TWILIO_AUTH_TOKEN = os.environ.get(
-    "TWILIO_AUTH_TOKEN",
-    ""
-).strip()
-
-TWILIO_WHATSAPP_FROM = os.environ.get(
-    "TWILIO_WHATSAPP_FROM",
-    ""
-).strip()
-
-TWILIO_CONTENT_SID = os.environ.get(
-    "TWILIO_CONTENT_SID",
-    ""
-).strip()
-
-TWILIO_CONTENT_VARIABLES = os.environ.get(
-    "TWILIO_CONTENT_VARIABLES",
-    ""
-).strip()
-
-
 try:
     import razorpay
 except ImportError:
@@ -179,669 +106,336 @@ def get_razorpay_client():
 
 
 # ==========================================================
-# WHATSAPP HELPERS
+# FILE TYPES
 # ==========================================================
 
-def normalize_whatsapp_number(value):
+ALLOWED_IMAGE_EXTENSIONS = {
+    "png",
+    "jpg",
+    "jpeg",
+    "webp"
+}
 
-    if not value:
+ALLOWED_VIDEO_EXTENSIONS = {
+    "mp4",
+    "webm",
+    "mov",
+    "m4v"
+}
+
+
+# ==========================================================
+# IMAGE HELPERS
+# ==========================================================
+
+def allowed_image_file(filename):
+
+    if not filename:
+        return False
+
+    if "." not in filename:
+        return False
+
+    extension = filename.rsplit(
+        ".",
+        1
+    )[1].lower()
+
+    return extension in ALLOWED_IMAGE_EXTENSIONS
+
+
+def image_filename_only(filename):
+
+    if not filename:
         return ""
 
-    value = str(value).strip()
+    value = str(filename).strip()
 
-    if value.lower().startswith(
-        "whatsapp:"
-    ):
+    value = value.replace(
+        "\\",
+        "/"
+    )
+
+    value = value.split(
+        "?",
+        1
+    )[0]
+
+    if "/static/images/" in value:
+
         value = value.split(
-            ":",
+            "/static/images/",
             1
         )[1]
 
-    cleaned = "".join(
-        ch for ch in value
-        if ch.isdigit() or ch == "+"
+    elif value.startswith(
+        "static/images/"
+    ):
+
+        value = value[
+            len("static/images/"):
+        ]
+
+    elif value.startswith(
+        "/images/"
+    ):
+
+        value = value[
+            len("/images/"):
+        ]
+
+    elif value.startswith(
+        "images/"
+    ):
+
+        value = value[
+            len("images/"):
+        ]
+
+    return os.path.basename(
+        value
     )
 
-    if cleaned.startswith("00"):
-        cleaned = "+" + cleaned[2:]
 
-    if (
-        cleaned
-        and not cleaned.startswith("+")
-        and len(cleaned) == 10
+def product_image_url(filename):
+
+    clean_name = image_filename_only(
+        filename
+    )
+
+    if not clean_name:
+        return ""
+
+    return url_for(
+        "uploaded_image",
+        filename=clean_name
+    )
+
+
+def product_video_url(filename):
+
+    clean_name = image_filename_only(
+        filename
+    )
+
+    if not clean_name:
+        return ""
+
+    return url_for(
+        "uploaded_video",
+        filename=clean_name
+    )
+
+
+def save_product_image(file):
+
+    if not file:
+        return ""
+
+    if not file.filename:
+        return ""
+
+    if not allowed_image_file(
+        file.filename
     ):
-        cleaned = "+91" + cleaned
 
-    return cleaned
-
-
-def _http_json(
-    url,
-    payload,
-    headers=None,
-    timeout=20
-):
-
-    body = json.dumps(
-        payload
-    ).encode("utf-8")
-
-    request_headers = {
-        "Content-Type": "application/json"
-    }
-
-    if headers:
-        request_headers.update(
-            headers
+        raise ValueError(
+            "Only JPG, JPEG, PNG and WEBP images are allowed."
         )
 
-    req = Request(
-        url,
-        data=body,
-        headers=request_headers,
-        method="POST",
+    original_name = secure_filename(
+        file.filename
+    )
+
+    extension = os.path.splitext(
+        original_name
+    )[1].lower()
+
+    filename = (
+        "product_"
+        + secrets.token_hex(10)
+        + extension
+    )
+
+    file_path = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
+
+    file.save(
+        file_path
+    )
+
+    return filename
+
+
+def delete_product_image(filename):
+
+    clean_name = image_filename_only(
+        filename
+    )
+
+    if not clean_name:
+        return
+
+    file_path = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        clean_name
     )
 
     try:
 
-        with urlopen(
-            req,
-            timeout=timeout
-        ) as response:
-
-            raw = response.read().decode(
-                "utf-8",
-                errors="replace"
-            )
-
-            try:
-                data = (
-                    json.loads(raw)
-                    if raw
-                    else {}
-                )
-            except json.JSONDecodeError:
-                data = {
-                    "raw": raw
-                }
-
-            return (
-                True,
-                response.status,
-                data
-            )
-
-    except HTTPError as error:
-
-        raw = error.read().decode(
-            "utf-8",
-            errors="replace"
-        )
-
-        try:
-            data = (
-                json.loads(raw)
-                if raw
-                else {}
-            )
-        except json.JSONDecodeError:
-            data = {
-                "raw": raw
-            }
-
-        return (
-            False,
-            error.code,
-            data
-        )
-
-    except URLError as error:
-
-        return (
-            False,
-            0,
-            {
-                "error": str(
-                    error.reason
-                )
-            }
-        )
-
-    except Exception as error:
-
-        return (
-            False,
-            0,
-            {
-                "error": str(error)
-            }
-        )
-
-
-def _send_meta_whatsapp(
-    to_number,
-    body
-):
-
-    if (
-        not WHATSAPP_ACCESS_TOKEN
-        or not WHATSAPP_PHONE_NUMBER_ID
-    ):
-        return (
-            False,
-            "Meta WhatsApp credentials are missing."
-        )
-
-    to_number = normalize_whatsapp_number(
-        to_number
-    )
-
-    if not to_number:
-        return (
-            False,
-            "Recipient WhatsApp number is invalid."
-        )
-
-    url = (
-        f"https://graph.facebook.com/"
-        f"{WHATSAPP_API_VERSION}/"
-        f"{WHATSAPP_PHONE_NUMBER_ID}/messages"
-    )
-
-    if WHATSAPP_TEMPLATE_NAME:
-
-        payload = {
-            "messaging_product": "whatsapp",
-            "to": to_number,
-            "type": "template",
-            "template": {
-                "name": (
-                    WHATSAPP_TEMPLATE_NAME
-                ),
-                "language": {
-                    "code": (
-                        WHATSAPP_TEMPLATE_LANGUAGE
-                    )
-                },
-                "components": [
-                    {
-                        "type": "body",
-                        "parameters": [
-                            {
-                                "type": "text",
-                                "text": body[:1024]
-                            }
-                        ]
-                    }
-                ]
-            }
-        }
-
-    else:
-
-        payload = {
-            "messaging_product": "whatsapp",
-            "recipient_type": "individual",
-            "to": to_number,
-            "type": "text",
-            "text": {
-                "preview_url": False,
-                "body": body[:4096]
-            }
-        }
-
-    ok, status, data = _http_json(
-        url,
-        payload,
-        headers={
-            "Authorization": (
-                f"Bearer "
-                f"{WHATSAPP_ACCESS_TOKEN}"
-            )
-        }
-    )
-
-    if ok:
-
-        message_id = "sent"
-
-        messages = (
-            data.get("messages")
-            or []
-        )
-
-        if messages:
-
-            message_id = messages[
-                0
-            ].get(
-                "id",
-                "sent"
-            )
-
-        return (
-            True,
-            message_id
-        )
-
-    return (
-        False,
-        (
-            f"Meta WhatsApp HTTP "
-            f"{status}: {data}"
-        )
-    )
-
-
-def _send_twilio_whatsapp(
-    to_number,
-    body
-):
-
-    if not all([
-        TWILIO_ACCOUNT_SID,
-        TWILIO_AUTH_TOKEN,
-        TWILIO_WHATSAPP_FROM
-    ]):
-
-        return (
-            False,
-            "Twilio WhatsApp credentials are missing."
-        )
-
-    to_number = normalize_whatsapp_number(
-        to_number
-    )
-
-    if not to_number:
-
-        return (
-            False,
-            "Recipient WhatsApp number is invalid."
-        )
-
-    url = (
-        "https://api.twilio.com/"
-        "2010-04-01/Accounts/"
-        f"{TWILIO_ACCOUNT_SID}/"
-        "Messages.json"
-    )
-
-    from_number = (
-        TWILIO_WHATSAPP_FROM
-    )
-
-    if not from_number.lower().startswith(
-        "whatsapp:"
-    ):
-
-        from_number = (
-            "whatsapp:"
-            + from_number
-        )
-
-    form = {
-        "To": (
-            "whatsapp:"
-            + to_number
-        ),
-        "From": from_number,
-    }
-
-    if TWILIO_CONTENT_SID:
-
-        form[
-            "ContentSid"
-        ] = TWILIO_CONTENT_SID
-
-        form[
-            "ContentVariables"
-        ] = (
-            TWILIO_CONTENT_VARIABLES
-            or json.dumps(
-                {
-                    "1": body[:1024]
-                }
-            )
-        )
-
-    else:
-
-        form[
-            "Body"
-        ] = body[:1600]
-
-    encoded = urlencode(
-        form
-    ).encode("utf-8")
-
-    auth = base64.b64encode(
-        (
-            f"{TWILIO_ACCOUNT_SID}:"
-            f"{TWILIO_AUTH_TOKEN}"
-        ).encode("utf-8")
-    ).decode("ascii")
-
-    req = Request(
-        url,
-        data=encoded,
-        headers={
-            "Authorization": (
-                f"Basic {auth}"
-            ),
-            "Content-Type": (
-                "application/"
-                "x-www-form-urlencoded"
-            )
-        },
-        method="POST",
-    )
-
-    try:
-
-        with urlopen(
-            req,
-            timeout=20
-        ) as response:
-
-            raw = response.read().decode(
-                "utf-8",
-                errors="replace"
-            )
-
-            data = (
-                json.loads(raw)
-                if raw
-                else {}
-            )
-
-            return (
-                True,
-                data.get(
-                    "sid",
-                    "sent"
-                )
-            )
-
-    except HTTPError as error:
-
-        raw = error.read().decode(
-            "utf-8",
-            errors="replace"
-        )
-
-        try:
-            data = (
-                json.loads(raw)
-                if raw
-                else {}
-            )
-        except json.JSONDecodeError:
-            data = {
-                "raw": raw
-            }
-
-        return (
-            False,
-            (
-                f"Twilio WhatsApp HTTP "
-                f"{error.code}: {data}"
-            )
-        )
-
-    except Exception as error:
-
-        return (
-            False,
-            (
-                "Twilio WhatsApp error: "
-                f"{error}"
-            )
-        )
-
-
-def send_whatsapp_message(
-    to_number,
-    body
-):
-
-    """
-    Send WhatsApp notification.
-
-    Messaging failure must never
-    fail the order itself.
-    """
-
-    if not to_number or not body:
-        return False
-
-    try:
-
-        if (
-            WHATSAPP_PROVIDER
-            == "twilio"
+        if os.path.isfile(
+            file_path
         ):
 
-            ok, detail = (
-                _send_twilio_whatsapp(
-                    to_number,
-                    body
-                )
+            os.remove(
+                file_path
             )
 
-        else:
+    except OSError:
 
-            ok, detail = (
-                _send_meta_whatsapp(
-                    to_number,
-                    body
-                )
-            )
+        pass
 
-        if ok:
 
-            app.logger.info(
-                "WhatsApp notification "
-                "sent: %s",
-                detail
-            )
+# ==========================================================
+# VIDEO HELPERS
+# ==========================================================
 
-        else:
+def allowed_video_file(filename):
 
-            app.logger.error(
-                "WhatsApp notification "
-                "failed: %s",
-                detail
-            )
-
-        return ok
-
-    except Exception:
-
-        app.logger.exception(
-            "Unexpected WhatsApp "
-            "notification error"
-        )
-
+    if not filename:
         return False
 
-
-def notify_order_whatsapp(
-    order_id,
-    include_customer=True,
-    include_admin=True,
-    status=None
-):
-
-    conn = get_db()
-
-    order = conn.execute(
-        """
-        SELECT *
-        FROM orders
-        WHERE id = ?
-        """,
-        (order_id,)
-    ).fetchone()
-
-    if order is None:
-
-        conn.close()
-
+    if "." not in filename:
         return False
 
-    items = conn.execute(
-        """
-        SELECT
-            order_items.*,
-            products.name AS product_name
-        FROM order_items
-        LEFT JOIN products
-            ON products.id =
-               order_items.product_id
-        WHERE order_items.order_id = ?
-        ORDER BY order_items.id ASC
-        """,
-        (order_id,)
-    ).fetchall()
+    extension = filename.rsplit(
+        ".",
+        1
+    )[1].lower()
 
-    conn.close()
+    return extension in ALLOWED_VIDEO_EXTENSIONS
 
-    customer_phone = (
-        order["phone"]
-        if "phone" in order.keys()
-        else ""
-    )
 
-    customer_name = (
-        order["name"]
-        if "name" in order.keys()
-        else "Customer"
-    )
+def save_product_video(file):
 
-    order_status = (
-        status
-        or (
-            order["status"]
-            if "status" in order.keys()
-            else "Pending"
-        )
-    )
+    if not file:
+        return ""
 
-    lines = [
-        "🛍️ MAJISA ORDER",
-        "",
-        f"Order ID: #{order_id}",
-        f"Customer: {customer_name}",
-        f"Status: {order_status}",
-    ]
+    if not file.filename:
+        return ""
 
-    if "payment_method" in order.keys():
-
-        lines.append(
-            "Payment: "
-            + str(
-                order["payment_method"]
-                or "-"
-            )
-        )
-
-    if items:
-
-        lines.append("")
-        lines.append("Items:")
-
-        for item in items:
-
-            product_name = (
-                item["product_name"]
-                or "Product"
-            )
-
-            quantity = (
-                item["quantity"]
-                if "quantity"
-                in item.keys()
-                else 1
-            )
-
-            price = (
-                item["price"]
-                if "price"
-                in item.keys()
-                else 0
-            )
-
-            lines.append(
-                f"- {product_name} "
-                f"x {quantity} "
-                f"₹{float(price):.2f}"
-            )
-
-    total_value = (
-        order["total"]
-        if "total" in order.keys()
-        else 0
-    )
-
-    lines.extend([
-        "",
-        f"Total: ₹{float(total_value):.2f}",
-    ])
-
-    if "address" in order.keys():
-
-        address = (
-            order["address"]
-            or ""
-        ).strip()
-
-        if address:
-
-            lines.extend([
-                "",
-                "Address:",
-                address
-            ])
-
-    customer_message = "\n".join(
-        lines
-    )
-
-    sent_any = False
-
-    if (
-        include_customer
-        and customer_phone
+    if not allowed_video_file(
+        file.filename
     ):
 
-        sent_any = (
-            send_whatsapp_message(
-                customer_phone,
-                customer_message
+        raise ValueError(
+            "Only MP4, WEBM, MOV and M4V videos are allowed."
+        )
+
+    original_name = secure_filename(
+        file.filename
+    )
+
+    extension = os.path.splitext(
+        original_name
+    )[1].lower()
+
+    filename = (
+        "video_"
+        + secrets.token_hex(10)
+        + extension
+    )
+
+    file_path = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
+
+    file.save(
+        file_path
+    )
+
+    return filename
+
+
+def delete_product_video(filename):
+
+    clean_name = image_filename_only(
+        filename
+    )
+
+    if not clean_name:
+        return
+
+    file_path = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        clean_name
+    )
+
+    try:
+
+        if os.path.isfile(
+            file_path
+        ):
+
+            os.remove(
+                file_path
             )
-            or sent_any
-        )
 
-    if (
-        include_admin
-        and WHATSAPP_ADMIN_PHONE
-    ):
+    except OSError:
 
-        admin_message = (
-            "🔔 NEW/UPDATED ORDER\n\n"
-            + customer_message
-        )
+        pass
 
-        sent_any = (
-            send_whatsapp_message(
-                WHATSAPP_ADMIN_PHONE,
-                admin_message
-            )
-            or sent_any
-        )
 
-    return sent_any
+# ==========================================================
+# FILE SERVING
+# ==========================================================
+
+@app.route(
+    "/static/images/<path:filename>"
+)
+def uploaded_static_image(filename):
+
+    filename = os.path.basename(
+        filename
+    )
+
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
+
+
+@app.route(
+    "/media/image/<path:filename>"
+)
+def uploaded_image(filename):
+
+    filename = os.path.basename(
+        filename
+    )
+
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
+
+
+@app.route(
+    "/media/video/<path:filename>"
+)
+def uploaded_video(filename):
+
+    filename = os.path.basename(
+        filename
+    )
+
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
 
 
 # ==========================================================
@@ -851,142 +445,349 @@ def notify_order_whatsapp(
 def get_db():
 
     conn = sqlite3.connect(
-        DATABASE
+        DATABASE,
+        timeout=30
     )
 
     conn.row_factory = sqlite3.Row
 
+    conn.execute(
+        "PRAGMA foreign_keys = ON"
+    )
+
     return conn
+
+
+def add_column_if_missing(
+    conn,
+    table,
+    column,
+    definition
+):
+
+    columns = conn.execute(
+        f"PRAGMA table_info({table})"
+    ).fetchall()
+
+    existing_columns = {
+        row["name"]
+        for row in columns
+    }
+
+    if column not in existing_columns:
+
+        conn.execute(
+            f"""
+            ALTER TABLE {table}
+            ADD COLUMN {column} {definition}
+            """
+        )
 
 
 def init_db():
 
     conn = get_db()
 
-    conn.executescript(
+    # ======================================================
+    # PRODUCTS
+    # ======================================================
+
+    conn.execute(
         """
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT,
-            phone TEXT,
-            password TEXT,
-            address TEXT,
-            created_at TEXT
-        );
-
         CREATE TABLE IF NOT EXISTS products (
+
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
             name TEXT NOT NULL,
-            slug TEXT,
-            description TEXT,
-            price REAL DEFAULT 0,
+
+            category TEXT NOT NULL,
+
+            price REAL NOT NULL DEFAULT 0,
+
             old_price REAL DEFAULT 0,
+
+            image TEXT DEFAULT '',
+
+            image2 TEXT DEFAULT '',
+
+            image3 TEXT DEFAULT '',
+
+            image4 TEXT DEFAULT '',
+
+            image5 TEXT DEFAULT '',
+
+            images TEXT DEFAULT '',
+
+            video TEXT DEFAULT '',
+
+            description TEXT DEFAULT '',
+
             stock INTEGER DEFAULT 0,
-            category TEXT,
-            image TEXT,
-            image2 TEXT,
-            image3 TEXT,
-            image4 TEXT,
-            image5 TEXT,
-            video TEXT,
-            active INTEGER DEFAULT 1,
-            created_at TEXT
-        );
 
-        CREATE TABLE IF NOT EXISTS orders (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            name TEXT,
-            email TEXT,
-            phone TEXT,
-            address TEXT,
-            city TEXT,
-            pincode TEXT,
-            total REAL DEFAULT 0,
-            payment_method TEXT,
-            payment_status TEXT,
-            status TEXT DEFAULT 'Pending',
-            razorpay_order_id TEXT,
-            razorpay_payment_id TEXT,
-            created_at TEXT
-        );
+            featured INTEGER DEFAULT 0,
 
-        CREATE TABLE IF NOT EXISTS order_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            order_id INTEGER,
-            product_id INTEGER,
-            quantity INTEGER DEFAULT 1,
-            price REAL DEFAULT 0
-        );
-
-        CREATE TABLE IF NOT EXISTS reviews (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id INTEGER,
-            user_id INTEGER,
-            name TEXT,
-            rating INTEGER DEFAULT 5,
-            comment TEXT,
-            created_at TEXT
-        );
-
-        CREATE TABLE IF NOT EXISTS settings (
-            id INTEGER PRIMARY KEY,
-            store_name TEXT DEFAULT 'MAJISA',
-            phone TEXT DEFAULT '',
-            email TEXT DEFAULT '',
-            instagram TEXT DEFAULT '',
-            address TEXT DEFAULT '',
-            city TEXT DEFAULT '',
-            pincode TEXT DEFAULT '',
-            business_hours TEXT DEFAULT '',
-            currency TEXT DEFAULT 'INR',
-            cod TEXT DEFAULT 'enabled',
-            upi TEXT DEFAULT 'enabled',
-            shipping_charge REAL DEFAULT 0,
-            free_shipping REAL DEFAULT 999,
-            delivery_time TEXT DEFAULT '5-7 business days',
-            store_status TEXT DEFAULT 'open',
-            maintenance_message TEXT DEFAULT ''
-        );
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
         """
     )
 
-    existing_settings = conn.execute(
-        """
-        SELECT id
-        FROM settings
-        WHERE id = 1
-        """
-    ).fetchone()
+    # ======================================================
+    # USERS
+    # ======================================================
 
-    if existing_settings is None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS users (
 
-        conn.execute(
-            """
-            INSERT INTO settings (
-                id,
-                store_name,
-                currency,
-                cod,
-                upi,
-                shipping_charge,
-                free_shipping,
-                delivery_time,
-                store_status
-            )
-            VALUES (
-                1,
-                'MAJISA',
-                'INR',
-                'enabled',
-                'enabled',
-                0,
-                999,
-                '5-7 business days',
-                'open'
-            )
-            """
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            name TEXT NOT NULL,
+
+            email TEXT UNIQUE NOT NULL,
+
+            password TEXT NOT NULL,
+
+            phone TEXT DEFAULT '',
+
+            address TEXT DEFAULT '',
+
+            reset_token TEXT DEFAULT '',
+
+            reset_token_created TEXT DEFAULT '',
+
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+    # ======================================================
+    # ORDERS
+    # ======================================================
+
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS orders (
+
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            user_id INTEGER,
+
+            customer_name TEXT NOT NULL,
+
+            phone TEXT NOT NULL,
+
+            address TEXT NOT NULL,
+
+            total REAL NOT NULL DEFAULT 0,
+
+            status TEXT DEFAULT 'Pending',
+
+            payment_method TEXT DEFAULT 'COD',
+
+            email TEXT DEFAULT '',
+
+            subtotal REAL DEFAULT 0,
+
+            shipping REAL DEFAULT 0,
+
+            discount REAL DEFAULT 0,
+
+            payment_status TEXT DEFAULT 'Pending',
+
+            razorpay_order_id TEXT DEFAULT '',
+
+            razorpay_payment_id TEXT DEFAULT '',
+
+            razorpay_signature TEXT DEFAULT '',
+
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+    # ======================================================
+    # ORDER ITEMS
+    # ======================================================
+
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS order_items (
+
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            order_id INTEGER NOT NULL,
+
+            product_id INTEGER NOT NULL,
+
+            product_name TEXT NOT NULL,
+
+            price REAL NOT NULL,
+
+            quantity INTEGER NOT NULL
+        )
+        """
+    )
+
+    # ======================================================
+    # REVIEWS
+    # ======================================================
+
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS reviews (
+
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            product_id INTEGER NOT NULL,
+
+            name TEXT NOT NULL,
+
+            rating INTEGER NOT NULL DEFAULT 5,
+
+            message TEXT NOT NULL,
+
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+    # ======================================================
+    # COUPONS
+    # ======================================================
+
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS coupons (
+
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            code TEXT UNIQUE NOT NULL,
+
+            discount REAL NOT NULL DEFAULT 0,
+
+            active INTEGER DEFAULT 1
+        )
+        """
+    )
+
+    # ======================================================
+    # SETTINGS
+    # ======================================================
+
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS settings (
+
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+
+            store_name TEXT DEFAULT 'Majisa Jewellers',
+
+            phone TEXT DEFAULT '8949144970',
+
+            email TEXT DEFAULT '',
+
+            instagram TEXT DEFAULT 'majisa_art_jewellers',
+
+            address TEXT DEFAULT '',
+
+            city TEXT DEFAULT '',
+
+            pincode TEXT DEFAULT '',
+
+            business_hours TEXT DEFAULT '10:00 AM - 8:00 PM',
+
+            currency TEXT DEFAULT 'INR',
+
+            cod TEXT DEFAULT 'enabled',
+
+            upi TEXT DEFAULT 'enabled',
+
+            shipping_charge REAL DEFAULT 0,
+
+            free_shipping REAL DEFAULT 999,
+
+            delivery_time TEXT DEFAULT '5-7 business days',
+
+            store_status TEXT DEFAULT 'open',
+
+            maintenance_message TEXT DEFAULT ''
+        )
+        """
+    )
+
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO settings
+        (
+            id,
+            store_name,
+            phone,
+            instagram
+        )
+        VALUES
+        (
+            1,
+            'Majisa Jewellers',
+            '8949144970',
+            'majisa_art_jewellers'
+        )
+        """
+    )
+
+    # ======================================================
+    # SAFE MIGRATIONS
+    # ======================================================
+
+    products_columns = [
+        ("image2", "TEXT DEFAULT ''"),
+        ("image3", "TEXT DEFAULT ''"),
+        ("image4", "TEXT DEFAULT ''"),
+        ("image5", "TEXT DEFAULT ''"),
+        ("images", "TEXT DEFAULT ''"),
+        ("video", "TEXT DEFAULT ''")
+    ]
+
+    for column, definition in products_columns:
+
+        add_column_if_missing(
+            conn,
+            "products",
+            column,
+            definition
+        )
+
+    users_columns = [
+        ("reset_token", "TEXT DEFAULT ''"),
+        ("reset_token_created", "TEXT DEFAULT ''")
+    ]
+
+    for column, definition in users_columns:
+
+        add_column_if_missing(
+            conn,
+            "users",
+            column,
+            definition
+        )
+
+    order_columns = [
+        ("email", "TEXT DEFAULT ''"),
+        ("subtotal", "REAL DEFAULT 0"),
+        ("shipping", "REAL DEFAULT 0"),
+        ("discount", "REAL DEFAULT 0"),
+        ("payment_status", "TEXT DEFAULT 'Pending'"),
+        ("razorpay_order_id", "TEXT DEFAULT ''"),
+        ("razorpay_payment_id", "TEXT DEFAULT ''"),
+        ("razorpay_signature", "TEXT DEFAULT ''")
+    ]
+
+    for column, definition in order_columns:
+
+        add_column_if_missing(
+            conn,
+            "orders",
+            column,
+            definition
         )
 
     conn.commit()
@@ -998,90 +799,114 @@ init_db()
 
 
 # ==========================================================
-# AUTH HELPERS
+# PASSWORD HELPERS
 # ==========================================================
 
 def hash_password(password):
 
-    salt = secrets.token_hex(
+    salt = secrets.token_bytes(
         16
     )
 
     digest = hashlib.pbkdf2_hmac(
         "sha256",
         password.encode("utf-8"),
-        salt.encode("utf-8"),
-        120000
+        salt,
+        310000
     )
 
     return (
-        salt
+        "pbkdf2_sha256$310000$"
+        + salt.hex()
         + "$"
         + digest.hex()
     )
 
 
 def verify_password(
-    password,
-    stored
+    stored_password,
+    password
 ):
 
-    if not stored:
+    if not stored_password:
         return False
 
-    if "$" not in stored:
-        return hmac.compare_digest(
-            password,
-            stored
-        )
+    if stored_password.startswith(
+        "pbkdf2_sha256$"
+    ):
 
-    salt, expected = (
-        stored.split(
-            "$",
-            1
-        )
-    )
+        try:
 
-    digest = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        salt.encode("utf-8"),
-        120000
-    ).hex()
+            parts = stored_password.split(
+                "$"
+            )
+
+            if len(parts) != 4:
+                return False
+
+            iterations = int(
+                parts[1]
+            )
+
+            salt = bytes.fromhex(
+                parts[2]
+            )
+
+            expected = bytes.fromhex(
+                parts[3]
+            )
+
+            actual = hashlib.pbkdf2_hmac(
+                "sha256",
+                password.encode("utf-8"),
+                salt,
+                iterations
+            )
+
+            return hmac.compare_digest(
+                actual,
+                expected
+            )
+
+        except Exception:
+
+            return False
 
     return hmac.compare_digest(
-        digest,
-        expected
+        str(stored_password),
+        str(password)
     )
 
 
-def admin_required(func):
+# ==========================================================
+# AUTH HELPERS
+# ==========================================================
 
-    @wraps(func)
-    def wrapper(*args, **kwargs):
+def admin_required(view):
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
 
         if not session.get(
             "admin_logged_in"
         ):
 
             return redirect(
-                url_for(
-                    "admin_login"
-                )
+                url_for("admin_login")
             )
 
-        return func(
+        return view(
             *args,
             **kwargs
         )
 
-    return wrapper
+    return wrapped
 
 
-def user_required(func):
+def login_required(view):
 
-    @wraps(func)
-    def wrapper(*args, **kwargs):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
 
         if not session.get(
             "user_id"
@@ -1089,28 +914,130 @@ def user_required(func):
 
             return redirect(
                 url_for(
-                    "login"
+                    "login",
+                    next=request.path
                 )
             )
 
-        return func(
+        return view(
             *args,
             **kwargs
         )
 
-    return wrapper
+    return wrapped
+
+
+def safe_next_url(target):
+
+    if not target:
+        return None
+
+    try:
+
+        parsed = urlparse(
+            target
+        )
+
+        if parsed.scheme:
+            return None
+
+        if parsed.netloc:
+            return None
+
+        if not target.startswith("/"):
+            return None
+
+        if target.startswith("//"):
+            return None
+
+        return target
+
+    except Exception:
+
+        return None
 
 
 # ==========================================================
-# GENERAL HELPERS
+# CART
 # ==========================================================
 
-def now_string():
+def get_cart():
 
-    return time.strftime(
-        "%Y-%m-%d %H:%M:%S"
+    cart = session.get(
+        "cart",
+        {}
     )
 
+    if not isinstance(
+        cart,
+        dict
+    ):
+
+        return {}
+
+    return cart
+
+
+def save_cart(cart):
+
+    clean_cart = {}
+
+    for product_id, quantity in cart.items():
+
+        try:
+
+            product_id = str(
+                int(product_id)
+            )
+
+            quantity = int(
+                quantity
+            )
+
+            if quantity > 0:
+
+                clean_cart[
+                    product_id
+                ] = quantity
+
+        except (
+            ValueError,
+            TypeError
+        ):
+
+            continue
+
+    session["cart"] = clean_cart
+
+    session.modified = True
+
+
+def cart_count():
+
+    total = 0
+
+    for quantity in get_cart().values():
+
+        try:
+
+            total += max(
+                0,
+                int(quantity)
+            )
+
+        except (
+            ValueError,
+            TypeError
+        ):
+
+            pass
+
+    return total
+
+
+# ==========================================================
+# SETTINGS
+# ==========================================================
 
 def get_settings():
 
@@ -1129,307 +1056,36 @@ def get_settings():
     return settings
 
 
-def cart_items():
-
-    cart = session.get(
-        "cart",
-        {}
-    )
-
-    if not cart:
-        return []
-
-    conn = get_db()
-
-    result = []
-
-    for product_id, quantity in cart.items():
-
-        try:
-            product_id_int = int(
-                product_id
-            )
-        except (
-            TypeError,
-            ValueError
-        ):
-            continue
-
-        product = conn.execute(
-            """
-            SELECT *
-            FROM products
-            WHERE id = ?
-            AND active = 1
-            """,
-            (product_id_int,)
-        ).fetchone()
-
-        if product is None:
-            continue
-
-        try:
-            quantity_int = max(
-                1,
-                int(quantity)
-            )
-        except (
-            TypeError,
-            ValueError
-        ):
-            quantity_int = 1
-
-        result.append(
-            {
-                "product": product,
-                "quantity": quantity_int,
-                "subtotal": (
-                    float(
-                        product["price"]
-                    )
-                    * quantity_int
-                )
-            }
-        )
-
-    conn.close()
-
-    return result
-
-
-def cart_count():
-
-    total = 0
-
-    for item in cart_items():
-
-        total += item[
-            "quantity"
-        ]
-
-    return total
-
-
-def cart_total():
-
-    total = 0
-
-    for item in cart_items():
-
-        total += item[
-            "subtotal"
-        ]
-
-    return round(
-        total,
-        2
-    )
-
-
-def clear_cart():
-
-    session[
-        "cart"
-    ] = {}
-
-    session.modified = True
-
-
-def product_image_url(
-    filename
-):
-
-    if not filename:
-        return ""
-
-    filename = str(
-        filename
-    ).strip()
-
-    if not filename:
-        return ""
-
-    return url_for(
-        "static",
-        filename=(
-            "images/"
-            + filename
-        )
-    )
-
-
-def product_video_url(
-    filename
-):
-
-    if not filename:
-        return ""
-
-    filename = str(
-        filename
-    ).strip()
-
-    if not filename:
-        return ""
-
-    return url_for(
-        "static",
-        filename=(
-            "images/"
-            + filename
-        )
-    )
-
-
-def slugify(value):
-
-    value = str(
-        value or ""
-    ).strip().lower()
-
-    result = []
-
-    for char in value:
-
-        if (
-            char.isalnum()
-            or char in (
-                "-",
-                "_"
-            )
-        ):
-
-            result.append(
-                char
-            )
-
-        elif char.isspace():
-
-            result.append("-")
-
-    slug = "".join(
-        result
-    )
-
-    while "--" in slug:
-
-        slug = slug.replace(
-            "--",
-            "-"
-        )
-
-    return slug.strip(
-        "-"
-    )
-
-
-def unique_slug(
-    conn,
-    value,
-    exclude_id=None
-):
-
-    base = slugify(
-        value
-    ) or "product"
-
-    slug = base
-
-    counter = 2
-
-    while True:
-
-        if exclude_id is None:
-
-            row = conn.execute(
-                """
-                SELECT id
-                FROM products
-                WHERE slug = ?
-                """,
-                (slug,)
-            ).fetchone()
-
-        else:
-
-            row = conn.execute(
-                """
-                SELECT id
-                FROM products
-                WHERE slug = ?
-                AND id != ?
-                """,
-                (
-                    slug,
-                    exclude_id
-                )
-            ).fetchone()
-
-        if row is None:
-            return slug
-
-        slug = (
-            f"{base}-{counter}"
-        )
-
-        counter += 1
-
-
-def save_uploaded_file(
-    file
-):
-
-    if not file:
-        return ""
-
-    if not file.filename:
-        return ""
-
-    filename = secure_filename(
-        file.filename
-    )
-
-    if not filename:
-        return ""
-
-    unique_name = (
-        f"{int(time.time())}_"
-        f"{secrets.token_hex(4)}_"
-        f"{filename}"
-    )
-
-    path = os.path.join(
-        app.config[
-            "UPLOAD_FOLDER"
-        ],
-        unique_name
-    )
-
-    file.save(
-        path
-    )
-
-    return unique_name
-
-
 # ==========================================================
-# CONTEXT
+# GLOBAL TEMPLATE DATA
 # ==========================================================
 
 @app.context_processor
-def inject_globals():
+def inject_global_data():
+
+    settings = get_settings()
 
     return {
-        "settings": get_settings(),
+        "store_settings": settings,
         "cart_count": cart_count(),
-        "cart_total": cart_total(),
-        "current_user_id": session.get(
-            "user_id"
+        "site_name": (
+            settings["store_name"]
+            if settings
+            else "Majisa Jewellers"
         ),
-        "admin_logged_in": session.get(
-            "admin_logged_in",
-            False
-        )
+        "site_phone": (
+            settings["phone"]
+            if settings
+            else "8949144970"
+        ),
+        "site_instagram": (
+            settings["instagram"]
+            if settings
+            else "majisa_art_jewellers"
+        ),
+        "razorpay_key_id": RAZORPAY_KEY_ID,
+        "image_url": product_image_url,
+        "video_url": product_video_url
     }
 
 
@@ -1438,7 +1094,7 @@ def inject_globals():
 # ==========================================================
 
 @app.route("/")
-def index():
+def home():
 
     conn = get_db()
 
@@ -1446,8 +1102,26 @@ def index():
         """
         SELECT *
         FROM products
-        WHERE active = 1
         ORDER BY id DESC
+        """
+    ).fetchall()
+
+    featured = conn.execute(
+        """
+        SELECT *
+        FROM products
+        WHERE featured = 1
+        ORDER BY id DESC
+        LIMIT 8
+        """
+    ).fetchall()
+
+    latest = conn.execute(
+        """
+        SELECT *
+        FROM products
+        ORDER BY id DESC
+        LIMIT 12
         """
     ).fetchall()
 
@@ -1455,7 +1129,9 @@ def index():
 
     return render_template(
         "index.html",
-        products=products
+        products=products,
+        featured=featured,
+        latest=latest
     )
 
 
@@ -1463,7 +1139,9 @@ def index():
 # PRODUCTS
 # ==========================================================
 
-@app.route("/products")
+@app.route(
+    "/products"
+)
 def products():
 
     category = request.args.get(
@@ -1476,15 +1154,49 @@ def products():
         ""
     ).strip()
 
+    try:
+
+        price_max = float(
+            request.args.get(
+                "price_max",
+                ""
+            )
+        )
+
+    except (
+        ValueError,
+        TypeError
+    ):
+
+        price_max = None
+
     conn = get_db()
 
     query = """
         SELECT *
         FROM products
-        WHERE active = 1
+        WHERE 1 = 1
     """
 
     params = []
+
+    if search:
+
+        query += """
+            AND (
+                name LIKE ?
+                OR category LIKE ?
+                OR description LIKE ?
+            )
+        """
+
+        params.extend(
+            [
+                f"%{search}%",
+                f"%{search}%",
+                f"%{search}%"
+            ]
+        )
 
     if category:
 
@@ -1496,35 +1208,21 @@ def products():
             category
         )
 
-    if search:
+    if price_max is not None:
 
         query += """
-            AND (
-                name LIKE ?
-                OR description LIKE ?
-                OR category LIKE ?
-            )
+            AND price <= ?
         """
 
-        search_value = (
-            "%"
-            + search
-            + "%"
-        )
-
-        params.extend(
-            [
-                search_value,
-                search_value,
-                search_value
-            ]
+        params.append(
+            price_max
         )
 
     query += """
         ORDER BY id DESC
     """
 
-    products_list = conn.execute(
+    items = conn.execute(
         query,
         params
     ).fetchall()
@@ -1533,9 +1231,7 @@ def products():
         """
         SELECT DISTINCT category
         FROM products
-        WHERE active = 1
-        AND category IS NOT NULL
-        AND category != ''
+        WHERE category != ''
         ORDER BY category
         """
     ).fetchall()
@@ -1544,19 +1240,27 @@ def products():
 
     return render_template(
         "products.html",
-        products=products_list,
+        products=items,
         categories=categories,
         selected_category=category,
+        selected_price_max=(
+            int(price_max)
+            if price_max is not None
+            and float(price_max).is_integer()
+            else price_max
+        ),
         search=search
     )
 
 
+# ==========================================================
+# PRODUCT DETAIL
+# ==========================================================
+
 @app.route(
     "/product/<int:product_id>"
 )
-def product_detail(
-    product_id
-):
+def product_detail(product_id):
 
     conn = get_db()
 
@@ -1565,7 +1269,6 @@ def product_detail(
         SELECT *
         FROM products
         WHERE id = ?
-        AND active = 1
         """,
         (product_id,)
     ).fetchone()
@@ -1584,14 +1287,34 @@ def product_detail(
 
     if product is None:
 
-        return render_template(
-            "404.html"
-        ), 404
+        return "Product not found", 404
 
     return render_template(
-        "product_detail.html",
+        "product.html",
         product=product,
         reviews=reviews
+    )
+
+
+# ==========================================================
+# SEARCH
+# ==========================================================
+
+@app.route(
+    "/search"
+)
+def search():
+
+    query = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    return redirect(
+        url_for(
+            "products",
+            search=query
+        )
     )
 
 
@@ -1599,15 +1322,109 @@ def product_detail(
 # CART
 # ==========================================================
 
-@app.route("/cart")
+@app.route(
+    "/cart"
+)
 def cart():
 
-    items = cart_items()
+    cart_data = get_cart()
+
+    if not cart_data:
+
+        return render_template(
+            "cart.html",
+            items=[],
+            total=0
+        )
+
+    product_ids = list(
+        cart_data.keys()
+    )
+
+    if not product_ids:
+
+        return render_template(
+            "cart.html",
+            items=[],
+            total=0
+        )
+
+    placeholders = ",".join(
+        ["?"] * len(product_ids)
+    )
+
+    conn = get_db()
+
+    products_list = conn.execute(
+        f"""
+        SELECT *
+        FROM products
+        WHERE id IN ({placeholders})
+        """,
+        product_ids
+    ).fetchall()
+
+    conn.close()
+
+    items = []
+
+    total = 0
+
+    valid_cart = {}
+
+    for product in products_list:
+
+        quantity = int(
+            cart_data.get(
+                str(product["id"]),
+                0
+            )
+        )
+
+        if quantity <= 0:
+            continue
+
+        stock = int(
+            product["stock"] or 0
+        )
+
+        if stock > 0:
+
+            quantity = min(
+                quantity,
+                stock
+            )
+
+        if quantity <= 0:
+            continue
+
+        valid_cart[
+            str(product["id"])
+        ] = quantity
+
+        subtotal = (
+            float(product["price"] or 0)
+            * quantity
+        )
+
+        total += subtotal
+
+        items.append(
+            {
+                "product": product,
+                "quantity": quantity,
+                "subtotal": subtotal
+            }
+        )
+
+    save_cart(
+        valid_cart
+    )
 
     return render_template(
         "cart.html",
         items=items,
-        total=cart_total()
+        total=total
     )
 
 
@@ -1615,18 +1432,15 @@ def cart():
     "/cart/add/<int:product_id>",
     methods=["POST", "GET"]
 )
-def add_to_cart(
-    product_id
-):
+def add_to_cart(product_id):
 
     conn = get_db()
 
     product = conn.execute(
         """
-        SELECT *
+        SELECT id, stock
         FROM products
         WHERE id = ?
-        AND active = 1
         """,
         (product_id,)
     ).fetchone()
@@ -1635,99 +1449,54 @@ def add_to_cart(
 
     if product is None:
 
-        flash(
-            "Product not found."
-        )
+        return "Product not found", 404
 
-        return redirect(
-            request.referrer
-            or url_for("products")
-        )
-
-    cart = session.get(
-        "cart",
-        {}
-    )
+    cart_data = get_cart()
 
     key = str(
         product_id
     )
 
-    current_quantity = cart.get(
-        key,
-        0
-    )
-
-    try:
-        current_quantity = int(
-            current_quantity
+    current_quantity = int(
+        cart_data.get(
+            key,
+            0
         )
-    except (
-        TypeError,
-        ValueError
-    ):
-        current_quantity = 0
-
-    requested_quantity = request.form.get(
-        "quantity",
-        1
-    )
-
-    try:
-        requested_quantity = int(
-            requested_quantity
-        )
-    except (
-        TypeError,
-        ValueError
-    ):
-        requested_quantity = 1
-
-    requested_quantity = max(
-        1,
-        requested_quantity
     )
 
     stock = int(
-        product["stock"]
-        or 0
+        product["stock"] or 0
     )
 
-    new_quantity = (
-        current_quantity
-        + requested_quantity
-    )
+    if stock <= 0:
 
-    if stock > 0:
-
-        new_quantity = min(
-            new_quantity,
-            stock
+        flash(
+            "This product is currently out of stock."
         )
-
-    cart[key] = new_quantity
-
-    session[
-        "cart"
-    ] = cart
-
-    session.modified = True
-
-    flash(
-        "Product added to cart."
-    )
-
-    next_url = request.form.get(
-        "next"
-    ) or request.args.get(
-        "next"
-    )
-
-    if next_url:
 
         return redirect(
-            next_url
+            request.referrer
+            or url_for("cart")
         )
+
+    if current_quantity >= stock:
+
+        flash(
+            "Sorry, available stock limit reached."
+        )
+
+        return redirect(
+            request.referrer
+            or url_for("cart")
+        )
+
+    cart_data[key] = (
+        current_quantity + 1
+    )
+
+    save_cart(
+        cart_data
+    )
 
     return redirect(
         request.referrer
@@ -1736,89 +1505,23 @@ def add_to_cart(
 
 
 @app.route(
-    "/cart/update",
-    methods=["POST"]
-)
-def update_cart():
-
-    cart = session.get(
-        "cart",
-        {}
-    )
-
-    for key in list(
-        cart.keys()
-    ):
-
-        value = request.form.get(
-            f"quantity_{key}"
-        )
-
-        if value is None:
-            continue
-
-        try:
-            quantity = int(
-                value
-            )
-        except (
-            TypeError,
-            ValueError
-        ):
-            quantity = 0
-
-        if quantity <= 0:
-
-            cart.pop(
-                key,
-                None
-            )
-
-        else:
-
-            cart[key] = quantity
-
-    session[
-        "cart"
-    ] = cart
-
-    session.modified = True
-
-    flash(
-        "Cart updated."
-    )
-
-    return redirect(
-        url_for("cart")
-    )
-
-
-@app.route(
     "/cart/remove/<int:product_id>",
     methods=["POST", "GET"]
 )
-def remove_from_cart(
-    product_id
-):
+def remove_from_cart(product_id):
 
-    cart = session.get(
-        "cart",
-        {}
+    cart_data = get_cart()
+
+    key = str(
+        product_id
     )
 
-    cart.pop(
-        str(product_id),
-        None
-    )
+    if key in cart_data:
 
-    session[
-        "cart"
-    ] = cart
+        del cart_data[key]
 
-    session.modified = True
-
-    flash(
-        "Product removed from cart."
+    save_cart(
+        cart_data
     )
 
     return redirect(
@@ -1830,16 +1533,111 @@ def remove_from_cart(
     "/cart/clear",
     methods=["POST", "GET"]
 )
-def clear_cart_route():
+def clear_cart():
 
-    clear_cart()
+    session["cart"] = {}
 
-    flash(
-        "Cart cleared."
-    )
+    session.modified = True
 
     return redirect(
         url_for("cart")
+    )
+
+
+# ==========================================================
+# WISHLIST
+# ==========================================================
+
+@app.route(
+    "/wishlist"
+)
+def wishlist():
+
+    wishlist_ids = session.get(
+        "wishlist",
+        []
+    )
+
+    if not isinstance(
+        wishlist_ids,
+        list
+    ):
+
+        wishlist_ids = []
+
+    wishlist_ids = [
+        int(item)
+        for item in wishlist_ids
+        if str(item).isdigit()
+    ]
+
+    if not wishlist_ids:
+
+        return render_template(
+            "wishlist.html",
+            products=[]
+        )
+
+    placeholders = ",".join(
+        ["?"] * len(wishlist_ids)
+    )
+
+    conn = get_db()
+
+    products_list = conn.execute(
+        f"""
+        SELECT *
+        FROM products
+        WHERE id IN ({placeholders})
+        """,
+        wishlist_ids
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "wishlist.html",
+        products=products_list
+    )
+
+
+@app.route(
+    "/wishlist/toggle/<int:product_id>",
+    methods=["POST", "GET"]
+)
+def toggle_wishlist(product_id):
+
+    wishlist_ids = session.get(
+        "wishlist",
+        []
+    )
+
+    if not isinstance(
+        wishlist_ids,
+        list
+    ):
+
+        wishlist_ids = []
+
+    if product_id in wishlist_ids:
+
+        wishlist_ids.remove(
+            product_id
+        )
+
+    else:
+
+        wishlist_ids.append(
+            product_id
+        )
+
+    session["wishlist"] = wishlist_ids
+
+    session.modified = True
+
+    return redirect(
+        request.referrer
+        or url_for("wishlist")
     )
 
 
@@ -1863,131 +1661,91 @@ def register():
         email = request.form.get(
             "email",
             ""
-        ).strip()
-
-        phone = request.form.get(
-            "phone",
-            ""
-        ).strip()
+        ).strip().lower()
 
         password = request.form.get(
             "password",
             ""
         )
 
-        confirm_password = request.form.get(
-            "confirm_password",
-            ""
-        )
-
-        address = request.form.get(
-            "address",
+        phone = request.form.get(
+            "phone",
             ""
         ).strip()
 
-        if not name:
+        if (
+            not name
+            or not email
+            or not password
+        ):
 
             flash(
-                "Name is required."
+                "Please fill all required fields."
             )
 
             return redirect(
                 url_for("register")
             )
 
-        if not password:
+        if len(password) < 6:
 
             flash(
-                "Password is required."
+                "Password must be at least 6 characters."
             )
 
             return redirect(
                 url_for("register")
             )
 
-        if password != confirm_password:
-
-            flash(
-                "Passwords do not match."
-            )
-
-            return redirect(
-                url_for("register")
-            )
+        hashed_password = hash_password(
+            password
+        )
 
         conn = get_db()
 
-        existing = conn.execute(
-            """
-            SELECT id
-            FROM users
-            WHERE email = ?
-            """,
-            (email,)
-        ).fetchone()
+        try:
 
-        if existing:
+            conn.execute(
+                """
+                INSERT INTO users
+                (
+                    name,
+                    email,
+                    password,
+                    phone
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    name,
+                    email,
+                    hashed_password,
+                    phone
+                )
+            )
+
+            conn.commit()
+
+        except sqlite3.IntegrityError:
 
             conn.close()
 
             flash(
-                "Email is already registered."
+                "Email already registered."
             )
 
             return redirect(
                 url_for("register")
             )
 
-        conn.execute(
-            """
-            INSERT INTO users (
-                name,
-                email,
-                phone,
-                password,
-                address,
-                created_at
-            )
-            VALUES (
-                ?, ?, ?, ?, ?, ?
-            )
-            """,
-            (
-                name,
-                email,
-                phone,
-                hash_password(
-                    password
-                ),
-                address,
-                now_string()
-            )
-        )
-
-        conn.commit()
-
-        user_id = conn.execute(
-            """
-            SELECT last_insert_rowid()
-            """
-        ).fetchone()[0]
-
         conn.close()
 
-        session[
-            "user_id"
-        ] = user_id
-
-        session[
-            "user_name"
-        ] = name
-
         flash(
-            "Registration successful."
+            "Registration successful. Please login."
         )
 
         return redirect(
-            url_for("index")
+            url_for("login")
         )
 
     return render_template(
@@ -2010,7 +1768,7 @@ def login():
         email = request.form.get(
             "email",
             ""
-        ).strip()
+        ).strip().lower()
 
         password = request.form.get(
             "password",
@@ -2028,34 +1786,60 @@ def login():
             (email,)
         ).fetchone()
 
-        conn.close()
-
-        if (
-            user
-            and verify_password(
-                password,
-                user["password"]
-            )
+        if user and verify_password(
+            user["password"],
+            password
         ):
 
-            session[
-                "user_id"
-            ] = user["id"]
+            if not str(
+                user["password"]
+            ).startswith(
+                "pbkdf2_sha256$"
+            ):
 
-            session[
-                "user_name"
-            ] = user["name"]
+                conn.execute(
+                    """
+                    UPDATE users
+                    SET password = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        hash_password(password),
+                        user["id"]
+                    )
+                )
 
-            flash(
-                "Login successful."
-            )
+                conn.commit()
 
-            return redirect(
+            conn.close()
+
+            session.clear()
+
+            session["user_id"] = user[
+                "id"
+            ]
+
+            session["user_name"] = user[
+                "name"
+            ]
+
+            next_page = safe_next_url(
                 request.args.get(
                     "next"
                 )
-                or url_for("index")
             )
+
+            if next_page:
+
+                return redirect(
+                    next_page
+                )
+
+            return redirect(
+                url_for("home")
+            )
+
+        conn.close()
 
         flash(
             "Invalid email or password."
@@ -2066,7 +1850,13 @@ def login():
     )
 
 
-@app.route("/logout")
+# ==========================================================
+# LOGOUT
+# ==========================================================
+
+@app.route(
+    "/logout"
+)
 def logout():
 
     session.pop(
@@ -2079,29 +1869,94 @@ def logout():
         None
     )
 
-    flash(
-        "You have been logged out."
-    )
-
     return redirect(
-        url_for("index")
+        url_for("home")
     )
 
 
 # ==========================================================
-# PROFILE
+# FORGOT PASSWORD
 # ==========================================================
 
 @app.route(
-    "/profile",
+    "/forgot-password",
     methods=["GET", "POST"]
 )
-@user_required
-def profile():
+def forgot_password():
 
-    user_id = session.get(
-        "user_id"
+    if request.method == "POST":
+
+        email = request.form.get(
+            "email",
+            ""
+        ).strip().lower()
+
+        conn = get_db()
+
+        user = conn.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE email = ?
+            """,
+            (email,)
+        ).fetchone()
+
+        if user:
+
+            token = secrets.token_urlsafe(
+                32
+            )
+
+            conn.execute(
+                """
+                UPDATE users
+                SET reset_token = ?,
+                    reset_token_created = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (
+                    token,
+                    user["id"]
+                )
+            )
+
+            conn.commit()
+
+            reset_url = url_for(
+                "reset_password",
+                token=token,
+                _external=True
+            )
+
+            conn.close()
+
+            return render_template(
+                "forgot_password.html",
+                message="Password reset link generated.",
+                reset_url=reset_url
+            )
+
+        conn.close()
+
+        flash(
+            "No account found with this email."
+        )
+
+    return render_template(
+        "forgot_password.html"
     )
+
+
+# ==========================================================
+# RESET PASSWORD
+# ==========================================================
+
+@app.route(
+    "/reset-password/<token>",
+    methods=["GET", "POST"]
+)
+def reset_password(token):
 
     conn = get_db()
 
@@ -2109,27 +1964,323 @@ def profile():
         """
         SELECT *
         FROM users
-        WHERE id = ?
+        WHERE reset_token = ?
         """,
-        (user_id,)
+        (token,)
     ).fetchone()
 
     if user is None:
 
         conn.close()
 
-        session.pop(
-            "user_id",
-            None
+        flash(
+            "Invalid or expired reset link."
+        )
+
+        return redirect(
+            url_for("forgot_password")
+        )
+
+    token_created = user[
+        "reset_token_created"
+    ]
+
+    if token_created:
+
+        try:
+
+            created_timestamp = time.mktime(
+                time.strptime(
+                    token_created[:19],
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            )
+
+            if (
+                time.time()
+                - created_timestamp
+                > 3600
+            ):
+
+                conn.execute(
+                    """
+                    UPDATE users
+                    SET reset_token = '',
+                        reset_token_created = ''
+                    WHERE id = ?
+                    """,
+                    (user["id"],)
+                )
+
+                conn.commit()
+
+                conn.close()
+
+                flash(
+                    "Reset link expired. Please request a new one."
+                )
+
+                return redirect(
+                    url_for("forgot_password")
+                )
+
+        except Exception:
+            pass
+
+    if request.method == "POST":
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        confirm_password = request.form.get(
+            "confirm_password",
+            request.form.get(
+                "password_confirmation",
+                ""
+            )
+        )
+
+        if len(password) < 6:
+
+            conn.close()
+
+            flash(
+                "Password must be at least 6 characters."
+            )
+
+            return redirect(
+                url_for(
+                    "reset_password",
+                    token=token
+                )
+            )
+
+        if password != confirm_password:
+
+            conn.close()
+
+            flash(
+                "Passwords do not match."
+            )
+
+            return redirect(
+                url_for(
+                    "reset_password",
+                    token=token
+                )
+            )
+
+        conn.execute(
+            """
+            UPDATE users
+            SET password = ?,
+                reset_token = '',
+                reset_token_created = ''
+            WHERE id = ?
+            """,
+            (
+                hash_password(password),
+                user["id"]
+            )
+        )
+
+        conn.commit()
+
+        conn.close()
+
+        flash(
+            "Password reset successfully. Please login."
         )
 
         return redirect(
             url_for("login")
         )
 
+    conn.close()
+
+    return render_template(
+        "reset_password.html",
+        token=token
+    )
+
+
+# ==========================================================
+# CHECKOUT DATA
+# ==========================================================
+
+def get_checkout_data():
+
+    cart_data = get_cart()
+
+    if not cart_data:
+        return None
+
+    product_ids = list(
+        cart_data.keys()
+    )
+
+    if not product_ids:
+        return None
+
+    placeholders = ",".join(
+        ["?"] * len(product_ids)
+    )
+
+    conn = get_db()
+
+    products_list = conn.execute(
+        f"""
+        SELECT *
+        FROM products
+        WHERE id IN ({placeholders})
+        """,
+        product_ids
+    ).fetchall()
+
+    settings = conn.execute(
+        """
+        SELECT *
+        FROM settings
+        WHERE id = 1
+        """
+    ).fetchone()
+
+    conn.close()
+
+    subtotal = 0
+
+    checkout_items = []
+
+    for product in products_list:
+
+        quantity = int(
+            cart_data.get(
+                str(product["id"]),
+                0
+            )
+        )
+
+        stock = int(
+            product["stock"] or 0
+        )
+
+        if stock <= 0:
+            continue
+
+        quantity = min(
+            quantity,
+            stock
+        )
+
+        if quantity <= 0:
+            continue
+
+        item_subtotal = (
+            float(product["price"] or 0)
+            * quantity
+        )
+
+        subtotal += item_subtotal
+
+        checkout_items.append(
+            (
+                product,
+                quantity
+            )
+        )
+
+    shipping_charge = float(
+        settings["shipping_charge"]
+        or 0
+    )
+
+    free_shipping = float(
+        settings["free_shipping"]
+        or 999999999
+    )
+
+    shipping = (
+        0
+        if subtotal >= free_shipping
+        else shipping_charge
+    )
+
+    total = (
+        subtotal
+        + shipping
+    )
+
+    return {
+        "products": products_list,
+        "items": checkout_items,
+        "settings": settings,
+        "subtotal": subtotal,
+        "shipping": shipping,
+        "total": total
+    }
+
+
+# ==========================================================
+# CHECKOUT
+# ==========================================================
+
+@app.route(
+    "/checkout",
+    methods=["GET", "POST"]
+)
+def checkout():
+
+    checkout_data = get_checkout_data()
+
+    if not checkout_data:
+
+        return redirect(
+            url_for("cart")
+        )
+
+    products_list = checkout_data[
+        "products"
+    ]
+
+    checkout_items = checkout_data[
+        "items"
+    ]
+
+    settings = checkout_data[
+        "settings"
+    ]
+
+    subtotal = checkout_data[
+        "subtotal"
+    ]
+
+    shipping = checkout_data[
+        "shipping"
+    ]
+
+    total = checkout_data[
+        "total"
+    ]
+
+    if not checkout_items:
+
+        session["cart"] = {}
+
+        session.modified = True
+
+        flash(
+            "Products in your cart are out of stock."
+        )
+
+        return redirect(
+            url_for("cart")
+        )
+
     if request.method == "POST":
 
-        name = request.form.get(
+        customer_name = request.form.get(
             "name",
             ""
         ).strip()
@@ -2137,7 +2288,7 @@ def profile():
         email = request.form.get(
             "email",
             ""
-        ).strip()
+        ).strip().lower()
 
         phone = request.form.get(
             "phone",
@@ -2149,537 +2300,476 @@ def profile():
             ""
         ).strip()
 
-        conn.execute(
-            """
-            UPDATE users
-            SET
-                name = ?,
-                email = ?,
-                phone = ?,
-                address = ?
-            WHERE id = ?
-            """,
-            (
-                name,
-                email,
-                phone,
-                address,
-                user_id
+        payment_method = request.form.get(
+            "payment_method",
+            "COD"
+        ).strip().upper()
+
+        if (
+            not customer_name
+            or not phone
+            or not address
+        ):
+
+            flash(
+                "Please fill all checkout details."
             )
-        )
 
-        conn.commit()
+            return redirect(
+                url_for("checkout")
+            )
 
-        session[
-            "user_name"
-        ] = name
+        allowed_payment_methods = {
+            "COD",
+            "UPI",
+            "RAZORPAY"
+        }
 
-        user = conn.execute(
-            """
-            SELECT *
-            FROM users
-            WHERE id = ?
-            """,
-            (user_id,)
-        ).fetchone()
+        if payment_method not in (
+            allowed_payment_methods
+        ):
 
-        flash(
-            "Profile updated successfully."
-        )
+            payment_method = "COD"
 
-    conn.close()
+        if (
+            payment_method == "COD"
+            and settings["cod"] != "enabled"
+        ):
 
-    return render_template(
-        "profile.html",
-        user=user
-    )
+            flash(
+                "Cash on Delivery is currently unavailable."
+            )
 
+            return redirect(
+                url_for("checkout")
+            )
 
-# ==========================================================
-# CHECKOUT
-# ==========================================================
+        if (
+            payment_method == "UPI"
+            and settings["upi"] != "enabled"
+        ):
 
-@app.route("/checkout")
-def checkout():
+            flash(
+                "UPI payment is currently unavailable."
+            )
 
-    items = cart_items()
+            return redirect(
+                url_for("checkout")
+            )
 
-    if not items:
+        # --------------------------------------------------
+        # RAZORPAY
+        # --------------------------------------------------
 
-        flash(
-            "Your cart is empty."
-        )
+        if payment_method == "RAZORPAY":
 
-        return redirect(
-            url_for("products")
-        )
+            if not get_razorpay_client():
 
-    settings = get_settings()
+                flash(
+                    "Online payment is not configured. Please contact the store."
+                )
 
-    subtotal = cart_total()
+                return redirect(
+                    url_for("checkout")
+                )
 
-    shipping_charge = float(
-        settings["shipping_charge"]
-        or 0
-    )
+            conn = get_db()
 
-    free_shipping = float(
-        settings["free_shipping"]
-        or 0
-    )
+            try:
 
-    if (
-        free_shipping > 0
-        and subtotal >= free_shipping
-    ):
+                cursor = conn.execute(
+                    """
+                    INSERT INTO orders
+                    (
+                        user_id,
+                        customer_name,
+                        phone,
+                        address,
+                        total,
+                        status,
+                        payment_method,
+                        email,
+                        subtotal,
+                        shipping,
+                        discount,
+                        payment_status
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        session.get("user_id"),
+                        customer_name,
+                        phone,
+                        address,
+                        total,
+                        "Pending",
+                        "RAZORPAY",
+                        email,
+                        subtotal,
+                        shipping,
+                        0,
+                        "Pending"
+                    )
+                )
 
-        shipping_charge = 0
+                order_id = cursor.lastrowid
 
-    total = round(
-        subtotal
-        + shipping_charge,
-        2
-    )
+                for product, quantity in checkout_items:
 
-    user = None
+                    conn.execute(
+                        """
+                        INSERT INTO order_items
+                        (
+                            order_id,
+                            product_id,
+                            product_name,
+                            price,
+                            quantity
+                        )
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (
+                            order_id,
+                            product["id"],
+                            product["name"],
+                            product["price"],
+                            quantity
+                        )
+                    )
 
-    if session.get(
-        "user_id"
-    ):
+                conn.commit()
+
+            except Exception:
+
+                conn.rollback()
+
+                conn.close()
+
+                flash(
+                    "Unable to create payment order."
+                )
+
+                return redirect(
+                    url_for("checkout")
+                )
+
+            conn.close()
+
+            return render_template(
+                "checkout.html",
+                products=products_list,
+                subtotal=subtotal,
+                shipping=shipping,
+                total=total,
+                razorpay_order_required=True,
+                pending_order_id=order_id,
+                razorpay_key_id=RAZORPAY_KEY_ID
+            )
+
+        # --------------------------------------------------
+        # COD / UPI
+        # --------------------------------------------------
 
         conn = get_db()
 
-        user = conn.execute(
-            """
-            SELECT *
-            FROM users
-            WHERE id = ?
-            """,
-            (
-                session[
-                    "user_id"
-                ],
+        try:
+
+            cursor = conn.execute(
+                """
+                INSERT INTO orders
+                (
+                    user_id,
+                    customer_name,
+                    phone,
+                    address,
+                    total,
+                    status,
+                    payment_method,
+                    email,
+                    subtotal,
+                    shipping,
+                    discount,
+                    payment_status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    session.get("user_id"),
+                    customer_name,
+                    phone,
+                    address,
+                    total,
+                    "Pending",
+                    payment_method,
+                    email,
+                    subtotal,
+                    shipping,
+                    0,
+                    "Pending"
+                )
             )
-        ).fetchone()
+
+            order_id = cursor.lastrowid
+
+            for product, quantity in checkout_items:
+
+                conn.execute(
+                    """
+                    INSERT INTO order_items
+                    (
+                        order_id,
+                        product_id,
+                        product_name,
+                        price,
+                        quantity
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        order_id,
+                        product["id"],
+                        product["name"],
+                        product["price"],
+                        quantity
+                    )
+                )
+
+                conn.execute(
+                    """
+                    UPDATE products
+                    SET stock = MAX(
+                        stock - ?,
+                        0
+                    )
+                    WHERE id = ?
+                    """,
+                    (
+                        quantity,
+                        product["id"]
+                    )
+                )
+
+            conn.commit()
+
+        except Exception:
+
+            conn.rollback()
+
+            conn.close()
+
+            flash(
+                "Unable to create your order."
+            )
+
+            return redirect(
+                url_for("checkout")
+            )
 
         conn.close()
 
+        session["cart"] = {}
+
+        session.modified = True
+
+        return redirect(
+            url_for(
+                "order_success",
+                order_id=order_id
+            )
+        )
+
     return render_template(
         "checkout.html",
-        items=items,
+        products=products_list,
         subtotal=subtotal,
-        shipping_charge=shipping_charge,
+        shipping=shipping,
         total=total,
-        user=user,
-        settings=settings
+        razorpay_key_id=RAZORPAY_KEY_ID,
+        razorpay_order_required=False,
+        pending_order_id=None
     )
 
 
 # ==========================================================
-# CREATE ORDER
+# RAZORPAY CREATE ORDER
 # ==========================================================
 
 @app.route(
-    "/create-order",
+    "/api/payment/create-order",
     methods=["POST"]
 )
-def create_order():
+def create_razorpay_order():
 
-    items = cart_items()
+    client = get_razorpay_client()
 
-    if not items:
-
-        return jsonify(
-            {
-                "success": False,
-                "message": (
-                    "Your cart is empty."
-                )
-            }
-        ), 400
-
-    name = request.form.get(
-        "name",
-        ""
-    ).strip()
-
-    email = request.form.get(
-        "email",
-        ""
-    ).strip()
-
-    phone = request.form.get(
-        "phone",
-        ""
-    ).strip()
-
-    address = request.form.get(
-        "address",
-        ""
-    ).strip()
-
-    city = request.form.get(
-        "city",
-        ""
-    ).strip()
-
-    pincode = request.form.get(
-        "pincode",
-        ""
-    ).strip()
-
-    payment_method = request.form.get(
-        "payment_method",
-        "cod"
-    ).strip().lower()
-
-    if not name:
+    if not client:
 
         return jsonify(
             {
                 "success": False,
-                "message": (
-                    "Name is required."
-                )
+                "message": "Razorpay is not configured."
             }
-        ), 400
+        ), 503
 
-    if not phone:
+    data = request.get_json(
+        silent=True
+    ) or {}
 
-        return jsonify(
-            {
-                "success": False,
-                "message": (
-                    "Phone number is required."
-                )
-            }
-        ), 400
+    try:
 
-    settings = get_settings()
-
-    subtotal = cart_total()
-
-    shipping_charge = float(
-        settings["shipping_charge"]
-        or 0
-    )
-
-    free_shipping = float(
-        settings["free_shipping"]
-        or 0
-    )
-
-    if (
-        free_shipping > 0
-        and subtotal >= free_shipping
-    ):
-
-        shipping_charge = 0
-
-    total = round(
-        subtotal
-        + shipping_charge,
-        2
-    )
-
-    if (
-        payment_method == "cod"
-        and settings["cod"] != "enabled"
-    ):
-
-        return jsonify(
-            {
-                "success": False,
-                "message": (
-                    "Cash on Delivery is disabled."
-                )
-            }
-        ), 400
-
-    if (
-        payment_method in (
-            "upi",
-            "razorpay"
+        order_id = int(
+            data.get(
+                "order_id"
+            )
         )
-        and settings["upi"] != "enabled"
+
+    except (
+        ValueError,
+        TypeError
     ):
 
         return jsonify(
             {
                 "success": False,
-                "message": (
-                    "Online payment is disabled."
-                )
+                "message": "Invalid order ID."
             }
         ), 400
 
     conn = get_db()
 
-    user_id = session.get(
-        "user_id"
-    )
+    order = conn.execute(
+        """
+        SELECT *
+        FROM orders
+        WHERE id = ?
+        """,
+        (order_id,)
+    ).fetchone()
 
-    payment_status = (
-        "Pending"
-        if payment_method
-        in (
-            "upi",
-            "razorpay"
+    conn.close()
+
+    if order is None:
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Order not found."
+            }
+        ), 404
+
+    if (
+        session.get("user_id")
+        and order["user_id"] is not None
+        and int(order["user_id"])
+        != int(session["user_id"])
+    ):
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Unauthorized."
+            }
+        ), 403
+
+    amount_paise = int(
+        round(
+            float(order["total"] or 0)
+            * 100
         )
-        else "Pending"
     )
 
-    order_status = (
-        "Pending"
-    )
+    if amount_paise <= 0:
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Invalid payment amount."
+            }
+        ), 400
+
+    try:
+
+        razorpay_order = client.order.create(
+            {
+                "amount": amount_paise,
+                "currency": "INR",
+                "receipt": f"order_{order_id}",
+                "notes": {
+                    "website_order_id": str(
+                        order_id
+                    )
+                }
+            }
+        )
+
+    except Exception:
+
+        app.logger.exception(
+            "Razorpay order creation failed"
+        )
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Unable to create payment order."
+            }
+        ), 500
+
+    conn = get_db()
 
     conn.execute(
         """
-        INSERT INTO orders (
-            user_id,
-            name,
-            email,
-            phone,
-            address,
-            city,
-            pincode,
-            total,
-            payment_method,
-            payment_status,
-            status,
-            created_at
-        )
-        VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?
-        )
+        UPDATE orders
+        SET razorpay_order_id = ?
+        WHERE id = ?
         """,
         (
-            user_id,
-            name,
-            email,
-            phone,
-            address,
-            city,
-            pincode,
-            total,
-            payment_method,
-            payment_status,
-            order_status,
-            now_string()
+            razorpay_order["id"],
+            order_id
         )
     )
-
-    order_id = conn.execute(
-        """
-        SELECT last_insert_rowid()
-        """
-    ).fetchone()[0]
-
-    for item in items:
-
-        product = item[
-            "product"
-        ]
-
-        quantity = item[
-            "quantity"
-        ]
-
-        price = float(
-            product["price"]
-            or 0
-        )
-
-        conn.execute(
-            """
-            INSERT INTO order_items (
-                order_id,
-                product_id,
-                quantity,
-                price
-            )
-            VALUES (
-                ?, ?, ?, ?
-            )
-            """,
-            (
-                order_id,
-                product["id"],
-                quantity,
-                price
-            )
-        )
-
-        if int(
-            product["stock"]
-            or 0
-        ) > 0:
-
-            conn.execute(
-                """
-                UPDATE products
-                SET stock =
-                    CASE
-                        WHEN stock >= ?
-                        THEN stock - ?
-                        ELSE 0
-                    END
-                WHERE id = ?
-                """,
-                (
-                    quantity,
-                    quantity,
-                    product["id"]
-                )
-            )
 
     conn.commit()
 
     conn.close()
 
-    # Send customer + admin notification.
-    # Notification failure never cancels
-    # the order.
-    notify_order_whatsapp(
-        order_id,
-        include_customer=True,
-        include_admin=True,
-        status=order_status
-    )
-
-    if payment_method in (
-        "upi",
-        "razorpay"
-    ):
-
-        client = (
-            get_razorpay_client()
-        )
-
-        if client is None:
-
-            return jsonify(
-                {
-                    "success": False,
-                    "message": (
-                        "Razorpay is not configured."
-                    ),
-                    "order_id": order_id
-                }
-            ), 500
-
-        try:
-
-            razorpay_order = (
-                client.order.create(
-                    {
-                        "amount": int(
-                            round(
-                                total * 100
-                            )
-                        ),
-                        "currency": "INR",
-                        "receipt": (
-                            f"order_{order_id}"
-                        ),
-                        "notes": {
-                            "order_id": str(
-                                order_id
-                            )
-                        }
-                    }
-                )
-            )
-
-            conn = get_db()
-
-            conn.execute(
-                """
-                UPDATE orders
-                SET razorpay_order_id = ?
-                WHERE id = ?
-                """,
-                (
-                    razorpay_order["id"],
-                    order_id
-                )
-            )
-
-            conn.commit()
-
-            conn.close()
-
-            return jsonify(
-                {
-                    "success": True,
-                    "payment_required": True,
-                    "order_id": order_id,
-                    "razorpay_order_id": (
-                        razorpay_order["id"]
-                    ),
-                    "amount": int(
-                        round(
-                            total * 100
-                        )
-                    ),
-                    "key_id": (
-                        RAZORPAY_KEY_ID
-                    )
-                }
-            )
-
-        except Exception as error:
-
-            app.logger.exception(
-                "Razorpay order creation failed"
-            )
-
-            return jsonify(
-                {
-                    "success": False,
-                    "message": (
-                        "Unable to create "
-                        "payment order."
-                    ),
-                    "error": str(
-                        error
-                    ),
-                    "order_id": order_id
-                }
-            ), 500
-
-    clear_cart()
-
     return jsonify(
         {
             "success": True,
-            "payment_required": False,
-            "order_id": order_id,
-            "redirect": url_for(
-                "order_success",
-                order_id=order_id
-            )
+            "order_id": razorpay_order["id"],
+            "website_order_id": order_id,
+            "amount": amount_paise,
+            "currency": "INR",
+            "key_id": RAZORPAY_KEY_ID
         }
     )
 
 
 # ==========================================================
-# RAZORPAY VERIFY
+# RAZORPAY VERIFY PAYMENT
 # ==========================================================
 
 @app.route(
-    "/razorpay/verify",
+    "/api/payment/verify",
     methods=["POST"]
 )
-def razorpay_verify():
+def verify_razorpay_payment():
+
+    if not RAZORPAY_KEY_SECRET:
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Payment gateway not configured."
+            }
+        ), 503
 
     data = request.get_json(
         silent=True
-    ) or request.form
+    ) or {}
 
-    order_id = data.get(
-        "order_id"
+    website_order_id = data.get(
+        "website_order_id"
     )
 
     razorpay_order_id = data.get(
@@ -2694,63 +2784,37 @@ def razorpay_verify():
         "razorpay_signature"
     )
 
-    if not all([
-        order_id,
-        razorpay_order_id,
-        razorpay_payment_id,
-        razorpay_signature
-    ]):
+    if not all(
+        [
+            website_order_id,
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature
+        ]
+    ):
 
         return jsonify(
             {
                 "success": False,
-                "message": (
-                    "Missing payment details."
-                )
+                "message": "Incomplete payment data."
             }
         ), 400
 
-    client = get_razorpay_client()
-
-    if client is None:
-
-        return jsonify(
-            {
-                "success": False,
-                "message": (
-                    "Razorpay is not configured."
-                )
-            }
-        ), 500
-
     try:
 
-        client.utility.verify_payment_signature(
-            {
-                "razorpay_order_id": (
-                    razorpay_order_id
-                ),
-                "razorpay_payment_id": (
-                    razorpay_payment_id
-                ),
-                "razorpay_signature": (
-                    razorpay_signature
-                )
-            }
+        website_order_id = int(
+            website_order_id
         )
 
-    except Exception:
-
-        app.logger.exception(
-            "Razorpay signature verification failed"
-        )
+    except (
+        ValueError,
+        TypeError
+    ):
 
         return jsonify(
             {
                 "success": False,
-                "message": (
-                    "Payment verification failed."
-                )
+                "message": "Invalid order ID."
             }
         ), 400
 
@@ -2762,7 +2826,7 @@ def razorpay_verify():
         FROM orders
         WHERE id = ?
         """,
-        (order_id,)
+        (website_order_id,)
     ).fetchone()
 
     if order is None:
@@ -2772,51 +2836,192 @@ def razorpay_verify():
         return jsonify(
             {
                 "success": False,
-                "message": (
-                    "Order not found."
-                )
+                "message": "Order not found."
             }
         ), 404
+
+    if (
+        order["razorpay_order_id"]
+        and order["razorpay_order_id"]
+        != razorpay_order_id
+    ):
+
+        conn.close()
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Payment order mismatch."
+            }
+        ), 400
+
+    message = (
+        str(razorpay_order_id)
+        + "|"
+        + str(razorpay_payment_id)
+    )
+
+    expected_signature = hmac.new(
+        RAZORPAY_KEY_SECRET.encode(
+            "utf-8"
+        ),
+        message.encode(
+            "utf-8"
+        ),
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(
+        expected_signature,
+        str(razorpay_signature)
+    ):
+
+        conn.close()
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Invalid payment signature."
+            }
+        ), 400
+
+    if order["payment_status"] == "Paid":
+
+        conn.close()
+
+        session["cart"] = {}
+
+        session.modified = True
+
+        return jsonify(
+            {
+                "success": True,
+                "message": "Payment already verified.",
+                "order_id": website_order_id,
+                "redirect_url": url_for(
+                    "order_success",
+                    order_id=website_order_id
+                )
+            }
+        )
 
     conn.execute(
         """
         UPDATE orders
         SET
-            razorpay_order_id = ?,
-            razorpay_payment_id = ?,
             payment_status = 'Paid',
-            status = 'Confirmed'
+            status = 'Confirmed',
+            razorpay_payment_id = ?,
+            razorpay_signature = ?,
+            razorpay_order_id = ?
         WHERE id = ?
         """,
         (
-            razorpay_order_id,
             razorpay_payment_id,
-            order_id
+            razorpay_signature,
+            razorpay_order_id,
+            website_order_id
         )
+    )
+
+    items = conn.execute(
+        """
+        SELECT product_id, quantity
+        FROM order_items
+        WHERE order_id = ?
+        """,
+        (website_order_id,)
+    ).fetchall()
+
+    for item in items:
+
+        conn.execute(
+            """
+            UPDATE products
+            SET stock = MAX(
+                stock - ?,
+                0
+            )
+            WHERE id = ?
+            """,
+            (
+                item["quantity"],
+                item["product_id"]
+            )
+        )
+
+    conn.commit()
+
+    conn.close()
+
+    session["cart"] = {}
+
+    session.modified = True
+
+    return jsonify(
+        {
+            "success": True,
+            "message": "Payment verified successfully.",
+            "order_id": website_order_id,
+            "redirect_url": url_for(
+                "order_success",
+                order_id=website_order_id
+            )
+        }
+    )
+
+
+# ==========================================================
+# RAZORPAY PAYMENT FAILURE
+# ==========================================================
+
+@app.route(
+    "/api/payment/failed",
+    methods=["POST"]
+)
+def razorpay_payment_failed():
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    try:
+
+        order_id = int(
+            data.get(
+                "website_order_id"
+            )
+        )
+
+    except (
+        ValueError,
+        TypeError
+    ):
+
+        return jsonify(
+            {
+                "success": False
+            }
+        ), 400
+
+    conn = get_db()
+
+    conn.execute(
+        """
+        UPDATE orders
+        SET payment_status = 'Failed'
+        WHERE id = ?
+        """,
+        (order_id,)
     )
 
     conn.commit()
 
     conn.close()
 
-    clear_cart()
-
-    # Notify customer that payment/order
-    # is confirmed.
-    notify_order_whatsapp(
-        order_id,
-        include_customer=True,
-        include_admin=True,
-        status="Confirmed"
-    )
-
     return jsonify(
         {
-            "success": True,
-            "redirect": url_for(
-                "order_success",
-                order_id=order_id
-            )
+            "success": True
         }
     )
 
@@ -2828,9 +3033,7 @@ def razorpay_verify():
 @app.route(
     "/order-success/<int:order_id>"
 )
-def order_success(
-    order_id
-):
+def order_success(order_id):
 
     conn = get_db()
 
@@ -2843,44 +3046,28 @@ def order_success(
         (order_id,)
     ).fetchone()
 
-    items = conn.execute(
-        """
-        SELECT
-            order_items.*,
-            products.name AS product_name,
-            products.image AS product_image
-        FROM order_items
-        LEFT JOIN products
-            ON products.id =
-               order_items.product_id
-        WHERE order_items.order_id = ?
-        ORDER BY order_items.id
-        """,
-        (order_id,)
-    ).fetchall()
-
     conn.close()
 
     if order is None:
 
-        return render_template(
-            "404.html"
-        ), 404
+        return "Order not found", 404
 
     return render_template(
         "order_success.html",
-        order=order,
-        items=items
+        order_id=order_id,
+        order=order
     )
 
 
 # ==========================================================
-# MY ORDERS
+# CUSTOMER ORDERS
 # ==========================================================
 
-@app.route("/orders")
-@user_required
-def my_orders():
+@app.route(
+    "/orders"
+)
+@login_required
+def orders():
 
     user_id = session.get(
         "user_id"
@@ -2909,9 +3096,12 @@ def my_orders():
 @app.route(
     "/order/<int:order_id>"
 )
-def order_detail(
-    order_id
-):
+@login_required
+def order_detail(order_id):
+
+    user_id = session.get(
+        "user_id"
+    )
 
     conn = get_db()
 
@@ -2920,50 +3110,22 @@ def order_detail(
         SELECT *
         FROM orders
         WHERE id = ?
+        AND user_id = ?
         """,
-        (order_id,)
+        (
+            order_id,
+            user_id
+        )
     ).fetchone()
-
-    if order is None:
-
-        conn.close()
-
-        return render_template(
-            "404.html"
-        ), 404
-
-    user_id = session.get(
-        "user_id"
-    )
-
-    if (
-        not session.get(
-            "admin_logged_in"
-        )
-        and (
-            not user_id
-            or order["user_id"]
-            != user_id
-        )
-    ):
-
-        conn.close()
-
-        return (
-            "Unauthorized",
-            403
-        )
 
     items = conn.execute(
         """
         SELECT
             order_items.*,
-            products.name AS product_name,
             products.image AS product_image
         FROM order_items
         LEFT JOIN products
-            ON products.id =
-               order_items.product_id
+            ON products.id = order_items.product_id
         WHERE order_items.order_id = ?
         ORDER BY order_items.id
         """,
@@ -2971,6 +3133,10 @@ def order_detail(
     ).fetchall()
 
     conn.close()
+
+    if order is None:
+
+        return "Order not found", 404
 
     return render_template(
         "order_detail.html",
@@ -2980,40 +3146,39 @@ def order_detail(
 
 
 # ==========================================================
-# REVIEW
+# REVIEWS
 # ==========================================================
 
 @app.route(
-    "/review/<int:product_id>",
+    "/product/<int:product_id>/review",
     methods=["POST"]
 )
-@user_required
-def add_review(
-    product_id
-):
+def add_review(product_id):
 
-    user_id = session.get(
-        "user_id"
-    )
+    name = request.form.get(
+        "name",
+        "Customer"
+    ).strip()
 
-    rating = request.form.get(
-        "rating",
-        5
-    )
-
-    comment = request.form.get(
-        "comment",
+    message = request.form.get(
+        "message",
         ""
     ).strip()
 
     try:
+
         rating = int(
-            rating
+            request.form.get(
+                "rating",
+                5
+            )
         )
+
     except (
-        TypeError,
-        ValueError
+        ValueError,
+        TypeError
     ):
+
         rating = 5
 
     rating = max(
@@ -3024,58 +3189,43 @@ def add_review(
         )
     )
 
-    conn = get_db()
+    if name and message:
 
-    user = conn.execute(
-        """
-        SELECT name
-        FROM users
-        WHERE id = ?
-        """,
-        (user_id,)
-    ).fetchone()
+        conn = get_db()
 
-    if user is None:
+        product = conn.execute(
+            """
+            SELECT id
+            FROM products
+            WHERE id = ?
+            """,
+            (product_id,)
+        ).fetchone()
+
+        if product:
+
+            conn.execute(
+                """
+                INSERT INTO reviews
+                (
+                    product_id,
+                    name,
+                    rating,
+                    message
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    product_id,
+                    name,
+                    rating,
+                    message
+                )
+            )
+
+            conn.commit()
 
         conn.close()
-
-        return redirect(
-            url_for(
-                "login"
-            )
-        )
-
-    conn.execute(
-        """
-        INSERT INTO reviews (
-            product_id,
-            user_id,
-            name,
-            rating,
-            comment,
-            created_at
-        )
-        VALUES (
-            ?, ?, ?, ?, ?, ?
-        )
-        """,
-        (
-            product_id,
-            user_id,
-            user["name"],
-            rating,
-            comment,
-            now_string()
-        )
-    )
-
-    conn.commit()
-
-    conn.close()
-
-    flash(
-        "Review submitted successfully."
-    )
 
     return redirect(
         url_for(
@@ -3086,14 +3236,60 @@ def add_review(
 
 
 # ==========================================================
+# CONTACT / ABOUT / FAQ
+# ==========================================================
+
+@app.route(
+    "/contact"
+)
+def contact():
+
+    return render_template(
+        "contact.html"
+    )
+
+
+@app.route(
+    "/about"
+)
+def about():
+
+    return render_template(
+        "about.html"
+    )
+
+
+@app.route(
+    "/faq"
+)
+def faq():
+
+    return render_template(
+        "faq.html"
+    )
+
+
+# ==========================================================
 # ADMIN LOGIN
 # ==========================================================
 
+@app.route(
+    "/admin",
+    methods=["GET", "POST"]
+)
 @app.route(
     "/admin/login",
     methods=["GET", "POST"]
 )
 def admin_login():
+
+    if session.get(
+        "admin_logged_in"
+    ):
+
+        return redirect(
+            url_for("admin_dashboard")
+        )
 
     if request.method == "POST":
 
@@ -3112,28 +3308,23 @@ def admin_login():
                 username,
                 ADMIN_USERNAME
             )
-            and hmac.compare_digest(
+            and
+            hmac.compare_digest(
                 password,
                 ADMIN_PASSWORD
             )
         ):
 
-            session[
-                "admin_logged_in"
-            ] = True
+            session.clear()
 
-            flash(
-                "Admin login successful."
-            )
+            session["admin_logged_in"] = True
 
             return redirect(
-                url_for(
-                    "admin_dashboard"
-                )
+                url_for("admin_dashboard")
             )
 
         flash(
-            "Invalid admin credentials."
+            "Invalid admin username or password."
         )
 
     return render_template(
@@ -3146,19 +3337,10 @@ def admin_login():
 )
 def admin_logout():
 
-    session.pop(
-        "admin_logged_in",
-        None
-    )
-
-    flash(
-        "Admin logged out."
-    )
+    session.clear()
 
     return redirect(
-        url_for(
-            "admin_login"
-        )
+        url_for("admin_login")
     )
 
 
@@ -3167,7 +3349,7 @@ def admin_logout():
 # ==========================================================
 
 @app.route(
-    "/admin"
+    "/admin/dashboard"
 )
 @admin_required
 def admin_dashboard():
@@ -3222,6 +3404,14 @@ def admin_dashboard():
         """
     ).fetchall()
 
+    products_list = conn.execute(
+        """
+        SELECT *
+        FROM products
+        ORDER BY id DESC
+        """
+    ).fetchall()
+
     conn.close()
 
     return render_template(
@@ -3231,9 +3421,17 @@ def admin_dashboard():
         users_count=users_count,
         reviews_count=reviews_count,
         total_sales=total_sales,
-        recent_orders=recent_orders
+        recent_orders=recent_orders,
+        products=products_list,
+        orders=recent_orders,
+        total_products=products_count,
+        total_orders=orders_count,
+        total_customers=users_count,
+        total_users=users_count
     )
-    # ==========================================================
+
+
+# ==========================================================
 # ADMIN PRODUCTS
 # ==========================================================
 
@@ -3414,13 +3612,55 @@ def admin_add_product():
         else 0
     )
 
-    image_files = [
-        request.files.get("image"),
-        request.files.get("image2"),
-        request.files.get("image3"),
-        request.files.get("image4"),
-        request.files.get("image5")
+    # Support both:
+    # 1) Separate inputs image/image2/.../image5
+    # 2) One multiple input named images
+
+    image_files = []
+
+    multiple_files = request.files.getlist(
+        "images"
+    )
+
+    if multiple_files:
+
+        for image_file in multiple_files:
+
+            if (
+                image_file
+                and image_file.filename
+            ):
+
+                image_files.append(
+                    image_file
+                )
+
+    separate_names = [
+        "image",
+        "image2",
+        "image3",
+        "image4",
+        "image5"
     ]
+
+    for field_name in separate_names:
+
+        image_file = request.files.get(
+            field_name
+        )
+
+        if (
+            image_file
+            and image_file.filename
+        ):
+
+            if len(image_files) < 5:
+
+                image_files.append(
+                    image_file
+                )
+
+    image_files = image_files[:5]
 
     saved_images = []
 
@@ -3428,20 +3668,15 @@ def admin_add_product():
 
         for image_file in image_files:
 
-            if (
+            saved_image = save_product_image(
                 image_file
-                and image_file.filename
-            ):
+            )
 
-                saved_image = save_product_image(
-                    image_file
+            if saved_image:
+
+                saved_images.append(
+                    saved_image
                 )
-
-                if saved_image:
-
-                    saved_images.append(
-                        saved_image
-                    )
 
     except ValueError as error:
 
@@ -3605,6 +3840,10 @@ def admin_add_product():
                 video
             )
 
+        app.logger.exception(
+            "Unable to add product"
+        )
+
         flash(
             "Unable to add product."
         )
@@ -3765,7 +4004,13 @@ def admin_edit_product(product_id):
             old_images
         )
 
-        new_image_files = [
+        # Multiple "images" field
+        multiple_files = request.files.getlist(
+            "images"
+        )
+
+        # Separate fields
+        separate_files = [
             request.files.get("image"),
             request.files.get("image2"),
             request.files.get("image3"),
@@ -3773,34 +4018,82 @@ def admin_edit_product(product_id):
             request.files.get("image5")
         ]
 
+        # Prefer explicit separate inputs when used.
+        supplied_files = []
+
+        has_separate = any(
+            file
+            and file.filename
+            for file in separate_files
+        )
+
+        if has_separate:
+
+            supplied_files = separate_files
+
+        elif multiple_files:
+
+            supplied_files = multiple_files[:5]
+
         new_images = []
 
         try:
 
-            for index, image_file in enumerate(
-                new_image_files
-            ):
+            if has_separate:
 
-                if (
-                    image_file
-                    and image_file.filename
+                for index, image_file in enumerate(
+                    supplied_files
                 ):
 
-                    saved_image = save_product_image(
+                    if (
                         image_file
-                    )
+                        and image_file.filename
+                    ):
 
-                    new_images.append(
-                        saved_image
-                    )
+                        saved_image = save_product_image(
+                            image_file
+                        )
+
+                        new_images.append(
+                            saved_image
+                        )
+
+                        all_images[index] = (
+                            saved_image
+                        )
+
+                    else:
+
+                        new_images.append("")
+
+            else:
+
+                valid_new_images = []
+
+                for image_file in supplied_files:
+
+                    if (
+                        image_file
+                        and image_file.filename
+                    ):
+
+                        saved_image = save_product_image(
+                            image_file
+                        )
+
+                        valid_new_images.append(
+                            saved_image
+                        )
+
+                new_images = valid_new_images
+
+                for index, saved_image in enumerate(
+                    valid_new_images[:5]
+                ):
 
                     all_images[index] = (
                         saved_image
                     )
-
-                else:
-
-                    new_images.append("")
 
         except ValueError as error:
 
@@ -3940,6 +4233,18 @@ def admin_edit_product(product_id):
                         new_image
                     )
 
+            if video != (
+                product["video"] or ""
+            ):
+
+                delete_product_video(
+                    video
+                )
+
+            app.logger.exception(
+                "Unable to update product"
+            )
+
             flash(
                 "Unable to update product."
             )
@@ -4028,19 +4333,23 @@ def admin_delete_product(product_id):
 
     if product["images"]:
 
-        for img in product[
-            "images"
-        ].split("|"):
-
-            if img:
-
-                image_names.append(
-                    img
-                )
+        image_names.extend(
+            [
+                img
+                for img in product[
+                    "images"
+                ].split("|")
+                if img
+            ]
+        )
 
     image_names = list(
         dict.fromkeys(
-            image_names
+            [
+                image
+                for image in image_names
+                if image
+            ]
         )
     )
 
@@ -4141,9 +4450,7 @@ def admin_orders():
     "/admin/order/<int:order_id>"
 )
 @admin_required
-def admin_order_detail(
-    order_id
-):
+def admin_order_detail(order_id):
 
     conn = get_db()
 
@@ -4194,9 +4501,7 @@ def admin_order_detail(
     methods=["POST"]
 )
 @admin_required
-def admin_update_order(
-    order_id
-):
+def admin_update_order(order_id):
 
     status = request.form.get(
         "status",
@@ -4254,13 +4559,6 @@ def admin_update_order(
     conn.commit()
 
     conn.close()
-
-    notify_order_whatsapp(
-        order_id,
-        include_customer=True,
-        include_admin=True,
-        status=status
-    )
 
     flash(
         "Order updated successfully."
@@ -4346,9 +4644,7 @@ def admin_reviews():
     methods=["POST", "GET"]
 )
 @admin_required
-def admin_delete_review(
-    review_id
-):
+def admin_delete_review(review_id):
 
     conn = get_db()
 
@@ -4572,7 +4868,9 @@ def admin_settings():
         "admin_settings.html",
         settings=settings
     )
-    # ==========================================================
+
+
+# ==========================================================
 # API - CART COUNT
 # ==========================================================
 
@@ -4700,11 +4998,33 @@ def api_image_url():
 )
 def health():
 
-    return jsonify(
-        {
-            "status": "ok"
-        }
-    )
+    try:
+
+        conn = get_db()
+
+        conn.execute(
+            "SELECT 1"
+        ).fetchone()
+
+        conn.close()
+
+        return jsonify(
+            {
+                "status": "ok"
+            }
+        )
+
+    except Exception:
+
+        app.logger.exception(
+            "Health check failed"
+        )
+
+        return jsonify(
+            {
+                "status": "error"
+            }
+        ), 500
 
 
 # ==========================================================
@@ -4742,9 +5062,15 @@ def favicon():
 )
 def page_not_found(error):
 
-    return render_template(
-        "404.html"
-    ), 404
+    try:
+
+        return render_template(
+            "404.html"
+        ), 404
+
+    except Exception:
+
+        return "Page not found", 404
 
 
 @app.errorhandler(
@@ -4769,9 +5095,16 @@ def file_too_large(error):
 )
 def internal_server_error(error):
 
-    return render_template(
-        "500.html"
-    ), 500
+    app.logger.exception(
+        "Internal Server Error"
+    )
+
+    # Never render a missing 500.html here.
+    # Otherwise the error handler itself can crash.
+    return (
+        "Internal Server Error",
+        500
+    )
 
 
 # ==========================================================
