@@ -4573,11 +4573,14 @@ def admin_update_order(order_id):
 
 
 # ==========================================================
-# ADMIN USERS
+# ADMIN USERS / CUSTOMERS
 # ==========================================================
 
 @app.route(
     "/admin/users"
+)
+@app.route(
+    "/admin/customers"
 )
 @admin_required
 def admin_users():
