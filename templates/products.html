@@ -178,7 +178,9 @@
             border-color: #211d18;
         }
 
-        /* PRODUCTS */
+        /* ==================================================
+           PRODUCTS
+        ================================================== */
 
         .products {
             display: grid;
@@ -205,39 +207,29 @@
             position: relative;
             background: #eee7da;
             overflow: hidden;
-            width: 100%;
-            aspect-ratio: 1 / 1;
         }
 
-        /*
-         * IMPORTANT IMAGE FIX
-         *
-         * Flask static folder:
-         * static/images/
-         *
-         * Database image value:
-         * example.jpg
-         *
-         * Final URL:
-         * /static/images/example.jpg
-         */
+        .main-image-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: #eee7da;
+        }
 
         .product-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
-            background: #eee7da;
             transition: transform .55s ease;
+            background: #eee7da;
         }
 
-        .product:hover .product-image {
+        .product:hover .main-image-wrap .product-image {
             transform: scale(1.045);
         }
 
         .image-placeholder {
-            position: absolute;
-            inset: 0;
             width: 100%;
             height: 100%;
             display: flex;
@@ -246,15 +238,61 @@
             background: #eee7da;
             color: #8c806d;
             font: 13px Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
         }
+
+        /* ==================================================
+           PHOTO THUMBNAILS
+        ================================================== */
+
+        .photo-thumbnails {
+            display: flex;
+            gap: 7px;
+            padding: 9px;
+            background: #fff;
+            border-top: 1px solid #eee5d9;
+            overflow-x: auto;
+        }
+
+        .photo-thumb {
+            width: 52px;
+            height: 52px;
+            min-width: 52px;
+            padding: 0;
+            border: 1px solid #d8cdbd;
+            border-radius: 4px;
+            background: #eee7da;
+            overflow: hidden;
+            cursor: pointer;
+            opacity: .72;
+            transition: .2s ease;
+        }
+
+        .photo-thumb:hover {
+            opacity: 1;
+            border-color: #9b7127;
+        }
+
+        .photo-thumb.active {
+            opacity: 1;
+            border: 2px solid #9b7127;
+        }
+
+        .photo-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* ==================================================
+           BADGES
+        ================================================== */
 
         .sale-badge {
             position: absolute;
             top: 12px;
             left: 12px;
-            z-index: 3;
+            z-index: 5;
             background: #b3342f;
             color: #fff;
             padding: 7px 9px;
@@ -265,12 +303,28 @@
             position: absolute;
             right: 12px;
             top: 12px;
-            z-index: 3;
+            z-index: 5;
             background: rgba(33, 29, 24, .9);
             color: #f4d58d;
             padding: 7px 9px;
             font: 11px Arial, sans-serif;
         }
+
+        .photo-count-badge {
+            position: absolute;
+            left: 12px;
+            bottom: 12px;
+            z-index: 5;
+            background: rgba(33, 29, 24, .88);
+            color: #f4d58d;
+            padding: 6px 9px;
+            border-radius: 4px;
+            font: bold 10px Arial, sans-serif;
+        }
+
+        /* ==================================================
+           PRODUCT INFO
+        ================================================== */
 
         .product-info {
             padding: 17px;
@@ -346,7 +400,9 @@
             font: 14px Arial, sans-serif;
         }
 
-        /* FOOTER */
+        /* ==================================================
+           FOOTER
+        ================================================== */
 
         footer {
             background: #15120f;
@@ -432,7 +488,12 @@
             }
         }
 
+        /* ==================================================
+           RESPONSIVE
+        ================================================== */
+
         @media (max-width: 1000px) {
+
             .products {
                 grid-template-columns: repeat(3, 1fr);
             }
@@ -443,6 +504,7 @@
         }
 
         @media (max-width: 760px) {
+
             nav {
                 display: none;
             }
@@ -461,6 +523,7 @@
         }
 
         @media (max-width: 520px) {
+
             .products {
                 grid-template-columns: 1fr;
             }
@@ -477,6 +540,12 @@
                 font-size: 12px;
                 gap: 9px;
             }
+
+            .photo-thumb {
+                width: 48px;
+                height: 48px;
+                min-width: 48px;
+            }
         }
     </style>
 </head>
@@ -491,17 +560,42 @@
 
     <nav>
         <a href="/">Home</a>
-        <a href="/products">Shop</a>
-        <a href="/products?category=Earrings">Earrings</a>
-        <a href="/products?category=Necklaces">Necklaces</a>
-        <a href="/products?category=Rings">Rings</a>
-        <a href="/contact">Contact</a>
+
+        <a href="/products">
+            Shop
+        </a>
+
+        <a href="/products?category=Earrings">
+            Earrings
+        </a>
+
+        <a href="/products?category=Necklaces">
+            Necklaces
+        </a>
+
+        <a href="/products?category=Rings">
+            Rings
+        </a>
+
+        <a href="/contact">
+            Contact
+        </a>
     </nav>
 
     <div class="actions">
-        <a href="/wishlist">♡</a>
-        <a href="/cart">🛒 {{ cart_count }}</a>
-        <a href="/login">Account</a>
+
+        <a href="/wishlist">
+            ♡
+        </a>
+
+        <a href="/cart">
+            🛒 {{ cart_count }}
+        </a>
+
+        <a href="/login">
+            Account
+        </a>
+
     </div>
 
 </header>
@@ -509,9 +603,15 @@
 
 <main class="page">
 
+    <!-- ==================================================
+         PAGE HEADING
+    ================================================== -->
+
     <section class="page-head">
 
-        <small>Our Collection</small>
+        <small>
+            Our Collection
+        </small>
 
         <h1>
             Shop Jewellery
@@ -524,7 +624,9 @@
     </section>
 
 
-    <!-- SEARCH + FILTERS -->
+    <!-- ==================================================
+         SEARCH + FILTERS
+    ================================================== -->
 
     <section class="shop-tools">
 
@@ -542,6 +644,18 @@
                 >
 
             {% endif %}
+
+
+            {% if selected_price_max %}
+
+                <input
+                    type="hidden"
+                    name="price_max"
+                    value="{{ selected_price_max }}"
+                >
+
+            {% endif %}
+
 
             <div class="tool-row">
 
@@ -572,6 +686,7 @@
             Shop by Price
         </div>
 
+
         <div class="price-links">
 
             <a
@@ -581,12 +696,14 @@
                 All Prices
             </a>
 
+
             <a
                 href="{{ url_for('products', price_max=499, category=selected_category) if selected_category else url_for('products', price_max=499) }}"
                 class="filter-link {% if selected_price_max == 499 %}active{% endif %}"
             >
                 Under ₹499
             </a>
+
 
             <a
                 href="{{ url_for('products', price_max=999, category=selected_category) if selected_category else url_for('products', price_max=999) }}"
@@ -595,12 +712,14 @@
                 Under ₹999
             </a>
 
+
             <a
                 href="{{ url_for('products', price_max=1499, category=selected_category) if selected_category else url_for('products', price_max=1499) }}"
                 class="filter-link {% if selected_price_max == 1499 %}active{% endif %}"
             >
                 Under ₹1,499
             </a>
+
 
             <a
                 href="{{ url_for('products', price_max=2999, category=selected_category) if selected_category else url_for('products', price_max=2999) }}"
@@ -618,6 +737,7 @@
                 Shop by Category
             </div>
 
+
             <div class="category-links">
 
                 <a
@@ -631,14 +751,7 @@
                 {% for category in categories %}
 
                     <a
-                        href="{{ url_for(
-                            'products',
-                            category=category['category'],
-                            price_max=selected_price_max
-                        ) if selected_price_max else url_for(
-                            'products',
-                            category=category['category']
-                        ) }}"
+                        href="{{ url_for('products', category=category['category'], price_max=selected_price_max) if selected_price_max else url_for('products', category=category['category']) }}"
                         class="filter-link {% if selected_category == category['category'] %}active{% endif %}"
                     >
                         {{ category["category"] }}
@@ -653,7 +766,9 @@
     </section>
 
 
-    <!-- PRODUCTS -->
+    <!-- ==================================================
+         PRODUCTS
+    ================================================== -->
 
     {% if products %}
 
@@ -668,54 +783,236 @@
 
                     <div class="product-media">
 
-                        {% if product["image"] %}
+                        <!-- ==================================================
+                             MAIN IMAGE
+                        ================================================== -->
 
-                            <img
-                                class="product-image"
-                                src="{{ url_for('static', filename='images/' ~ product['image']) }}"
-                                alt="{{ product['name'] }}"
-                                loading="lazy"
-                                onerror="imageLoadError(this)"
-                            >
+                        <div class="main-image-wrap">
 
-                            <div class="image-placeholder" style="display:none;">
-                                Image Not Available
+                            {% if product["image"] %}
+
+                                <img
+                                    id="main-image-{{ product['id'] }}"
+                                    class="product-image"
+                                    src="{{ image_url(product['image']) }}"
+                                    alt="{{ product['name'] }}"
+                                    loading="lazy"
+                                    onerror="handleImageError(this)"
+                                >
+
+                                <div
+                                    id="placeholder-{{ product['id'] }}"
+                                    class="image-placeholder"
+                                    style="display:none;"
+                                >
+                                    Image Not Available
+                                </div>
+
+                            {% else %}
+
+                                <div class="image-placeholder">
+                                    No Image
+                                </div>
+
+                            {% endif %}
+
+
+                            <!-- SALE -->
+
+                            {% if product["discount"] and product["discount"] > 0 %}
+
+                                <span class="sale-badge">
+                                    {{ "%.0f"|format(product["discount"]) }}% OFF
+                                </span>
+
+                            {% elif product["old_price"] and product["old_price"] > product["price"] %}
+
+                                <span class="sale-badge">
+                                    SALE
+                                </span>
+
+                            {% endif %}
+
+
+                            <!-- VIDEO -->
+
+                            {% if product["video"] %}
+
+                                <span class="video-badge">
+                                    VIDEO
+                                </span>
+
+                            {% endif %}
+
+
+                            <!-- PHOTO COUNT -->
+
+                            {% set photo_count = 0 %}
+
+                            {% if product["image"] %}
+                                {% set photo_count = photo_count + 1 %}
+                            {% endif %}
+
+                            {% if product["image2"] %}
+                                {% set photo_count = photo_count + 1 %}
+                            {% endif %}
+
+                            {% if product["image3"] %}
+                                {% set photo_count = photo_count + 1 %}
+                            {% endif %}
+
+                            {% if product["image4"] %}
+                                {% set photo_count = photo_count + 1 %}
+                            {% endif %}
+
+                            {% if product["image5"] %}
+                                {% set photo_count = photo_count + 1 %}
+                            {% endif %}
+
+
+                            {% if photo_count > 1 %}
+
+                                <span class="photo-count-badge">
+                                    {{ photo_count }} PHOTOS
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <!-- ==================================================
+                             PHOTO THUMBNAILS
+                        ================================================== -->
+
+                        {% if photo_count > 1 %}
+
+                            <div class="photo-thumbnails">
+
+                                {% if product["image"] %}
+
+                                    <button
+                                        type="button"
+                                        class="photo-thumb active"
+                                        onclick="changeProductImage(
+                                            '{{ product['id'] }}',
+                                            '{{ image_url(product['image']) }}',
+                                            this
+                                        )"
+                                    >
+
+                                        <img
+                                            src="{{ image_url(product['image']) }}"
+                                            alt="Photo 1"
+                                            loading="lazy"
+                                        >
+
+                                    </button>
+
+                                {% endif %}
+
+
+                                {% if product["image2"] %}
+
+                                    <button
+                                        type="button"
+                                        class="photo-thumb"
+                                        onclick="changeProductImage(
+                                            '{{ product['id'] }}',
+                                            '{{ image_url(product['image2']) }}',
+                                            this
+                                        )"
+                                    >
+
+                                        <img
+                                            src="{{ image_url(product['image2']) }}"
+                                            alt="Photo 2"
+                                            loading="lazy"
+                                        >
+
+                                    </button>
+
+                                {% endif %}
+
+
+                                {% if product["image3"] %}
+
+                                    <button
+                                        type="button"
+                                        class="photo-thumb"
+                                        onclick="changeProductImage(
+                                            '{{ product['id'] }}',
+                                            '{{ image_url(product['image3']) }}',
+                                            this
+                                        )"
+                                    >
+
+                                        <img
+                                            src="{{ image_url(product['image3']) }}"
+                                            alt="Photo 3"
+                                            loading="lazy"
+                                        >
+
+                                    </button>
+
+                                {% endif %}
+
+
+                                {% if product["image4"] %}
+
+                                    <button
+                                        type="button"
+                                        class="photo-thumb"
+                                        onclick="changeProductImage(
+                                            '{{ product['id'] }}',
+                                            '{{ image_url(product['image4']) }}',
+                                            this
+                                        )"
+                                    >
+
+                                        <img
+                                            src="{{ image_url(product['image4']) }}"
+                                            alt="Photo 4"
+                                            loading="lazy"
+                                        >
+
+                                    </button>
+
+                                {% endif %}
+
+
+                                {% if product["image5"] %}
+
+                                    <button
+                                        type="button"
+                                        class="photo-thumb"
+                                        onclick="changeProductImage(
+                                            '{{ product['id'] }}',
+                                            '{{ image_url(product['image5']) }}',
+                                            this
+                                        )"
+                                    >
+
+                                        <img
+                                            src="{{ image_url(product['image5']) }}"
+                                            alt="Photo 5"
+                                            loading="lazy"
+                                        >
+
+                                    </button>
+
+                                {% endif %}
+
                             </div>
-
-                        {% else %}
-
-                            <div class="image-placeholder">
-                                No Image
-                            </div>
-
-                        {% endif %}
-
-
-                        {% if product["discount"] and product["discount"] > 0 %}
-
-                            <span class="sale-badge">
-                                {{ "%.0f"|format(product["discount"]) }}% OFF
-                            </span>
-
-                        {% elif product["old_price"] and product["old_price"] > product["price"] %}
-
-                            <span class="sale-badge">
-                                SALE
-                            </span>
-
-                        {% endif %}
-
-
-                        {% if product["video"] %}
-
-                            <span class="video-badge">
-                                VIDEO
-                            </span>
 
                         {% endif %}
 
                     </div>
 
+
+                    <!-- ==================================================
+                         PRODUCT INFO
+                    ================================================== -->
 
                     <div class="product-info">
 
@@ -765,8 +1062,9 @@
                                 VIEW
                             </a>
 
+
                             <a
-                                href="/cart/add/{{ product['id'] }}"
+                                href="{{ url_for('add_to_cart', product_id=product['id']) }}"
                                 class="button"
                             >
                                 ADD TO BAG
@@ -792,6 +1090,10 @@
 
 </main>
 
+
+<!-- ======================================================
+     FOOTER
+====================================================== -->
 
 <footer>
 
@@ -949,7 +1251,7 @@
                         />
 
                         <path
-                            d="M8.2 7.4c.2-.4.5-.5.9-.5h.8c.2 0 .5.1.6.4l.8 1.9c.1.2.1.5 0 .7l-.6.8c-.1.2-.1.4 0 .6.5.9 1.2 1.6 2.1 2.1.2.1.4.1.6-.1l.8-.6c.2-.1.5-.1.7 0l1.9.8c.3.1.4.3.4.6v.8c0 .4-.2.7-.5.9- .4.2-1 .3-1.5.2-1.2-.2-2.6-.9-3.8-2.1-1.2-1.2-1.9-2.6-2.1-3.8-.1-.5 0-1.1.2-1.5Z"
+                            d="M8.2 7.4c.2-.4.5-.5.9-.5h.8c.2 0 .5.1.6.4l.8 1.9c.1.2.1.5 0 .7l-.6.8c-.1.2-.1.4 0 .6.5.9 1.2 1.6 2.1 2.1.2.1.4.1.6-.1l.8-.6c.2-.1.5-.1.7 0l1.9.8c.3.1.4.3.4.6v.8c0 .4-.2.7-.5.9-.4.2-1 .3-1.5.2-1.2-.2-2.6-.9-3.8-2.1-1.2-1.2-1.9-2.6-2.1-3.8-.1-.5 0-1.1.2-1.5Z"
                             fill="currentColor"
                         />
 
@@ -976,17 +1278,89 @@
 
 
 <script>
-    function imageLoadError(image) {
-        image.style.display = "none";
+/* ==========================================================
+   CHANGE MAIN PRODUCT IMAGE
+========================================================== */
 
-        const placeholder = image.parentElement.querySelector(
+function changeProductImage(
+    productId,
+    imageUrl,
+    clickedButton
+) {
+
+    const mainImage =
+        document.getElementById(
+            "main-image-" + productId
+        );
+
+    const placeholder =
+        document.getElementById(
+            "placeholder-" + productId
+        );
+
+    if (!mainImage) {
+        return;
+    }
+
+    mainImage.src = imageUrl;
+
+    mainImage.style.display = "block";
+
+    if (placeholder) {
+        placeholder.style.display = "none";
+    }
+
+    const thumbnails =
+        clickedButton
+            .parentElement
+            .querySelectorAll(
+                ".photo-thumb"
+            );
+
+    thumbnails.forEach(
+        function(button) {
+
+            button.classList.remove(
+                "active"
+            );
+
+        }
+    );
+
+    clickedButton.classList.add(
+        "active"
+    );
+}
+
+
+/* ==========================================================
+   IMAGE ERROR HANDLER
+========================================================== */
+
+function handleImageError(imageElement) {
+
+    imageElement.style.display =
+        "none";
+
+    const parent =
+        imageElement.parentElement;
+
+    if (!parent) {
+        return;
+    }
+
+    const placeholder =
+        parent.querySelector(
             ".image-placeholder"
         );
 
-        if (placeholder) {
-            placeholder.style.display = "flex";
-        }
+    if (placeholder) {
+
+        placeholder.style.display =
+            "flex";
+
     }
+}
 </script>
 
 </body>
