@@ -4,6 +4,7 @@
 <head>
 
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
@@ -132,6 +133,7 @@
             outline: none;
             font-family: Arial, sans-serif;
             font-size: 14px;
+            color: #211d18;
         }
 
         .field textarea {
@@ -143,6 +145,39 @@
         .field textarea:focus,
         .field select:focus {
             border-color: #9b7127;
+        }
+
+        /* SHIPPING */
+
+        .shipping-note {
+            margin-top: -8px;
+            margin-bottom: 18px;
+            color: #777;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .shipping-status {
+            display: none;
+            margin-top: -8px;
+            margin-bottom: 18px;
+            padding: 10px 12px;
+            background: #f5efe5;
+            border: 1px solid #ddd3c5;
+            color: #655d53;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+
+        .shipping-status.show {
+            display: block;
+        }
+
+        .shipping-status.error {
+            background: #fce8e8;
+            border-color: #e0b5b5;
+            color: #9b3030;
         }
 
         /* PAYMENT */
@@ -317,6 +352,11 @@
             color: white;
         }
 
+        .place-order:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
         .back {
             display: block;
             text-align: center;
@@ -408,6 +448,7 @@
 
 <body>
 
+
 <header>
 
     <a
@@ -456,6 +497,7 @@
 
 <main class="page">
 
+
     <div class="heading">
 
         <small>
@@ -481,13 +523,14 @@
         id="checkoutForm"
     >
 
+
         <div class="checkout-grid">
 
-            <!-- ==================================================
-                 CUSTOMER DETAILS
-            ================================================== -->
+
+            <!-- CUSTOMER DETAILS -->
 
             <div class="box">
+
 
                 <h2>
                     Delivery Details
@@ -540,6 +583,7 @@
                         placeholder="10-digit mobile number"
                         pattern="[0-9]{10}"
                         maxlength="10"
+                        inputmode="numeric"
                         required
                     >
 
@@ -555,18 +599,59 @@
                     <textarea
                         id="address"
                         name="address"
-                        placeholder="House/Flat, Street, Area, City, State, PIN"
+                        placeholder="House/Flat, Street, Area, City, State"
                         required
                     ></textarea>
 
                 </div>
 
 
-                <!-- ==================================================
-                     PAYMENT
-                ================================================== -->
+                <!-- PIN CODE -->
+
+                <div class="field">
+
+                    <label for="pincode">
+                        PIN Code *
+                    </label>
+
+                    <input
+                        type="text"
+                        id="pincode"
+                        name="pincode"
+                        placeholder="Enter 6-digit PIN code"
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        inputmode="numeric"
+                        autocomplete="postal-code"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="shipping-note">
+
+                    Shipping:
+
+                    Jodhpur ₹99
+                    &nbsp;|&nbsp;
+                    Rajasthan ₹200
+                    &nbsp;|&nbsp;
+                    Outside Rajasthan ₹500
+
+                </div>
+
+
+                <div
+                    id="shippingStatus"
+                    class="shipping-status"
+                ></div>
+
+
+                <!-- PAYMENT -->
 
                 <div class="payment">
+
 
                     <h3>
                         Payment Method
@@ -604,30 +689,35 @@
                     </label>
 
 
-                    <!-- ==================================================
-                         DYNAMIC UPI QR
-                    ================================================== -->
+                    <!-- UPI -->
 
                     <div
                         class="upi-box"
                         id="upiBox"
                     >
 
+
                         <h4>
                             Scan & Pay
                         </h4>
 
 
-                        <div class="upi-amount">
+                        <div
+                            class="upi-amount"
+                            id="upiAmount"
+                        >
                             ₹{{ "%.2f"|format(total|float) }}
                         </div>
 
 
                         <div class="upi-id">
+
                             UPI ID:
+
                             <strong>
                                 9602617287@fam
                             </strong>
+
                         </div>
 
 
@@ -649,7 +739,7 @@
                             Paytm or another UPI app.
 
                             The payment amount is already
-                            set to your order total.
+                            set to your final order total.
 
                         </div>
 
@@ -662,29 +752,30 @@
                             OPEN UPI APP
                         </a>
 
+
                     </div>
 
 
                     <div class="note">
 
-                        For UPI payment, scan the QR code
-                        above and pay the exact order total.
-
-                        After completing payment, click
-                        PLACE ORDER.
+                        UPI payment is manual.
+                        Please verify the payment in
+                        your UPI/bank app before dispatching
+                        the order.
 
                     </div>
 
+
                 </div>
+
 
             </div>
 
 
-            <!-- ==================================================
-                 ORDER SUMMARY
-            ================================================== -->
+            <!-- ORDER SUMMARY -->
 
             <aside class="summary">
+
 
                 <h2>
                     Your Order
@@ -707,7 +798,7 @@
                 <div class="summary-row">
 
                     <span>
-                        Subtotal
+                        Goods Value
                     </span>
 
                     <span>
@@ -720,18 +811,18 @@
                 <div class="summary-row">
 
                     <span>
-                        Delivery
+                        Shipping
                     </span>
 
-                    <span>
+                    <span id="shippingAmount">
 
-                        {% if shipping|float > 0 %}
+                        {% if shipping is not none %}
 
                             ₹{{ "%.2f"|format(shipping|float) }}
 
                         {% else %}
 
-                            FREE
+                            Enter PIN
 
                         {% endif %}
 
@@ -748,7 +839,15 @@
 
                     <span id="orderTotal">
 
-                        ₹{{ "%.2f"|format(total|float) }}
+                        {% if total is not none %}
+
+                            ₹{{ "%.2f"|format(total|float) }}
+
+                        {% else %}
+
+                            ₹{{ "%.2f"|format(subtotal|float) }}
+
+                        {% endif %}
 
                     </span>
 
@@ -774,16 +873,21 @@
 
                 <div class="secure">
 
-                    Your order details are securely
-                    submitted to Majisa Jewellers.
+                    Please verify your delivery
+                    address and PIN code before
+                    placing the order.
 
                 </div>
 
+
             </aside>
+
 
         </div>
 
+
     </form>
+
 
 </main>
 
@@ -805,130 +909,215 @@
 </footer>
 
 
-<!-- ==========================================================
-     QR CODE LIBRARY
-========================================================== -->
+<!-- QR CODE LIBRARY -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
 
 <script>
 
-    /* ==========================================================
-       PAYMENT DATA
-    ========================================================== */
 
-    const UPI_ID =
-        "9602617287@fam";
-
-    const PAYEE_NAME =
-        "Majisa Jewellers";
-
-    const TOTAL_AMOUNT =
-        {{ "%.2f"|format(total|float) }};
+/* ==========================================================
+   PAYMENT DATA
+========================================================== */
 
 
-    /* ==========================================================
-       ELEMENTS
-    ========================================================== */
-
-    const paymentRadios =
-        document.querySelectorAll(
-            'input[name="payment_method"]'
-        );
-
-    const upiBox =
-        document.getElementById(
-            "upiBox"
-        );
-
-    const qrCanvas =
-        document.getElementById(
-            "upiQrCode"
-        );
-
-    const upiOpenButton =
-        document.getElementById(
-            "upiOpenButton"
-        );
+const UPI_ID =
+    "9602617287@fam";
 
 
-    /* ==========================================================
-       CREATE UPI PAYMENT LINK
-    ========================================================== */
+const PAYEE_NAME =
+    "Majisa Jewellers";
 
-    function getUpiPaymentUrl() {
 
-        const params = new URLSearchParams();
+const SUBTOTAL =
+    Number(
+        "{{ '%.2f'|format(subtotal|float) }}"
+    );
 
-        params.set(
-            "pa",
-            UPI_ID
-        );
 
-        params.set(
-            "pn",
-            PAYEE_NAME
-        );
+let SHIPPING =
+    0;
 
-        params.set(
-            "am",
-            TOTAL_AMOUNT.toFixed(2)
-        );
 
-        params.set(
-            "cu",
-            "INR"
-        );
+let TOTAL_AMOUNT =
+    SUBTOTAL;
 
-        return (
-            "upi://pay?"
-            + params.toString()
-        );
+
+/* ==========================================================
+   ELEMENTS
+========================================================== */
+
+
+const checkoutForm =
+    document.getElementById(
+        "checkoutForm"
+    );
+
+
+const pincodeInput =
+    document.getElementById(
+        "pincode"
+    );
+
+
+const shippingAmount =
+    document.getElementById(
+        "shippingAmount"
+    );
+
+
+const shippingStatus =
+    document.getElementById(
+        "shippingStatus"
+    );
+
+
+const orderTotal =
+    document.getElementById(
+        "orderTotal"
+    );
+
+
+const upiAmount =
+    document.getElementById(
+        "upiAmount"
+    );
+
+
+const upiBox =
+    document.getElementById(
+        "upiBox"
+    );
+
+
+const qrCanvas =
+    document.getElementById(
+        "upiQrCode"
+    );
+
+
+const upiOpenButton =
+    document.getElementById(
+        "upiOpenButton"
+    );
+
+
+const placeOrderButton =
+    document.getElementById(
+        "placeOrderButton"
+    );
+
+
+const paymentRadios =
+    document.querySelectorAll(
+        'input[name="payment_method"]'
+    );
+
+
+/* ==========================================================
+   RUPEE FORMAT
+========================================================== */
+
+
+function rupees(amount) {
+
+    return (
+        "₹"
+        + Number(amount).toFixed(2)
+    );
+
+}
+
+
+/* ==========================================================
+   UPI URL
+========================================================== */
+
+
+function getUpiPaymentUrl() {
+
+    const params =
+        new URLSearchParams();
+
+
+    params.set(
+        "pa",
+        UPI_ID
+    );
+
+
+    params.set(
+        "pn",
+        PAYEE_NAME
+    );
+
+
+    params.set(
+        "am",
+        Number(
+            TOTAL_AMOUNT
+        ).toFixed(2)
+    );
+
+
+    params.set(
+        "cu",
+        "INR"
+    );
+
+
+    return (
+        "upi://pay?"
+        + params.toString()
+    );
+
+}
+
+
+/* ==========================================================
+   QR GENERATOR
+========================================================== */
+
+
+function generateUpiQr() {
+
+    if (
+        !qrCanvas ||
+        typeof QRious ===
+        "undefined"
+    ) {
+
+        return;
 
     }
 
 
-    /* ==========================================================
-       GENERATE QR
-    ========================================================== */
-
-    function generateUpiQr() {
-
-        const paymentUrl =
-            getUpiPaymentUrl();
+    const paymentUrl =
+        getUpiPaymentUrl();
 
 
-        if (
-            typeof QRious ===
-            "undefined"
-        ) {
+    new QRious({
 
-            const ctx =
-                qrCanvas.getContext(
-                    "2d"
-                );
+        element:
+            qrCanvas,
 
-            ctx.clearRect(
-                0,
-                0,
-                qrCanvas.width,
-                qrCanvas.height
-            );
+        value:
+            paymentUrl,
 
-            return;
+        size:
+            220,
 
-        }
+        level:
+            "H",
+
+        padding:
+            8
+
+    });
 
 
-        new QRious({
-            element: qrCanvas,
-            value: paymentUrl,
-            size: 220,
-            level: "H",
-            padding: 8
-        });
-
+    if (upiOpenButton) {
 
         upiOpenButton.href =
             paymentUrl;
@@ -936,35 +1125,340 @@
     }
 
 
-    /* ==========================================================
-       SHOW / HIDE UPI
-    ========================================================== */
+    if (upiAmount) {
 
-    function updatePaymentView() {
+        upiAmount.textContent =
+            rupees(
+                TOTAL_AMOUNT
+            );
 
-        const selected =
-            document.querySelector(
-                'input[name="payment_method"]:checked'
+    }
+
+}
+
+
+/* ==========================================================
+   UPDATE TOTAL
+========================================================== */
+
+
+function updateOrderTotal() {
+
+    TOTAL_AMOUNT =
+        Number(SUBTOTAL)
+        + Number(SHIPPING);
+
+
+    if (orderTotal) {
+
+        orderTotal.textContent =
+            rupees(
+                TOTAL_AMOUNT
+            );
+
+    }
+
+
+    generateUpiQr();
+
+}
+
+
+/* ==========================================================
+   SHIPPING MESSAGE
+========================================================== */
+
+
+function showShippingMessage(
+    message,
+    isError = false
+) {
+
+    if (!shippingStatus) {
+
+        return;
+
+    }
+
+
+    shippingStatus.textContent =
+        message;
+
+
+    shippingStatus.classList.add(
+        "show"
+    );
+
+
+    shippingStatus.classList.toggle(
+        "error",
+        isError
+    );
+
+}
+
+
+/* ==========================================================
+   RESET SHIPPING
+========================================================== */
+
+
+function resetShipping() {
+
+    SHIPPING = 0;
+
+
+    if (shippingAmount) {
+
+        shippingAmount.textContent =
+            "Enter PIN";
+
+    }
+
+
+    showShippingMessage(
+        "Enter your 6-digit PIN code to calculate delivery charges."
+    );
+
+
+    updateOrderTotal();
+
+}
+
+
+/* ==========================================================
+   GET SHIPPING
+========================================================== */
+
+
+async function calculateShipping() {
+
+    if (!pincodeInput) {
+
+        return;
+
+    }
+
+
+    const pin =
+        pincodeInput.value
+            .replace(
+                /\D/g,
+                ""
+            )
+            .slice(
+                0,
+                6
             );
 
 
-        if (!selected) {
-            return;
-        }
+    pincodeInput.value =
+        pin;
+
+
+    if (
+        pin.length !== 6
+    ) {
+
+        resetShipping();
+
+        return;
+
+    }
+
+
+    showShippingMessage(
+        "Calculating shipping..."
+    );
+
+
+    if (placeOrderButton) {
+
+        placeOrderButton.disabled =
+            true;
+
+    }
+
+
+    try {
+
+
+        const response =
+            await fetch(
+                "/api/shipping-charge"
+                + "?pincode="
+                + encodeURIComponent(
+                    pin
+                )
+                + "&subtotal="
+                + encodeURIComponent(
+                    SUBTOTAL
+                )
+            );
+
+
+        const data =
+            await response.json();
 
 
         if (
-            selected.value ===
-            "UPI"
+            !response.ok ||
+            !data.success
         ) {
+
+            throw new Error(
+                data.message ||
+                "Unable to calculate shipping."
+            );
+
+        }
+
+
+        SHIPPING =
+            Number(
+                data.shipping
+            );
+
+
+        if (shippingAmount) {
+
+            shippingAmount.textContent =
+                rupees(
+                    SHIPPING
+                );
+
+        }
+
+
+        showShippingMessage(
+            data.zone
+            + " delivery charge: "
+            + rupees(
+                SHIPPING
+            )
+        );
+
+
+        updateOrderTotal();
+
+
+    } catch (error) {
+
+
+        SHIPPING = 0;
+
+
+        if (shippingAmount) {
+
+            shippingAmount.textContent =
+                "Invalid PIN";
+
+        }
+
+
+        showShippingMessage(
+            error.message ||
+            "Unable to calculate shipping.",
+            true
+        );
+
+
+        updateOrderTotal();
+
+    }
+
+
+    if (placeOrderButton) {
+
+        placeOrderButton.disabled =
+            false;
+
+    }
+
+}
+
+
+/* ==========================================================
+   PIN INPUT
+========================================================== */
+
+
+if (pincodeInput) {
+
+    pincodeInput.addEventListener(
+        "input",
+        function() {
+
+            this.value =
+                this.value
+                    .replace(
+                        /\D/g,
+                        ""
+                    )
+                    .slice(
+                        0,
+                        6
+                    );
+
+
+            clearTimeout(
+                window.shippingTimer
+            );
+
+
+            window.shippingTimer =
+                setTimeout(
+                    calculateShipping,
+                    250
+                );
+
+        }
+    );
+
+}
+
+
+/* ==========================================================
+   PAYMENT VIEW
+========================================================== */
+
+
+function updatePaymentView() {
+
+    const selected =
+        document.querySelector(
+            'input[name="payment_method"]:checked'
+        );
+
+
+    if (!selected) {
+
+        return;
+
+    }
+
+
+    if (
+        selected.value ===
+        "UPI"
+    ) {
+
+        if (upiBox) {
 
             upiBox.classList.add(
                 "active"
             );
 
-            generateUpiQr();
+        }
 
-        } else {
+
+        generateUpiQr();
+
+    }
+
+    else {
+
+        if (upiBox) {
 
             upiBox.classList.remove(
                 "active"
@@ -974,97 +1468,134 @@
 
     }
 
+}
 
-    /* ==========================================================
-       PAYMENT RADIO EVENTS
-    ========================================================== */
 
-    paymentRadios.forEach(
-        function(radio) {
+paymentRadios.forEach(
+    function(radio) {
 
-            radio.addEventListener(
-                "change",
-                updatePaymentView
-            );
+        radio.addEventListener(
+            "change",
+            updatePaymentView
+        );
+
+    }
+);
+
+
+/* ==========================================================
+   FORM SUBMIT
+========================================================== */
+
+
+if (checkoutForm) {
+
+    checkoutForm.addEventListener(
+        "submit",
+        function(event) {
+
+            const pin =
+                (
+                    pincodeInput
+                        ? pincodeInput.value
+                        : ""
+                )
+                .replace(
+                    /\D/g,
+                    ""
+                );
+
+
+            if (
+                pin.length !== 6
+            ) {
+
+                event.preventDefault();
+
+
+                alert(
+                    "Please enter a valid 6-digit PIN code."
+                );
+
+
+                if (pincodeInput) {
+
+                    pincodeInput.focus();
+
+                }
+
+
+                return;
+
+            }
+
+
+            /*
+             * Shipping must have been calculated
+             * before order submission.
+             */
+
+            if (
+                shippingAmount &&
+                shippingAmount.textContent ===
+                "Enter PIN"
+            ) {
+
+                event.preventDefault();
+
+
+                alert(
+                    "Please wait for shipping charge calculation."
+                );
+
+
+                return;
+
+            }
+
+
+            const selected =
+                document.querySelector(
+                    'input[name="payment_method"]:checked'
+                );
+
+
+            if (
+                selected &&
+                selected.value ===
+                "UPI"
+            {
+
+                /*
+                 * Manual UPI payment.
+                 *
+                 * Seller must verify payment
+                 * in the UPI/bank app before
+                 * dispatching the order.
+                 */
+
+            }
 
         }
     );
 
-
-    /* ==========================================================
-       INITIAL STATE
-    ========================================================== */
-
-    updatePaymentView();
+}
 
 
-    /* ==========================================================
-       CHECK FORM
-    ========================================================== */
-
-    document
-        .getElementById("checkoutForm")
-        .addEventListener(
-            "submit",
-            function(event) {
-
-                const name =
-                    document
-                        .getElementById("name")
-                        .value
-                        .trim();
-
-                const phone =
-                    document
-                        .getElementById("phone")
-                        .value
-                        .trim();
-
-                const address =
-                    document
-                        .getElementById("address")
-                        .value
-                        .trim();
+/* ==========================================================
+   INITIAL STATE
+========================================================== */
 
 
-                if (
-                    !name ||
-                    !phone ||
-                    !address
-                ) {
+resetShipping();
 
-                    return;
+updatePaymentView();
 
-                }
+generateUpiQr();
 
-
-                const selected =
-                    document.querySelector(
-                        'input[name="payment_method"]:checked'
-                    );
-
-
-                if (
-                    selected &&
-                    selected.value ===
-                    "UPI"
-                ) {
-
-                    /*
-                     * IMPORTANT:
-                     * This only creates the order as
-                     * your current app.py is designed.
-                     *
-                     * UPI payment itself is NOT automatically
-                     * verified by this QR.
-                     */
-
-                }
-
-            }
-        );
 
 </script>
+
 
 </body>
 </html>
