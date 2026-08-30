@@ -2107,10 +2107,105 @@ def reset_password(token):
 
 
 # ==========================================================
+# SHIPPING RULES
+# ==========================================================
+
+JODHPUR_SHIPPING = 99.0
+RAJASTHAN_SHIPPING = 200.0
+OUTSIDE_RAJASTHAN_SHIPPING = 500.0
+
+
+def normalize_pincode(pincode):
+
+    digits = "".join(
+        char
+        for char in str(pincode or "")
+        if char.isdigit()
+    )
+
+    if len(digits) != 6:
+
+        return ""
+
+    return digits
+
+
+def calculate_shipping_charge(pincode):
+
+    digits = normalize_pincode(
+        pincode
+    )
+
+    if not digits:
+
+        return None
+
+    # ------------------------------------------------------
+    # JODHPUR
+    # Main Jodhpur PIN series used here: 3420xx
+    # ------------------------------------------------------
+
+    if digits.startswith("3420"):
+
+        return JODHPUR_SHIPPING
+
+    # ------------------------------------------------------
+    # RAJASTHAN
+    # Rajasthan PIN prefixes covered by this policy:
+    # 30, 31, 32, 33, 34
+    # ------------------------------------------------------
+
+    if digits[:2] in {
+        "30",
+        "31",
+        "32",
+        "33",
+        "34"
+    }:
+
+        return RAJASTHAN_SHIPPING
+
+    # ------------------------------------------------------
+    # OUTSIDE RAJASTHAN
+    # ------------------------------------------------------
+
+    return OUTSIDE_RAJASTHAN_SHIPPING
+
+
+def shipping_zone(pincode):
+
+    digits = normalize_pincode(
+        pincode
+    )
+
+    if not digits:
+
+        return ""
+
+    if digits.startswith("3420"):
+
+        return "Jodhpur"
+
+    if digits[:2] in {
+        "30",
+        "31",
+        "32",
+        "33",
+        "34"
+    }:
+
+        return "Rajasthan"
+
+    return "Outside Rajasthan"
+
+
+# ==========================================================
 # CHECKOUT DATA
 # ==========================================================
 
-def get_checkout_data():
+def get_checkout_data(
+    pincode=""
+):
 
     cart_data = get_cart()
 
@@ -2149,24 +2244,34 @@ def get_checkout_data():
 
     conn.close()
 
-    subtotal = 0
+    subtotal = 0.0
 
     checkout_items = []
 
     for product in products_list:
 
-        quantity = int(
-            cart_data.get(
-                str(product["id"]),
-                0
+        try:
+
+            quantity = int(
+                cart_data.get(
+                    str(product["id"]),
+                    0
+                )
             )
-        )
+
+        except (
+            ValueError,
+            TypeError
+        ):
+
+            quantity = 0
 
         stock = int(
             product["stock"] or 0
         )
 
         if stock <= 0:
+
             continue
 
         quantity = min(
@@ -2175,10 +2280,13 @@ def get_checkout_data():
         )
 
         if quantity <= 0:
+
             continue
 
         item_subtotal = (
-            float(product["price"] or 0)
+            float(
+                product["price"] or 0
+            )
             * quantity
         )
 
@@ -2191,35 +2299,131 @@ def get_checkout_data():
             )
         )
 
-    shipping_charge = float(
-        settings["shipping_charge"]
-        or 0
+    shipping = calculate_shipping_charge(
+        pincode
     )
 
-    free_shipping = float(
-        settings["free_shipping"]
-        or 999999999
-    )
+    if shipping is None:
 
-    shipping = (
-        0
-        if subtotal >= free_shipping
-        else shipping_charge
-    )
+        total = subtotal
 
-    total = (
-        subtotal
-        + shipping
-    )
+    else:
+
+        total = (
+            subtotal
+            + shipping
+        )
 
     return {
         "products": products_list,
         "items": checkout_items,
         "settings": settings,
-        "subtotal": subtotal,
-        "shipping": shipping,
-        "total": total
+        "subtotal": round(
+            subtotal,
+            2
+        ),
+        "shipping": (
+            None
+            if shipping is None
+            else round(
+                shipping,
+                2
+            )
+        ),
+        "total": round(
+            total,
+            2
+        ),
+        "pincode": normalize_pincode(
+            pincode
+        )
     }
+
+
+# ==========================================================
+# SHIPPING API
+# ==========================================================
+
+@app.route(
+    "/api/shipping-charge",
+    methods=["GET"]
+)
+def api_shipping_charge():
+
+    pincode = request.args.get(
+        "pincode",
+        ""
+    ).strip()
+
+    try:
+
+        subtotal = float(
+            request.args.get(
+                "subtotal",
+                0
+            ) or 0
+        )
+
+    except (
+        ValueError,
+        TypeError
+    ):
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Invalid subtotal."
+            }
+        ), 400
+
+    pincode_digits = normalize_pincode(
+        pincode
+    )
+
+    if not pincode_digits:
+
+        return jsonify(
+            {
+                "success": False,
+                "message":
+                    "Please enter a valid 6-digit PIN code."
+            }
+        ), 400
+
+    shipping = calculate_shipping_charge(
+        pincode_digits
+    )
+
+    if shipping is None:
+
+        return jsonify(
+            {
+                "success": False,
+                "message":
+                    "Unable to calculate shipping."
+            }
+        ), 400
+
+    total = round(
+        subtotal + shipping,
+        2
+    )
+
+    return jsonify(
+        {
+            "success": True,
+            "zone": shipping_zone(
+                pincode_digits
+            ),
+            "pincode": pincode_digits,
+            "subtotal": round(
+                subtotal,
+                2
+            ),
+            "shipping": shipping,
+            "total": total
+        }
+    )
 
 
 # ==========================================================
@@ -2232,7 +2436,22 @@ def get_checkout_data():
 )
 def checkout():
 
-    checkout_data = get_checkout_data()
+    # ------------------------------------------------------
+    # PIN
+    # ------------------------------------------------------
+
+    pincode = ""
+
+    if request.method == "POST":
+
+        pincode = request.form.get(
+            "pincode",
+            ""
+        ).strip()
+
+    checkout_data = get_checkout_data(
+        pincode
+    )
 
     if not checkout_data:
 
@@ -2278,6 +2497,10 @@ def checkout():
             url_for("cart")
         )
 
+    # ------------------------------------------------------
+    # POST
+    # ------------------------------------------------------
+
     if request.method == "POST":
 
         customer_name = request.form.get(
@@ -2300,10 +2523,18 @@ def checkout():
             ""
         ).strip()
 
+        pincode_digits = normalize_pincode(
+            pincode
+        )
+
         payment_method = request.form.get(
             "payment_method",
             "COD"
         ).strip().upper()
+
+        # --------------------------------------------------
+        # BASIC VALIDATION
+        # --------------------------------------------------
 
         if (
             not customer_name
@@ -2319,6 +2550,53 @@ def checkout():
                 url_for("checkout")
             )
 
+        # --------------------------------------------------
+        # PIN VALIDATION
+        # --------------------------------------------------
+
+        if len(pincode_digits) != 6:
+
+            flash(
+                "Please enter a valid 6-digit PIN code."
+            )
+
+            return redirect(
+                url_for("checkout")
+            )
+
+        # --------------------------------------------------
+        # SERVER-SIDE SHIPPING CALCULATION
+        # --------------------------------------------------
+
+        shipping = calculate_shipping_charge(
+            pincode_digits
+        )
+
+        if shipping is None:
+
+            flash(
+                "Unable to calculate shipping charge."
+            )
+
+            return redirect(
+                url_for("checkout")
+            )
+
+        total = round(
+            subtotal + shipping,
+            2
+        )
+
+        full_address = (
+            address
+            + ", PIN: "
+            + pincode_digits
+        )
+
+        # --------------------------------------------------
+        # PAYMENT METHODS
+        # --------------------------------------------------
+
         allowed_payment_methods = {
             "COD",
             "UPI",
@@ -2330,6 +2608,10 @@ def checkout():
         ):
 
             payment_method = "COD"
+
+        # --------------------------------------------------
+        # COD
+        # --------------------------------------------------
 
         if (
             payment_method == "COD"
@@ -2343,6 +2625,10 @@ def checkout():
             return redirect(
                 url_for("checkout")
             )
+
+        # --------------------------------------------------
+        # UPI
+        # --------------------------------------------------
 
         if (
             payment_method == "UPI"
@@ -2400,7 +2686,7 @@ def checkout():
                         session.get("user_id"),
                         customer_name,
                         phone,
-                        address,
+                        full_address,
                         total,
                         "Pending",
                         "RAZORPAY",
@@ -2445,6 +2731,10 @@ def checkout():
 
                 conn.close()
 
+                app.logger.exception(
+                    "Unable to create Razorpay order"
+                )
+
                 flash(
                     "Unable to create payment order."
                 )
@@ -2463,11 +2753,12 @@ def checkout():
                 total=total,
                 razorpay_order_required=True,
                 pending_order_id=order_id,
-                razorpay_key_id=RAZORPAY_KEY_ID
+                razorpay_key_id=RAZORPAY_KEY_ID,
+                pincode=pincode_digits
             )
 
         # --------------------------------------------------
-        # COD / UPI
+        # COD / MANUAL UPI
         # --------------------------------------------------
 
         conn = get_db()
@@ -2497,7 +2788,7 @@ def checkout():
                     session.get("user_id"),
                     customer_name,
                     phone,
-                    address,
+                    full_address,
                     total,
                     "Pending",
                     payment_method,
@@ -2557,6 +2848,10 @@ def checkout():
 
             conn.close()
 
+            app.logger.exception(
+                "Unable to create order"
+            )
+
             flash(
                 "Unable to create your order."
             )
@@ -2578,6 +2873,10 @@ def checkout():
             )
         )
 
+    # ------------------------------------------------------
+    # GET
+    # ------------------------------------------------------
+
     return render_template(
         "checkout.html",
         products=products_list,
@@ -2586,7 +2885,8 @@ def checkout():
         total=total,
         razorpay_key_id=RAZORPAY_KEY_ID,
         razorpay_order_required=False,
-        pending_order_id=None
+        pending_order_id=None,
+        pincode=""
     )
 
 
@@ -3612,10 +3912,6 @@ def admin_add_product():
         else 0
     )
 
-    # Support both:
-    # 1) Separate inputs image/image2/.../image5
-    # 2) One multiple input named images
-
     image_files = []
 
     multiple_files = request.files.getlist(
@@ -4004,12 +4300,10 @@ def admin_edit_product(product_id):
             old_images
         )
 
-        # Multiple "images" field
         multiple_files = request.files.getlist(
             "images"
         )
 
-        # Separate fields
         separate_files = [
             request.files.get("image"),
             request.files.get("image2"),
@@ -4018,7 +4312,6 @@ def admin_edit_product(product_id):
             request.files.get("image5")
         ]
 
-        # Prefer explicit separate inputs when used.
         supplied_files = []
 
         has_separate = any(
@@ -5102,8 +5395,6 @@ def internal_server_error(error):
         "Internal Server Error"
     )
 
-    # Never render a missing 500.html here.
-    # Otherwise the error handler itself can crash.
     return (
         "Internal Server Error",
         500
